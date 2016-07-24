@@ -14,6 +14,8 @@ from scipy import io, constants
 from xml.dom import minidom
 import os 
 import os.path
+import fwhm
+reload(fwhm)
 
 class nmrData(object):
     """
@@ -22,9 +24,9 @@ class nmrData(object):
     Usage: 
     > nmrData = nmrData(path, type)      
     
-    supported type: 'ntnmr', 'TopSpin', 'spinSight'
+    supported type: 'Magritek', 'ntnmr', 'TopSpin', 'spinSight'
     """
-    def __init__(self, path, datatype, container=0, sizeTD1=0):
+    def __init__(self, path, datatype, container=0, sizeTD1=0, process = False,  lb = 0, phase = 0, ls = 0, ft_only = [], debug = False):
         """ This reads the data """
         #plt.close()
         if datatype == '':
@@ -36,7 +38,7 @@ class nmrData(object):
         self.allFid.append([])
         self.sizeTD1 = sizeTD1
         
-        print "The datatype is {0}".format(datatype)
+        if debug: print "The datatype is {0}".format(datatype)
           
         if datatype == "Magritek":
             if os.path.isfile(path + "/data.1d"):
@@ -119,6 +121,8 @@ class nmrData(object):
             directory = os.path.dirname(path)
             acqusFile = open(directory + "/acqus", mode='r')
 
+            #print "Importing TopSpin data"
+            
             #check if acqu2sfile exists, if yes, experiment is 2D!
             if os.path.isfile(directory + "/acqu2s"):
                 acqu2sFile = open(directory + "/acqu2s", mode='r')
@@ -128,6 +132,7 @@ class nmrData(object):
                 self.is2D = False
                 self.sizeTD1 = 1
 
+            #print "2D: ", self.is2D
 
             #this could be crafted into a common routine which gives names of parameters
             #parameters and works the same for e.g., spinsight and topspin
@@ -139,7 +144,7 @@ class nmrData(object):
                 if "=" in line:
                     line = line.split("=")
                 elif len(line) == 0 or count > 1000:
-                    print "Ended reading acqus file at line ", count
+                    if debug: print "Ended reading acqus file at line ", count
                     break
                 else:
                     next
@@ -149,12 +154,12 @@ class nmrData(object):
                     #this line might be chopping the last digit off....
                     #self.sweepWidthTD2 = int(float(line[1][:-1]))
                     self.sweepWidthTD2 = int(float(line[1]))
-                    print "SweepWidthTD2: ", self.sweepWidthTD2
+                    if debug: print "SweepWidthTD2: ", self.sweepWidthTD2
                 elif line[0] == "##$TD":
                     self.sizeTD2 = int(line[1])/2
-                    print "sizeTD2: ", self.sizeTD2
+                    if debug: print "sizeTD2: ", self.sizeTD2
                 elif line[0] == "##$SFO1":
-                    self.carrier = float(line[1])*1e6
+                    if debug: self.carrier = float(line[1])*1e6
 
                 elif len(line) == 0:
                     break
@@ -168,7 +173,7 @@ class nmrData(object):
                     if "=" in line:
                         line = line.split("=")
                     elif len(line) == 0 or count > 1000:
-                        print "Ended reading acqu2s file at line ", count
+                        if debug: print "Ended reading acqu2s file at line ", count
                         break
                     else:
                         next
@@ -176,13 +181,14 @@ class nmrData(object):
                     #print line[0]
                     if line[0] == "##$TD" and self.sizeTD1 == 0:
                         self.sizeTD1 = int(line[1])
-                        print "sizeTD1: ", self.sizeTD1
+                        if debug: print "sizeTD1: ", self.sizeTD1
                     elif len(line) == 0:
                         break
                     
-            print "TD2: ", self.sizeTD2
-            print "TD1: ", self.sizeTD1
-            print "Carrier:", self.carrier
+            if debug:
+                print "TD2: ", self.sizeTD2
+                print "TD1: ", self.sizeTD1
+                print "Carrier:", self.carrier
 
             if self.is2D:
                 self.f = open(path + "/ser", mode='rb')
@@ -190,8 +196,7 @@ class nmrData(object):
                 self.f = open(path + "fid", mode='rb')
                 
             dataString = self.f.read(self.sizeTD2*2*self.sizeTD1*4)
-            print "len(dataString): ", len(dataString)
-            print "OK?"
+            if debug: print "len(dataString): ", len(dataString)
 
             dwellTime = 1./self.sweepWidthTD2
             self.fidTime = np.linspace(0, (self.sizeTD2-1)*dwellTime, num = self.sizeTD2)
@@ -318,6 +323,9 @@ class nmrData(object):
                 self.allFid[0].append(sp.add(realPart, imagPart))
                 print "Data imported, Number of Experiments: ", self.sizeTD1
 
+        if process == True:
+            self.process(ls = ls, lb = lb, phase = phase, ft_only = ft_only)
+
 
     def offsetCorrection(self, fromPos, toPos, fraction = 0.75, whichFid = 0):
 
@@ -355,9 +363,13 @@ class nmrData(object):
         self.checkToPos(toPos)
         self.allFid[toPos] = sp.multiply(self.allFid[fromPos][:], sp.exp(-self.fidTime*LB))
 
-    def fourierTransform(self, fromPos, toPos):
+    def fourierTransform(self, fromPos, toPos, only = []):
         self.checkToPos(toPos)
-        self.allFid[toPos] = [fftshift(fft(fid)) for fid in self.allFid[fromPos]]
+        if len(only) > 0:
+            self.allFid[toPos] = [fftshift(fft(self.allFid[fromPos][fidIndex])) for fidIndex in only]    
+        else:
+            self.allFid[toPos] = [fftshift(fft(fid)) for fid in self.allFid[fromPos]]
+
         self.frequency = np.linspace(-self.sweepWidthTD2/2,self.sweepWidthTD2/2,len(self.allFid[fromPos][0]))
 
     def phase(self, fromPos, toPos, phase, degree=True):
@@ -371,13 +383,7 @@ class nmrData(object):
 
     def autoPhase0(self, fromPos, index, start, stop, scale = "Hz"):
         """This function should get fromPos and index pointing to a spectrum. It will return the phase for maximimizing the integral over the real part in the spectral region of interest, in degrees."""
-        if scale == "Hz":
-            i1 = self.getIndexFromFrequency(start)
-            i2 = self.getIndexFromFrequency(stop)
-        elif scale=="ppm":
-            i1 = self.getIndexFromPPM(start)
-            i2 = self.getIndexFromPPM(stop)
-
+        i1, i2 = self.getIndices([start, stop], scale=scale)
         phiTest = np.linspace(0, 359, num = 360)
 
         integrals = np.zeros(np.size(phiTest))
@@ -386,7 +392,13 @@ class nmrData(object):
             integrals[k] = np.sum(np.real(self.allFid[fromPos][index][start:stop]*np.exp(-1j*phiTest[k]/180*np.pi)))
         return phiTest[np.argmax(integrals)]
 
-        
+    def fwhm(self, fromPos, index, start, stop, scale = "Hz", silence = False):
+        i1, i2 = self.getIndices([start, stop], scale=scale)
+        x = self.frequency[i1:i2]
+        y = np.real(self.allFid[fromPos][index][i1:i2])
+
+        return fwhm.fwhm(x, y, silence = silence)
+
         
     def phaseFirstOrder(self, fromPos, toPos, phi1, degree = False, noChangeOnResonance=False, pivot = 0):
         """This should only be applied to Fourier transformed spectral data
@@ -427,39 +439,39 @@ class nmrData(object):
             spectra.extend(self.getPartialSpectrum(fromPos, index, startFreq, stopFreq))
         return spectra
 
-    def getPartialSpectrum(self, fromPos, index, startFreq, stopFreq):
-        i1 = self.getIndexFromFrequency(startFreq)
-        i2 = self.getIndexFromFrequency(stopFreq)
+    def getPartialSpectrum(self, fromPos, index, startFreq, stopFreq, scale = "Hz"):
+        i1, i2 = self.getIndices([start, stop], scale=scale)
+
         return np.real(self.allFid[fromPos][index][i1:i2])
 
-    def integrateRealPart(self, fromPos, index, start, stop, scale="Hz"):
+    def integrateRealPart(self, fromPos, index, start, stop, scale="Hz", part = "real"):
         """This function integrates the real part between start and stop. standard scale is Hz
         Arguments:
         - `fromPos`:
         - `index`: index of the spectrum
         - `startFreq`: lower limit of integration
         - `stopFreq`: upper limit of integration
+        - `scale`: Hz or ppm
+        - `part`: real or magnitude
         """
-        if scale == "Hz":
-            i1 = self.getIndexFromFrequency(start)
-            i2 = self.getIndexFromFrequency(stop)
-        elif scale=="ppm":
-            i1 = self.getIndexFromPPM(start)
-            i2 = self.getIndexFromPPM(stop)
-        #print "i1: ", i1
-        #print "i2: ", i2
-        #print np.real(self.allFid[fromPos][index][i1:i2])
-        return np.sum(np.real(self.allFid[fromPos][index][i1:i2]))
+        i1, i2 = self.getIndices([start, stop], scale=scale)
 
-    def integrateAllRealPart(self, fromPos, start, stop, scale="Hz"):
+        if part == "real":
+            retVal = np.sum(np.real(self.allFid[fromPos][index][i1:i2]))
+        elif part == "magnitude":
+            retVal = np.sum(np.abs(self.allFid[fromPos][index][i1:i2]))
+
+        return retVal
+
+    def integrateAllRealPart(self, fromPos, start, stop, scale="Hz", part = "real"):
         #return all integrals by calling integrateRealPart sizeTD1 times
-        return np.array([self.integrateRealPart(fromPos, k, start, stop, scale = scale)
+        return np.array([self.integrateRealPart(fromPos, k, start, stop, scale = scale, part = part)
                          for k in range(self.sizeTD1)])
 
     
     def getPeak(self, fromPos, index, start, stop, negative = False, scale="Hz"):
         """This function returns peak intensities in a given range; it searches for negative peaks if negative = True"""
-
+ 
         i1, i2 = self.getIndices([start, stop], scale=scale)
         spec = self.allFid[fromPos][index]
         
@@ -471,15 +483,7 @@ class nmrData(object):
         return maxVal
 
     def getCenterFrequency(self, fromPos, index, start, stop, scale ="Hz"):
-        if scale == "Hz":
-            i1 = self.getIndexFromFrequency(start)
-            i2 = self.getIndexFromFrequency(stop)
-        elif scale=="ppm":
-            i1 = self.getIndexFromPPM(start)
-            i2 = self.getIndexFromPPM(stop)
-
-        #print "i1: ", i1
-        #print "i2: ", i2
+        i1, i2 = self.getIndices([start, stop], scale=scale)
    
         freqList = np.linspace(start, stop, num = (i2 - i1))
         #print freqList
@@ -548,6 +552,18 @@ class nmrData(object):
             f0 = freqRef/( 1 + reference[1]*1e-6)
             #print "f0 is: ", f0
             self.ppmScale = (self.frequency + self.carrier - f0)/f0*1e6
+
+    def process(self, lb = 0, phase = 0, ls = 0, ft_only = []):
+        """Process routine for NMR data. 
+
+        lb: line broadening in Hz
+        phase: phase correction in degree
+        ls: left shift (number of points)
+        """
+        self.lineBroadening(0,1,lb)
+        self.phase(1,1,phase,degree=True)
+        self.leftShift(1, 2, ls)
+        self.fourierTransform(2, 3, only = ft_only)
 
     def export(self, pos, count, filename, scale="Hz", xlim=[], complexType="r", fmt="%.3f"):
         if scale == "Hz":

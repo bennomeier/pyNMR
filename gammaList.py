@@ -150,7 +150,7 @@ def get(nucleus="", allNuclei = 0):
 def gammaList(nucleus):
     """Returns the same as get(),
     included for backward-compatiblity."""
-    return gammaList(nucleus)
+    return get(nucleus)
 
 if __name__ == "__main__":
     print gamma.__doc__

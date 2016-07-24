@@ -1,9 +1,11 @@
 import numpy as np
 
-def fwhm(x,y):
+def fwhm(x,y, silence = False):
     maxVal = np.max(y)
     maxVal50 = 0.5*maxVal
-    print "Max: " + str(maxVal)
+
+    if not silence:
+        print "Max: " + str(maxVal)
 
     biggerCondition = [a > maxVal50 for a in y]
 
@@ -15,7 +17,8 @@ def fwhm(x,y):
             changePoints.append(k)
 
     if len(changePoints) > 2:
-        print "WARNING: THE FWHM IS LIKELY TO GIVE INCORRECT VALUES"
+        if not silence:
+            print "WARNING: THE FWHM IS LIKELY TO GIVE INCORRECT VALUES"
 
     #interpolate between points.
     
