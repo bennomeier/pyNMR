@@ -37,6 +37,7 @@ class nmrData(object):
         self.allFid = []
         self.allFid.append([])
         self.sizeTD1 = sizeTD1
+        self.title = ['no title']
         
         if debug: print "The datatype is {0}".format(datatype)
           
@@ -201,12 +202,28 @@ class nmrData(object):
             dwellTime = 1./self.sweepWidthTD2
             self.fidTime = np.linspace(0, (self.sizeTD2-1)*dwellTime, num = self.sizeTD2)
             
+            # here we read the FID data from fid/ser file
+            # first convert the datasting into a list of numbers:
             self.data = struct.unpack('<' + 'i'*(self.sizeTD2*2*self.sizeTD1), dataString)
+            
+            # here we create one array of complex numbers for each of the FIDs 
+            # i runs overa all fids in a ser file, in case of a fid file i = 0
+            # TD1 is number of FIDs, TD2 is number of datapoints in each FID
             for i in range(0,  self.sizeTD1):
                 #print i
                 realPart = self.data[i*self.sizeTD2*2:(i+1)*self.sizeTD2*2:2]
                 imagPart = sp.multiply(self.data[i*self.sizeTD2*2+1:(i+1)*self.sizeTD2*2+1:2], 1j)
                 self.allFid[0].append(sp.add(realPart, imagPart))
+            
+            
+            # here we read the experiment title (only the one stored in pdata/1):
+            # could be made to read titles from all pdata folders (if needed)
+            pathToTitle = directory + '/pdata/1/title'
+            titleFile = open(pathToTitle, mode='r')
+            title = list(titleFile)
+            self.title = [line.strip() for line in title]
+            
+
 
                 
         if datatype == 'spinsight':
@@ -594,6 +611,9 @@ class nmrData(object):
             data = zip(xData[start:stop], yDataR[start:stop])
 
         np.savetxt(filename, data, fmt=fmt, delimiter="\t")
+    
+    def printTitle(self):
+        for line in self.title: print line
             
           
                   
