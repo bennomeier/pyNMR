@@ -18,6 +18,13 @@ Incomplete and not in order of improtance, but we have to stat somewhere:
 
  - [ ] automatic first order phase correction 
 
+ - [ ] load carrier frequency automatically for all experiment types 
+(now this does not work at least for 2D TopSpin) 
+
+ - [ ] getPPMScale shold have an option to use absolute frequency (instead of 
+offset from the current carrier), this can be done via an optional argument:
+getPPMScale(self, reference=[], scale = 'offset') 
+
  - [ ] ISSUE: fromPos/toPos - turn them into optional arguments (with: default being fromPos = len(self.allFid) - 1, toPos = len(self.allFid) ). Breaks backward compatibility ( = BBC).
 
  - [ ] ISSUE: stop storing all the history explicitly in the allFId, instead store only the latest FID and only the latest spectrum (with their time/frequency scales) and keep a log of all the processing commands. BBC

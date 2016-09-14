@@ -160,7 +160,8 @@ class nmrData(object):
                     self.sizeTD2 = int(line[1])/2
                     if debug: print "sizeTD2: ", self.sizeTD2
                 elif line[0] == "##$SFO1":
-                    if debug: self.carrier = float(line[1])*1e6
+                    self.carrier = float(line[1])*1e6
+                    if debug: print "SFO1:", self.carrier 
 
                 elif len(line) == 0:
                     break
