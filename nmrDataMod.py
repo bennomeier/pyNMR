@@ -545,25 +545,35 @@ class nmrData(object):
           # fid = fid[0:len(fid/2)]
           print "This function has not been checked!"
 
-    def getPPMScale(self, reference=[]):
-        """this function constructs a chemical shift axis given a reference of the form
-        reference = [offset, shift]
+    def getPPMScale(self, reference=[], scale = 'offset'):
+        """
+        getPPMScale(self, reference=[], scale = 'offset')
+        this function constructs a chemical shift axis given a reference of the form
+        reference = [offset, ppm]
 
         For example if a signal of known chemical shift 3.14 ppm occurs at -350 Hz, then the 
         axis would be constructed using
-        getPPMScale(reference=[-350, 3.14]
+        getPPMScale(reference=[-350, 3.14])
 
         If reference is left empty, the 0 ppm value is assumed to be at the carrier frequency.
+        
+        scale can be 'offset' or 'absolute' - offset is used for signal frequency measured from 
+        the carrier, absolute is used of absolute signal frequency (in Hz).
+        The 'absolute' is useful when creating a ppm scale based on data from 
+        different experiment with different SFO1 
         """
         print "self.carrier: ", self.carrier
 
         
-        
+        assert scale == 'offset' or scale == 'absolute', 'unknown scale' 
         if reference == []:
             self.ppmScale = self.frequency/self.carrier*1e6
         else:
             #calculate the magnitude of the reference frequency:
-            freqRef = self.carrier + reference[0]
+            if scale == 'offset':
+                freqRef = self.carrier + reference[0]
+            elif scale == 'absolute':
+                freqRef = reference[0]
             # now we know that sigmaRef = (omegaRef - omega0)/omega0 => omega0 = omegaRef/(1 + sigmaREf)
             #in this case freqRef = omega, and omega0 will be the zero ppm frequency
             #hence
