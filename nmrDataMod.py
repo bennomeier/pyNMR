@@ -378,8 +378,11 @@ class nmrData(object):
 
                 
     def lineBroadening(self, fromPos, toPos, LB):
+        """Applies line broadening of given widh (in Hz) to the FID. Resulting spectrum
+        (after fft is called) will be convolution of the original spectrum (fromPos) 
+        and Lorentzian with full-width-at-half-maximum equal to LB"""
         self.checkToPos(toPos)
-        self.allFid[toPos] = sp.multiply(self.allFid[fromPos][:], sp.exp(-self.fidTime*LB))
+        self.allFid[toPos] = sp.multiply(self.allFid[fromPos][:], sp.exp(-self.fidTime*LB*np.pi))
 
     def fourierTransform(self, fromPos, toPos, only = []):
         self.checkToPos(toPos)
