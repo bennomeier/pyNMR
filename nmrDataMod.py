@@ -632,11 +632,12 @@ class nmrData(object):
         
     
     def autoPhase1(self, fromPos, index, start = -1e6, stop = 1e6, derivative = 1, 
-                   penalty = 1e3, scale  = 'Hz'):
+                   penalty = 1e3, scale  = 'Hz', debug = False):
         """Automatic phase correction (0 + 1 order) based on entropy 
         minimization (Chen et al: J. Mag. Res. 158, 164-168 (2002)).
         Minimizes entropy of phased spectrum + a penalty function (which is 
-        equal to integral of intensity**2 in regions where intensity<0).
+        equal to integral of intensity**2 in regions where intensity<0 multiplied
+        by the "penalty" parameter given in autoPhase input).
         Returns phase correction coefs in radians in array [ph0, ph1]
         which can be used by method phase01 to apply the phase correction.
         Derivative should be set to 1-4, increasing penalty puts more
@@ -668,11 +669,21 @@ class nmrData(object):
                     spectrum[i] = 0
                 if self.ppmScale[i] > stop:
                     spectrum[i] = 0
-             
+                    
+        #record initial values of penalty and entropy:     
+        penalty_start = self.__penalty(spectrum, penalty)
+        entropy_start = self.__entropy(spectrum, derivative)
         
+        # find the phase correction that minimizes the objective function
         correction = [0, 0]
         res = sp.optimize.minimize(self.__tryPhase, correction, 
                                    args = (spectrum, derivative, penalty,))
+        
+        if debug:
+            spectrum = self.__phase01(spectrum, res.x)
+            print 'penalty change:', self.__penalty(spectrum, penalty) - penalty_start
+            print 'entropy change:', self.__entropy(spectrum, derivative) - entropy_start
+        
         return res.x
     
     def phase01(self, fromPos, toPos, correction):
