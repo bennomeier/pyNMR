@@ -632,7 +632,7 @@ class nmrData(object):
         
     
     def autoPhase1(self, fromPos, index, start = -1e6, stop = 1e6, derivative = 1, 
-                   penalty = 1e5, scale  = 'Hz'):
+                   penalty = 1e3, scale  = 'Hz'):
         """Automatic phase correction (0 + 1 order) based on entropy 
         minimization (Chen et al: J. Mag. Res. 158, 164-168 (2002)).
         Minimizes entropy of phased spectrum + a penalty function (which is 
