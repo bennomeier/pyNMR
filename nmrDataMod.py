@@ -651,8 +651,8 @@ class nmrData(object):
         assert derivative > 0,  "need derivative > 0"
         
         spectrum = np.array(self.allFid[fromPos][index])
-        #first we "normalize" the spectrum:
-              
+        
+        # normalize the spectrum:
         spectrum = spectrum/np.abs(spectrum).sum()
         
         # zero everything that is out of start-stop frequency window 
@@ -721,11 +721,14 @@ class nmrData(object):
         
     
     def __penalty(self, spectrum, gamma):
-        """return penalty function for the spectrum"""
+        """return penalty function for the spectrum - sum of squares of
+        all negative points in normalized spectrum multiplied by gamma"""
         
         
         penalty = 0
-        spect = spectrum.real
+        #normalize the real part of the spectrum:
+        spect = spectrum.real/np.abs(spectrum.real).sum()
+        #calculate the penalty for the normalized real part
         for point in spect:
             if point < 0:
                 penalty += point**2
