@@ -15,6 +15,9 @@ from xml.dom import minidom
 import os 
 import os.path
 import fwhm
+import types
+from scipy import stats
+from scipy import optimize
 reload(fwhm)
 
 class nmrData(object):
@@ -628,7 +631,134 @@ class nmrData(object):
     
     def printTitle(self):
         for line in self.title: print line
-            
+        
+        
+    
+    def autoPhase1(self, fromPos, index, start = -1e6, stop = 1e6, derivative = 1, 
+                   penalty = 1e3, scale  = 'Hz', debug = False):
+        """Automatic phase correction (0 + 1 order) based on entropy 
+        minimization (Chen et al: J. Mag. Res. 158, 164-168 (2002)).
+        Minimizes entropy of phased spectrum + a penalty function (which is 
+        equal to integral of intensity**2 in regions where intensity<0 multiplied
+        by the "penalty" parameter given in autoPhase input).
+        Returns phase correction coefs in radians in array [ph0, ph1]
+        which can be used by method phase01 to apply the phase correction.
+        Derivative should be set to 1-4, increasing penalty puts more
+        emphasis on non-negative spectrum. 
+        By default the spectrum in range +/-1MHz arond offset is considered,
+        the interval can be set using the start and stop which can be 
+        in either 'Hz' or 'ppm' scale"""
+        
+        assert start < stop, "start should be smaller than stop"
+        assert penalty > 0, "penalty shoud be possitive"
+        assert type(derivative) is types.IntType, "derivative should be a (small possitive) integer"
+        assert derivative > 0,  "need derivative > 0"
+        
+        spectrum = np.array(self.allFid[fromPos][index])
+        
+        # normalize the spectrum:
+        spectrum = spectrum/np.abs(spectrum).sum()
+        
+        # zero everything that is out of start-stop frequency window 
+        if scale == 'Hz':
+            for i in range(len(spectrum)):
+                if self.frequency[i] < start: 
+                    spectrum[i] = 0
+                if self.frequency[i] > stop:
+                    spectrum[i] = 0
+        if scale == 'ppm':
+            for i in range(len(spectrum)):
+                if self.ppmScale[i] < start: 
+                    spectrum[i] = 0
+                if self.ppmScale[i] > stop:
+                    spectrum[i] = 0
+                    
+        #record initial values of penalty and entropy:     
+        penalty_start = self.__penalty(spectrum, penalty)
+        entropy_start = self.__entropy(spectrum, derivative)
+        
+        # find the phase correction that minimizes the objective function
+        correction = [0, 0]
+        res = sp.optimize.minimize(self.__tryPhase, correction, 
+                                   args = (spectrum, derivative, penalty,))
+        
+        if debug:
+            spectrum = self.__phase01(spectrum, res.x)
+            print 'penalty change:', self.__penalty(spectrum, penalty) - penalty_start
+            print 'entropy change:', self.__entropy(spectrum, derivative) - entropy_start
+        
+        return res.x
+    
+    def phase01(self, fromPos, toPos, correction):
+        """apply zero and first order phase correction to spectra at fromPos
+        and write the result to toPos. correction angles are in radians and 
+        are stored in array correction = [ph0, ph1]. first order
+        correction leads to no change at first point of spectrum and maximum
+        (ph1) change at the last point. 
+        This function can be used to apply the phase correction returned by 
+        autoPhase1"""
+        self.checkToPos(toPos)
+        #here we apply the correction
+        self.allFid[toPos] = [ self.__phase01(spectrum, correction) 
+        for spectrum in self.allFid[fromPos]]
+        
+    
+    def __phase01(self, spectrum, correction):
+        """Returns a spectrum (np.array) to which a specified phase correction
+        was applied. ph0 and ph1 are in rad"""
+        ph0, ph1 = correction[0], correction[1]
+        phaseValues = np.linspace(0, ph1, num = len(spectrum)) + ph0
+        corrections = np.exp(1j*phaseValues)
+        
+        return np.array([spectrum[i]*corrections[i] 
+        for i in range(len(spectrum))])
+    
+    def __entropy(self, spectrum, m):
+        """Calculates get m-th derivative of the real part of spectrum and 
+        returns entropy of its absolute value. """
+        assert type(m) is types.IntType, 'm should be a (possitive) integer'
+        assert m > 0, 'need m > 0'
+        
+        #get the real part of the spectrum
+        spect = np.array(spectrum)
+        spect = spect.real
+
+        # calculate the m-th derivative of the real part of the spectrum
+        spectrumDerivative = spect
+        for i in range(m):
+            spectrumDerivative = np.gradient(spectrumDerivative)
+        
+        # now get the entropy of the abslolute value of the m-th derivative:
+        entropy = sp.stats.entropy(np.abs(spectrumDerivative))
+        return entropy
+        
+        
+    
+    def __penalty(self, spectrum, gamma):
+        """return penalty function for the spectrum - sum of squares of
+        all negative points in normalized spectrum multiplied by gamma"""
+        
+        
+        penalty = 0
+        #normalize the real part of the spectrum:
+        spect = spectrum.real/np.abs(spectrum.real).sum()
+        #calculate the penalty for the normalized real part
+        for point in spect:
+            if point < 0:
+                penalty += point**2
+        return penalty*gamma
+        
+    
+    def __tryPhase(self, correction, spectrum, m, gamma):
+        """Apply the phase correction to the spectrum, evaluate 
+        entropy and penalty of the resulting spectrum and return
+        their sum (aka objective function)"""
+        
+        
+        phased = self.__phase01(spectrum, correction)
+        objective = self.__entropy(phased, m) + self.__penalty(phased, gamma)
+        return objective
+
           
                   
 
