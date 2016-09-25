@@ -518,19 +518,7 @@ class nmrData(object):
         return np.argmin(abs(self.frequency - freq))
 
     def getIndexFromPPM(self, ppm):
-        indexCounter = 0
-        while True:
-            if self.ppmScale[indexCounter] < ppm:
-                next
-            else:
-                break
-            indexCounter += 1
-
-        if abs(self.ppmScale[indexCounter -1]-ppm) < abs(self.ppmScale[indexCounter] - ppm):
-            retVal = indexCounter - 1
-        else:
-            retVal = indexCounter
-        return retVal
+        return np.argmin(abs(self.ppmScale - ppm))
 
     def getIndices(self, interval, scale="Hz"):
         if scale=="Hz":
@@ -645,7 +633,7 @@ class nmrData(object):
         which can be used by method phase01 to apply the phase correction.
         Derivative should be set to 1-4, increasing penalty puts more
         emphasis on non-negative spectrum. 
-        By default the spectrum in range +/-1MHz arond offset is considered,
+        By default the spectrum in range +/-1MHz around offset is considered,
         the interval can be set using the start and stop which can be 
         in either 'Hz' or 'ppm' scale"""
         
