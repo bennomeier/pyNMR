@@ -390,9 +390,9 @@ class nmrData(object):
     def fourierTransform(self, fromPos, toPos, only = []):
         self.checkToPos(toPos)
         if len(only) > 0:
-            self.allFid[toPos] = [fftshift(fft(self.allFid[fromPos][fidIndex])) for fidIndex in only]    
+            self.allFid[toPos] = np.array([fftshift(fft(self.allFid[fromPos][fidIndex])) for fidIndex in only])
         else:
-            self.allFid[toPos] = [fftshift(fft(fid)) for fid in self.allFid[fromPos]]
+            self.allFid[toPos] = np.array([fftshift(fft(fid)) for fid in self.allFid[fromPos]])
 
         self.frequency = np.linspace(-self.sweepWidthTD2/2,self.sweepWidthTD2/2,len(self.allFid[fromPos][0]))
 
@@ -407,13 +407,15 @@ class nmrData(object):
 
     def autoPhase0(self, fromPos, index, start, stop, scale = "Hz"):
         """This function should get fromPos and index pointing to a spectrum. It will return the phase for maximimizing the integral over the real part in the spectral region of interest, in degrees."""
+
         i1, i2 = self.getIndices([start, stop], scale=scale)
         phiTest = np.linspace(0, 359, num = 360)
 
         integrals = np.zeros(np.size(phiTest))
 
         for k in range(len(integrals)):
-            integrals[k] = np.sum(np.real(self.allFid[fromPos][index][start:stop]*np.exp(-1j*phiTest[k]/180*np.pi)))
+            integrals[k] = np.sum(np.real(self.allFid[fromPos][index][i1:i2]*np.exp(-1j*float(phiTest[k])/180.*np.pi)))
+            
         return phiTest[np.argmax(integrals)]
 
     def fwhm(self, fromPos, index, start, stop, scale = "Hz", silence = False):
