@@ -45,6 +45,29 @@ class nmrData(object):
         if debug: print "The datatype is {0}".format(datatype)
           
         if datatype == "Magritek":
+
+            #get sweep WidthTD2 based on dweelTime in acqu.par
+            if os.path.isfile(path + "/acqu.par"):
+
+                f_acqu = open(path + "/acqu.par", "r")
+
+                count = 0
+                while True:
+                    count += 1
+                    line = f_acqu.readline().strip()
+                    if "=" in line:
+                        line = line.split("=")
+                    elif len(line) == 0 or count > 1000:
+                        if debug: print "Ended dreading acqus file at line ", count
+                        break
+                    else:
+                        next
+                    
+                    if line[0].strip() == "dwellTime":
+                        self.sweepWidthTD2 = int(1./(float(line[1])*1e-6))
+                        if debug: print "SweepWidthTD2: ", self.sweepWidthTD2
+
+
             if os.path.isfile(path + "/data.1d"):
                 f = open(path + "/data.1d", "rb")
                 
@@ -56,7 +79,6 @@ class nmrData(object):
                 self.sizeTD2 = struct.unpack('<i', f.read(4))[0]
 
                 print "Size TD2: ", self.sizeTD2
-                self.sweepWidthTD2 = 1e6
 
                 f.seek(32)
                 dwellTime = 1./self.sweepWidthTD2
@@ -66,15 +88,13 @@ class nmrData(object):
                 t = struct.unpack('<' + 'f'*self.sizeTD2, f.read(4*self.sizeTD2))
 
                 data1 = struct.unpack('<' + 'f'*self.sizeTD2*2, f.read(4*self.sizeTD2*2))
-                #data2 = struct.unpack('<' + 'f'*2048, fidFile.read(4*2048))
-                #data = struct.unpack('>' + 'l'*(sizeTD2*2*1), fidFile.read(sizeTD2*2*1*4))
-
-                self.frequency = np.linspace(-self.sweepWidthTD2/2,self.sweepWidthTD2/2, 2048)
 
                 realPart = np.array(data1[::2])
                 imagPart = np.array(data1[1::2])
 
                 self.allFid[0].append(realPart + 1j*imagPart)
+
+                self.frequency = np.linspace(-self.sweepWidthTD2/2,self.sweepWidthTD2/2, 2048)
 
             elif os.path.isfile(path + "/data.2d"):
                 f = open(path + "/data.2d", "rb")
@@ -89,7 +109,6 @@ class nmrData(object):
 
                 print "Size TD2: ", self.sizeTD2
                 print "Size TD1: ", self.sizeTD1
-                self.sweepWidthTD2 = 1e6
 
                 f.seek(32)
                 dwellTime = 1./self.sweepWidthTD2
