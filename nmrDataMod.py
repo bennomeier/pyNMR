@@ -41,6 +41,8 @@ class nmrData(object):
         self.allFid.append([])
         self.sizeTD1 = sizeTD1
         self.title = ['no title']
+
+        self.parDictionary = {}
         
         if debug: print "The datatype is {0}".format(datatype)
           
@@ -62,10 +64,13 @@ class nmrData(object):
                         break
                     else:
                         next
-                    
-                    if line[0].strip() == "dwellTime":
-                        self.sweepWidthTD2 = int(1./(float(line[1])*1e-6))
-                        if debug: print "SweepWidthTD2: ", self.sweepWidthTD2
+
+                    if len(line[0]) > 1:
+                        self.parDictionary[line[0].strip()] = line[1].strip()
+                        
+                
+                self.sweepWidthTD2 = int(1./(float(self.parDictionary["dwellTime"])*1e-6))
+                if debug: print "SweepWidthTD2: ", self.sweepWidthTD2
 
 
             if os.path.isfile(path + "/data.1d"):
