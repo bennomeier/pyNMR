@@ -483,11 +483,16 @@ class nmrData(object):
         z = np.zeros(totalPoints)
         self.allFid[toPos] = [np.concatenate((k, z[:-len(k)])) for k in self.allFid[fromPos]]
             
-    def getJoinedPartialSpectra(self, fromPos, start, stop, scale = "Hz"):
+    def getJoinedPartialSpectra(self, fromPos, start, stop, scale = "Hz", returnX = False):
         spectra = []
         for index in range(self.sizeTD1):
             spectra.extend(self.getPartialSpectrum(fromPos, index, start, stop, scale = scale))
-        return spectra
+
+        if returnX:
+            x = np.array(range(len(spectra))) * self.sizeTD1 / float(len(spectra)) + 0.5
+            return x, spectra
+        else:
+            return spectra
 
     def getPartialSpectrum(self, fromPos, index, start, stop, scale = "Hz"):
         i1, i2 = self.getIndices([start, stop], scale=scale)
