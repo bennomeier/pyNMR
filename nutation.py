@@ -1,26 +1,26 @@
+# -*- coding: utf-8 -*-
+""" 
+This module provides
+- getB1Strength()
+functionality to calculate the piHalf pulse duration based on first principles and coil parameters 
+
+- getB1FromPiHalf()
+Trivial function to convert pi/2 pulse duration to B1 strength
+
+-getPiHalfFromB1()
+Trivial function to convert B1 strength to  pi/2 pulse duration
+
+A derivation of the formula for getB1Strength is given, e.g. in Slichter's book, Chapter 2.
+
+In practice, pulseLengths maybe up to a factor of two longer than what the formula predicts.
+"""
+
+
 import numpy as np
 from scipy.constants import mu_0
 
 import sys
 import gammaList as gL
-
-gamma = gL.get("1H")
-
-Q = 500
-P = 100
-r = 2.5e-3
-h = 3e-2
-
-V = pi*r**2*h
-
-omega = 2*pi*500e6
-
-
-#An estimate of the B1 strength. See Slichter's book (Chapter 2) for a derivation.
-#B1 = sqrt(mu_0*Q*P/(2*omega*V))
-#print "B1 in Hz is: ", gamma*B1/(2*pi)
-#print "in seconds this is: ", 2*pi/(gamma*B1)
-
 
 def getB1Strength(nuc, Q, P, f = 0, B = 0, r = 0, h = 0, V = 0):
     """Calculate B1 Strength and duration of pi/2 pulse.
