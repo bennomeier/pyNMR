@@ -28,8 +28,8 @@ def fwhm(x,y, silence = False):
         # do a polyfit
         # with the points before and after the point where the change occurs.
         
-        # note that here we are fitting the frequency as a function of the return loss.
-        # then we can use the polynom to compute the frequency at returnloss = threshold.
+        # note that here we are fitting the x values as a function of the y values.
+        # then we can use the polynom to compute the value of x at the threshold, i.e. at maxVal50.
 
         yPolyFit = x[k-1:k+2]
         xPolyFit = y[k-1:k+2]
