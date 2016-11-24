@@ -171,6 +171,8 @@ class nmrData(object):
                 line = acqusFile.readline().strip()
                 if "=" in line:
                     line = line.split("=")
+                elif len(line) > 0:
+                    line = line.split(" ")
                 elif len(line) == 0 or count > 1000:
                     if debug: print "Ended reading acqus file at line ", count
                     break
@@ -192,6 +194,22 @@ class nmrData(object):
 
                 elif len(line) == 0:
                     break
+
+                
+                if len(line[0]) > 1:
+                    if "@" in line[-1]:
+                        #this line contains date, time, some unknown stuff and user"
+                        self.parDictionary["date"] = line[1].strip()
+                        self.parDictionary["time"] = line[2].strip()
+                    elif line[0] == "##$D":
+                        delays1 = acqusFile.readline().strip()
+                        delays2 = acqusFile.readline().strip()
+                        self.parDictionary["d"] = [float(d) for d in delays1.strip().split(" ")] + [float(d) for d in delays2.strip().split(" ")]
+                        
+                        
+                    else:
+                        self.parDictionary[line[0][2:].strip()] = line[1].strip()
+
 
             if self.is2D == True:
                 count = 0
