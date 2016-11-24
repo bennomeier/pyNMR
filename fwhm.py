@@ -7,6 +7,7 @@ def fwhm(x,y, silence = False):
     if not silence:
         print "Max: " + str(maxVal)
 
+    #this is to detect if there are multiple values
     biggerCondition = [a > maxVal50 for a in y]
 
     changePoints = []
@@ -21,12 +22,25 @@ def fwhm(x,y, silence = False):
             print "WARNING: THE FWHM IS LIKELY TO GIVE INCORRECT VALUES"
 
     #interpolate between points.
+    print "ChangePoints: ", changePoints
     
     for k in changePoints:
-        slope = (y[k] - y[k-1])/(x[k] - x[k-1])
-        dx = (maxVal50 - y[k-1])/slope
-        freq = x[k-1] + dx
+        # do a polyfit
+        # with the points before and after the point where the change occurs.
+        
+        # note that here we are fitting the frequency as a function of the return loss.
+        # then we can use the polynom to compute the frequency at returnloss = threshold.
+
+        yPolyFit = x[k-1:k+2]
+        xPolyFit = y[k-1:k+2]
+
+        z = np.polyfit(xPolyFit,yPolyFit,2)
+        p = np.poly1d(z)
+
+        print p
+        freq = p(maxVal50)
         freqPoints.append(freq)
+
 
     if len(freqPoints) == 2:
         value = freqPoints[1] - freqPoints[0]
