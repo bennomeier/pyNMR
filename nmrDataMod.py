@@ -438,6 +438,41 @@ class nmrData(object):
 
         self.frequency = np.linspace(-self.sweepWidthTD2/2,self.sweepWidthTD2/2,len(self.allFid[fromPos][0]))
 
+    def baselineCorrection(self, fromPos, toPos, fitRange, scale = "Hz", order = 1, applyLocally = False):
+        """Polynomial base line correction.
+
+        - fromPos: position where current spectra are stored
+        - toPos: position where corrected spectra will be stored
+        - fitRange: a list of lists, with each list element giving the limits of a baseline section.
+        - order: polynomial order of the baseline correction. Use order = 1 for linear baseline correction
+        - applyLocally: set to True for an only local baseline correction that extends only over the entire fitRange."""
+
+        self.checkToPos(toPos)
+        
+        for k in range(self.sizeTD1):
+            xVals = []
+            yVals = []
+            indices = []
+
+            for pair in fitRange:
+                i1,i2 = self.getIndices(pair, scale = scale)
+
+                indices.extend([i1,i2])
+
+                xVals.extend(self.frequency[i1:i2])
+                yVals.extend(self.allFid[fromPos][k][i1:i2])
+
+            z = np.polyfit(xVals, yVals, order)
+
+            p = np.poly1d(z)
+
+            if applyLocally:
+                self.allFid[toPos].append(self.allFid[fromPos][k])
+                self.allFid[fromPos][k][min(indices):max(indices)] -= p(self.frequency[min(indices):max(indices)])
+            else:
+                self.allFid[toPos].append(self.allFid[fromPos][k] - p(self.frequency))
+
+
     def phase(self, fromPos, toPos, phase, degree=True):
         self.checkToPos(toPos)
 
@@ -448,7 +483,9 @@ class nmrData(object):
         self.allFid[toPos] = [fid*phaseFactor for fid in self.allFid[fromPos]]
 
     def autoPhase0(self, fromPos, index, start, stop, scale = "Hz"):
-        """This function should get fromPos and index pointing to a spectrum. It will return the phase for maximimizing the integral over the real part in the spectral region of interest, in degrees."""
+        """This function should get fromPos and index pointing to a spectrum. 
+        It returns the phase for maximimizing the integral over the real part
+        in the spectral region of interest, in degrees."""
 
         i1, i2 = self.getIndices([start, stop], scale=scale)
         phiTest = np.linspace(0, 359, num = 360)
@@ -468,7 +505,7 @@ class nmrData(object):
         return fwhm.fwhm(x, y, silence = silence)
 
         
-    def phaseFirstOrder(self, fromPos, toPos, phi1, degree = False, noChangeOnResonance=False, pivot = 0):
+    def phaseFirstOrder(self, fromPos, toPos, phi1, degree = False, noChangeOnResonance=False, pivot = 0, scale= "Hz"):
         """This should only be applied to Fourier transformed spectral data
         It will lead to a zero phase shift at the upper end of the spectrum and to a 
         phase shift of phi1 at the lower end, linear interpolation inbetween.
@@ -481,7 +518,7 @@ class nmrData(object):
             pivot = 0
         elif pivot !=0:
             print "Using pivot for first order phase correction"
-            index = self.getIndexFromFrequency(pivot)            
+            index = self.getIndex(pivot, scale= scale)            
             phaseValues = phaseValues - phaseValues[index]
             0
         if degree == True:
@@ -569,14 +606,20 @@ class nmrData(object):
     def getIndexFromPPM(self, ppm):
         return np.argmin(abs(self.ppmScale - ppm))
 
+    def getIndex(self, value, scale="Hz"):
+        if scale == "Hz":
+            return self.getIndexFromFrequency(value)
+        elif scale == "ppm":
+            return self.getIndexFromPPM(value)
+
     def getIndices(self, interval, scale="Hz"):
-        if scale=="Hz":
-            i1 = self.getIndexFromFrequency(interval[0])
-            i2 = self.getIndexFromFrequency(interval[1])
-        elif scale=="ppm":
-            i1 = self.getIndexFromPPM(interval[0])
-            i2 = self.getIndexFromPPM(interval[1])
-        return i1, i2
+        i1 = self.getIndex(interval[0], scale = scale)
+        i2 = self.getIndex(interval[1], scale = scale)
+
+        if i1 > i2:
+            return i2, i1
+        else:
+            return i1, i2
 
             
     def checkToPos(self, toPos):
@@ -605,10 +648,9 @@ class nmrData(object):
         The 'absolute' is useful when creating a ppm scale based on data from 
         different experiment with different SFO1 
         """
-        print "self.carrier: ", self.carrier
-
         
-        assert scale == 'offset' or scale == 'absolute', 'unknown scale' 
+        assert scale == 'offset' or scale == 'absolute', 'unknown scale'
+        
         if reference == []:
             self.ppmScale = self.frequency/self.carrier*1e6
         else:
@@ -736,8 +778,7 @@ class nmrData(object):
         autoPhase1"""
         self.checkToPos(toPos)
         #here we apply the correction
-        self.allFid[toPos] = [ self.__phase01(spectrum, correction) 
-        for spectrum in self.allFid[fromPos]]
+        self.allFid[toPos] = [ self.__phase01(spectrum, correction) for spectrum in self.allFid[fromPos]]
         
     
     def __phase01(self, spectrum, correction):
@@ -747,8 +788,7 @@ class nmrData(object):
         phaseValues = np.linspace(0, ph1, num = len(spectrum)) + ph0
         corrections = np.exp(1j*phaseValues)
         
-        return np.array([spectrum[i]*corrections[i] 
-        for i in range(len(spectrum))])
+        return np.array([spectrum[i]*corrections[i] for i in range(len(spectrum))])
     
     def __entropy(self, spectrum, m):
         """Calculates get m-th derivative of the real part of spectrum and 
