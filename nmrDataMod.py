@@ -453,6 +453,7 @@ class nmrData(object):
             xVals = []
             yVals = []
             indices = []
+            
 
             for pair in fitRange:
                 i1,i2 = self.getIndices(pair, scale = scale)
@@ -461,8 +462,10 @@ class nmrData(object):
 
                 xVals.extend(self.frequency[i1:i2])
                 yVals.extend(self.allFid[fromPos][k][i1:i2])
+                
 
             z = np.polyfit(xVals, yVals, order)
+            
 
             p = np.poly1d(z)
 
@@ -502,7 +505,7 @@ class nmrData(object):
         x = self.frequency[i1:i2]
         y = np.real(self.allFid[fromPos][index][i1:i2])
 
-        return fwhm.fwhm(x, y, silence = silence)
+        return fwhm.fwhm(x, y)
 
         
     def phaseFirstOrder(self, fromPos, toPos, phi1, degree = False, noChangeOnResonance=False, pivot = 0, scale= "Hz"):
