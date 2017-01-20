@@ -20,6 +20,7 @@ from scipy import stats
 from scipy import optimize
 reload(fwhm)
 
+
 class nmrData(object):
     """
     nmrData objects is used to import and store nmrData from several file formats.
@@ -29,7 +30,7 @@ class nmrData(object):
     
     supported type: 'Magritek', 'ntnmr', 'TopSpin', 'spinSight'
     """
-    def __init__(self, path, datatype, container=0, sizeTD1=0, process = False,  lb = 0, phase = 0, ls = 0, ft_only = [], debug = False):
+    def __init__(self, path, datatype, container=0, sizeTD1=0, process = False,  lb = 0, phase = 0, ls = 0, ft_only = [], debug = False, hiper_skip_footer = 0, hiper_skip_header = 3):
         """ This reads the data """
         #plt.close()
         if datatype == '':
@@ -45,7 +46,30 @@ class nmrData(object):
         self.parDictionary = {}
         
         if debug: print "The datatype is {0}".format(datatype)
-          
+
+        if datatype == "Hiper":
+            """Hiper EPR Data import for EPR experiments at St Andrews, UK.
+
+            Note you will have to adjust the skip_footer parameter,
+            depending on the length of the pulse programme that is appended to the data file."""
+            
+            data = np.genfromtxt(path, skip_header = hiper_skip_header, skip_footer = hiper_skip_footer, delimiter = ",")
+            self.sizeTD1 = 1
+
+            timeList = data[:, 0]
+            iData = data[:, 1]
+            qData = data[:, 2]
+            self.sizeTD2 = len(qData)
+            if debug: print "sizeTD2: ", self.sizeTD2
+            
+            dwellTime = (timeList[1] - timeList[0])*1e-9
+            self.sweepWidthTD2 = int(1. /dwellTime)
+            if debug: print "SweepWidthTD2: ", self.sweepWidthTD2
+
+            self.allFid[0].append(iData + 1j*qData)
+            self.fidTime = np.linspace(0, (self.sizeTD2-1)*dwellTime, num = self.sizeTD2)
+
+            
         if datatype == "Magritek":
 
             #get sweep WidthTD2 based on dweelTime in acqu.par
