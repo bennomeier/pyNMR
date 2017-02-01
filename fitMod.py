@@ -1,3 +1,4 @@
+from __future__ import division
 from scipy.optimize import curve_fit
 import numpy as np
 from scipy.stats import t
@@ -9,7 +10,7 @@ debye = 3.33564e-30
 def getError(var_matrix, dof):
     a = 1 - 0.05/2
     factorSE = t.isf(a, dof)
-    variance = np.diagonal(var_matrix) 
+    variance = np.diagonal(var_matrix)
     SE = np.sqrt(variance)
     error = np.abs(SE*factorSE)
     return error
@@ -18,7 +19,7 @@ def getError(var_matrix, dof):
 class Model(object):
     """This class can represent any model. A Model is given by its parameters, their names and a functional relationship.
     """
-    
+
     def __init__(self):
         """
         """
@@ -36,11 +37,11 @@ class Model(object):
         for k in range(len(self.popt)):
             print self.paramNames[k] + ": " + str(self.popt[k])  + "(" + str(errors[k]) + ")"
         print "parameters stored in self.popt"
-    
+
     def getError(self,var_matrix, dof):
         a = 1 - 0.05/2
         factorSE = t.isf(a, dof)
-        variance = np.diagonal(var_matrix) 
+        variance = np.diagonal(var_matrix)
         SE = np.sqrt(variance)
         error = np.abs(SE*factorSE)
         return error
@@ -76,8 +77,8 @@ class t1InversionRecovery(Model):
         self.p0 = self.fitGeneral(x,y,p0)
 
 
-        
-        
+
+
 class polarizability(Model):
     """This class represents the classical polarizability model alpha + mu^2 / (3*k*T)
     """
@@ -85,7 +86,7 @@ class polarizability(Model):
     def __init__(self, unit1="volume", unit2 = "Debye", fixDipole = 0):
         self.unit1 = unit1
         self.unit2 = unit2
-        
+
         if fixDipole > 0:
             #fix the dipole moment at p0
             self.paramNames = ["alpha"]
@@ -106,9 +107,9 @@ class polarizability(Model):
         else:
             conversionFactor = 1/(4*np.pi*epsilon_0)*1e30
 
-            
+
         retVal = alpha + dipole**2/(3*k*t)*conversionFactor
-        return retVal 
+        return retVal
 
     def model2(self, t, p0, alpha):
         if self.unit2 == "SI":
@@ -122,7 +123,7 @@ class polarizability(Model):
             conversionFactor = 1/(4*np.pi*epsilon_0)*1e30
 
         retVal = alpha + dipole**2/(3*k*t)*conversionFactor
-        return retVal 
+        return retVal
 
     def fit(self, x,y, p0 = []):
         if len(p0) == 0:
@@ -135,7 +136,7 @@ class polarizability(Model):
 
 
 
-        
+
 class capacitance(Model):
     """This class represents the capacitance Model C = C0 + CH2O*exp(-t/tau)
     """
@@ -149,7 +150,7 @@ class capacitance(Model):
     def fit(self, x,y, p0 = []):
         self.fitGeneral(x,y, p0)
 
-        
+
 
 class nutationCurve(Model):
     """This class represents the T1 Inversion Recovery Model."""
@@ -162,7 +163,7 @@ class nutationCurve(Model):
     def nutationCurve(self, t, A, tau):
         """A model for fitting a perfect nutation"""
         return A*np.sin(np.pi/(2*tau)*t)
-       
+
     def fit(self, x, y, p0 = []):
         if len(p0) == 0:
             if len(self.paramNames) == 2:
@@ -187,7 +188,7 @@ class exponentialDecay(Model):
 
         print "We're going to the zoo."
         self.outputString = ""
-        
+
         print "Offset value is: ", offset
         if offset == False:
             self.paramNames = ["A", "tau"]
@@ -204,7 +205,7 @@ class exponentialDecay(Model):
     def exponentialDecayOffset(self, t, A, tau, offset):
         """A model for fitting an exponential Decay"""
         return A*np.exp(-t/tau)+offset
-       
+
     def fit(self, x, y, p0 = []):
         if len(p0) == 0:
             if len(self.paramNames) == 2:
@@ -287,7 +288,7 @@ class curieWeiss(Model):
 
     def fit(self, x, y, p0 = []):
         if len(p0) == 0:
-            A = y[-1] -1 
+            A = y[-1] -1
             C = 1
             T_c = 1
             p0 = [A, C, T_c]
@@ -299,7 +300,7 @@ class clausiusMossoti(Model):
     def __init__(self):
         """Coefficients: alpha is the temperature independent part, for C60 the lit value is 85 A^3
        p0 is the dipole moment in Debye"""
-        
+
         self.paramNames = ["alpha", "p_0","N"]
         self.model = self.clausiusMossoti
 
@@ -327,7 +328,7 @@ class clausiusMossoti(Model):
             N = 0.15*1.37e27
             p0 = [alpha, p_0, N]
         self.fitGeneral(x,y,p0)
-            
+
 
 
 class saturationRecovery(Model):
@@ -350,15 +351,58 @@ class saturationRecovery(Model):
 
     def fit(self, x, y, p0 = []):
         if len(p0) == 0 and self.offset == True:
-            A = y[0]-y[-1] 
+            A = y[0]-y[-1]
             B = y[-1]
             k = 1
             p0 = [A, B, k]
             print "Parameters have been estimated: ", p0
         elif len(p0) == 0 and self.offset == False:
-            A = y[0]-y[-1] 
+            A = y[0]-y[-1]
             k = 1
             p0 = [A, k]
             print "Parameters have been estimated: ", p0
+
+        self.fitGeneral(x,y,p0)
+
+
+class liqXtalHaller(Model):
+    """This class represents a simple model for temperature dependence of
+    liquid crystal order parameter (Haller equation):
+    S(T) = (1-T/Tdag)**exp
+    where Tdag = Ttrans + deltaT (deltaT ~ 1-3K)
+    The Haller equation is modified here - a scaling factor is added:
+    X(T) = scale*(1-T/Tdag)**exp
+    So this model can be used to fit variables that should be proportional
+    to the liquid crystal order parameter.
+    """
+    def __init__(self):
+        self.paramNames = ["transitionTemperature", "temperatureShift", "exponent", "scale"]
+        self.model = self.haller
+
+    def haller(self, temperatures, transitionTemperature, temperatureShift, exponent, scale):
+        """Returns Haller estimate of liquid crystal order parameter
+        (Haller1975 http://dx.doi.org/10.1016/0079-6786(75)90008-4). Defaults are for MBBA with C60.
+        Note: the original expression does not have the scaling factor in it,
+        the factor is included in order to fit things that are expected to be
+        be proportional to the liquid crystal order parameter."""
+        tCross = transitionTemperature + temperatureShift
+        results = []
+        for t in temperatures:
+            if t < transitionTemperature:
+                 results.append(scale*(1 - t/tCross)**exponent)
+            else:
+                 results.append(0)
+        return results
+
+
+    def fit(self, x, y, p0 = []):
+        if len(p0) == 0:
+            transitionTemperature = 316
+            temperatureShift = 1
+            exponent = 0.219
+            scale = 1
+            p0 = [transitionTemperature, temperatureShift, exponent, scale]
+            print "Parameters have been estimated: ", p0
+
 
         self.fitGeneral(x,y,p0)
