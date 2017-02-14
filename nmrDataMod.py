@@ -30,7 +30,7 @@ class nmrData(object):
     
     supported type: 'Magritek', 'ntnmr', 'TopSpin', 'spinSight'
     """
-    def __init__(self, path, datatype, container=0, sizeTD1=0, process = False,  lb = 0, phase = 0, ls = 0, ft_only = [], debug = False, hiper_skip_footer = 0, hiper_skip_header = 3):
+    def __init__(self, path, datatype, container=0, sizeTD1=0, process = False,  lb = 0, phase = 0, ls = 0, ft_only = [], debug = False, hiper_skip_footer = 0, hiper_skip_header = 3, endianess = "<"):
         """ This reads the data """
         #plt.close()
         if datatype == '':
@@ -162,7 +162,7 @@ class nmrData(object):
             self.sizeTD1=(int((os.stat(path)).st_size))/8 
             self.data = struct.unpack('>' + 'i'*(self.sizeTD2*2*self.sizeTD1), self.f.read(self.sizeTD2*2*self.sizeTD1*4))
             for i in range(0,  self.sizeTD1):
-                print i
+                #print i
                 realPart = self.data[i*self.sizeTD2*2:(i+1)*self.sizeTD2*2:2]
                 imagPart = sp.multiply(self.data[i*self.sizeTD2*2+1:(i+1)*self.sizeTD2*2+1:2], 1j)
                 self.allFid[0].append(sp.add(realPart, imagPart))
@@ -222,9 +222,12 @@ class nmrData(object):
                 
                 if len(line[0]) > 1:
                     if "@" in line[-1]:
-                        #this line contains date, time, some unknown stuff and user"
-                        self.parDictionary["date"] = line[1].strip()
-                        self.parDictionary["time"] = line[2].strip()
+                        #this line contains date, time, some unknown stuff and user, does not work with all bruker files, hence try only"
+                        try:
+                            self.parDictionary["date"] = line[1].strip()
+                            self.parDictionary["time"] = line[2].strip()
+                        except:
+                            pass
                     elif line[0] == "##$D":
                         delays1 = acqusFile.readline().strip()
                         delays2 = acqusFile.readline().strip()
@@ -274,7 +277,8 @@ class nmrData(object):
             
             # here we read the FID data from fid/ser file
             # first convert the datasting into a list of numbers:
-            self.data = struct.unpack('<' + 'i'*(self.sizeTD2*2*self.sizeTD1), dataString)
+            if debug: print "Endianess: ", endianess
+            self.data = struct.unpack(endianess + 'i'*(self.sizeTD2*2*self.sizeTD1), dataString)
             
             # here we create one array of complex numbers for each of the FIDs 
             # i runs overa all fids in a ser file, in case of a fid file i = 0

@@ -18,7 +18,6 @@ In practice, pulseLengths maybe up to a factor of two longer than what the formu
 
 import numpy as np
 from scipy.constants import mu_0
-
 import sys
 import gammaList as gL
 
