@@ -292,11 +292,16 @@ class nmrData(object):
             
             # here we read the experiment title (only the one stored in pdata/1):
             # could be made to read titles from all pdata folders (if needed)
-            pathToTitle = directory + '/pdata/1/title'
-            titleFile = open(pathToTitle, mode='r')
-            title = list(titleFile)
-            self.title = [line.strip() for line in title]
-            
+            try:
+                pathToTitle = directory + '/pdata/1/title'
+                titleFile = open(pathToTitle, mode='r')
+                title = list(titleFile)
+                self.title = [line.strip() for line in title]
+            except:
+                if debug:
+                    print "No title file."
+                else:
+                    pass
 
 
                 
