@@ -533,12 +533,16 @@ class nmrData(object):
             
         return phiTest[np.argmax(integrals)]
 
-    def fwhm(self, fromPos, index, start, stop, scale = "Hz", silence = False):
+    def fwhm(self, fromPos, index, start, stop, scale = "Hz", debug = False):
         i1, i2 = self.getIndices([start, stop], scale=scale)
         x = self.frequency[i1:i2]
         y = np.real(self.allFid[fromPos][index][i1:i2])
 
-        return fwhm.fwhm(x, y)
+        linewidth = fwhm.fwhm(x, y)
+        
+        if debug: print("Linewidth: {} Hz".format(linewidth))
+        
+        return linewidth
 
         
     def phaseFirstOrder(self, fromPos, toPos, phi1, degree = False, noChangeOnResonance=False, pivot = 0, scale= "Hz"):
