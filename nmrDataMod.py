@@ -12,7 +12,7 @@ import struct
 import string
 from scipy import io, constants
 from xml.dom import minidom
-import os 
+import os
 import os.path
 import fwhm
 import types
@@ -25,9 +25,9 @@ class nmrData(object):
     """
     nmrData objects is used to import and store nmrData from several file formats.
 
-    Usage: 
-    > nmrData = nmrData(path, type)      
-    
+    Usage:
+    > nmrData = nmrData(path, type)
+
     supported type: 'Magritek', 'ntnmr', 'TopSpin', 'spinSight'
     """
     def __init__(self, path, datatype, container=0, sizeTD1=0, process = False,  lb = 0, phase = 0, ls = 0, ft_only = [], debug = False, hiper_skip_footer = 0, hiper_skip_header = 3, endianess = "<"):
@@ -37,7 +37,7 @@ class nmrData(object):
             print "No Datatype - Setting it to ntnmr"
             datatype = "ntnmr"
 
-        self.carrier = 0   
+        self.carrier = 0
         self.allFid = []
         self.allFid.append([])
         self.sizeTD1 = sizeTD1
@@ -45,7 +45,7 @@ class nmrData(object):
         self.vdList = []
 
         self.parDictionary = {}
-        
+
         if debug: print "The datatype is {0}".format(datatype)
 
         if datatype == "Hiper":
@@ -53,7 +53,7 @@ class nmrData(object):
 
             Note you will have to adjust the skip_footer parameter,
             depending on the length of the pulse programme that is appended to the data file."""
-            
+
             data = np.genfromtxt(path, skip_header = hiper_skip_header, skip_footer = hiper_skip_footer, delimiter = ",")
             self.sizeTD1 = 1
 
@@ -62,7 +62,7 @@ class nmrData(object):
             qData = data[:, 2]
             self.sizeTD2 = len(qData)
             if debug: print "sizeTD2: ", self.sizeTD2
-            
+
             dwellTime = (timeList[1] - timeList[0])*1e-9
             self.sweepWidthTD2 = int(1. /dwellTime)
             if debug: print "SweepWidthTD2: ", self.sweepWidthTD2
@@ -70,7 +70,7 @@ class nmrData(object):
             self.allFid[0].append(iData + 1j*qData)
             self.fidTime = np.linspace(0, (self.sizeTD2-1)*dwellTime, num = self.sizeTD2)
 
-            
+
         if datatype == "Magritek":
 
             #get sweep WidthTD2 based on dweelTime in acqu.par
@@ -92,16 +92,16 @@ class nmrData(object):
 
                     if len(line[0]) > 1:
                         self.parDictionary[line[0].strip()] = line[1].strip()
-                        
-                
+
+
                 self.sweepWidthTD2 = int(1./(float(self.parDictionary["dwellTime"])*1e-6))
                 if debug: print "SweepWidthTD2: ", self.sweepWidthTD2
 
 
             if os.path.isfile(path + "/data.1d"):
                 f = open(path + "/data.1d", "rb")
-                
-                f.seek(12) 
+
+                f.seek(12)
                 print "Format: ", struct.unpack('<i', f.read(4))[0]
 
                 #get this information out of the acqu file.
@@ -128,8 +128,8 @@ class nmrData(object):
 
             elif os.path.isfile(path + "/data.2d"):
                 f = open(path + "/data.2d", "rb")
-                
-                f.seek(12) 
+
+                f.seek(12)
                 print "Format: ", struct.unpack('<i', f.read(4))[0]
 
                 #get this information out of the acqu file.
@@ -160,7 +160,7 @@ class nmrData(object):
         if datatype == 'TopSpinOld':
             self.f = open(path, mode='rb')
             self.sizeTD2=1
-            self.sizeTD1=(int((os.stat(path)).st_size))/8 
+            self.sizeTD1=(int((os.stat(path)).st_size))/8
             self.data = struct.unpack('>' + 'i'*(self.sizeTD2*2*self.sizeTD1), self.f.read(self.sizeTD2*2*self.sizeTD1*4))
             for i in range(0,  self.sizeTD1):
                 #print i
@@ -175,7 +175,7 @@ class nmrData(object):
             acqusFile = open(directory + "/acqus", mode='r')
 
             #print "Importing TopSpin data"
-            
+
             #check if acqu2sfile exists, if yes, experiment is 2D!
             if os.path.isfile(directory + "/acqu2s"):
                 acqu2sFile = open(directory + "/acqu2s", mode='r')
@@ -203,7 +203,7 @@ class nmrData(object):
                     break
                 else:
                     next
-                    
+
                     #print line[0]
                 if line[0] == "##$SW_h":
                     #this line might be chopping the last digit off....
@@ -215,12 +215,12 @@ class nmrData(object):
                     if debug: print "sizeTD2: ", self.sizeTD2
                 elif line[0] == "##$SFO1":
                     self.carrier = float(line[1])*1e6
-                    if debug: print "SFO1:", self.carrier 
+                    if debug: print "SFO1:", self.carrier
 
                 elif len(line) == 0:
                     break
 
-                
+
                 if len(line[0]) > 1:
                     if "@" in line[-1]:
                         #this line contains date, time, some unknown stuff and user, does not work with all bruker files, hence try only"
@@ -233,8 +233,8 @@ class nmrData(object):
                         delays1 = acqusFile.readline().strip()
                         delays2 = acqusFile.readline().strip()
                         self.parDictionary["d"] = [float(d) for d in delays1.strip().split(" ")] + [float(d) for d in delays2.strip().split(" ")]
-                        
-                        
+
+
                     else:
                         self.parDictionary[line[0][2:].strip()] = line[1].strip()
 
@@ -252,7 +252,7 @@ class nmrData(object):
                         break
                     else:
                         next
-                    
+
                     #print line[0]
                     if line[0] == "##$TD" and self.sizeTD1 == 0:
                         self.sizeTD1 = int(line[1])
@@ -263,7 +263,7 @@ class nmrData(object):
                 if os.path.isfile(directory + "/vdlist"):
                     if debug: print "VD File exists!"
                     self.vdList = np.loadtxt(directory + "/vdlist")
-                    
+
             if debug:
                 print "TD2: ", self.sizeTD2
                 print "TD1: ", self.sizeTD1
@@ -273,19 +273,19 @@ class nmrData(object):
                 self.f = open(path + "/ser", mode='rb')
             else:
                 self.f = open(path + "fid", mode='rb')
-                
+
             dataString = self.f.read(self.sizeTD2*2*self.sizeTD1*4)
             if debug: print "len(dataString): ", len(dataString)
 
             dwellTime = 1./self.sweepWidthTD2
             self.fidTime = np.linspace(0, (self.sizeTD2-1)*dwellTime, num = self.sizeTD2)
-            
+
             # here we read the FID data from fid/ser file
             # first convert the datasting into a list of numbers:
             if debug: print "Endianess: ", endianess
             self.data = struct.unpack(endianess + 'i'*(self.sizeTD2*2*self.sizeTD1), dataString)
-            
-            # here we create one array of complex numbers for each of the FIDs 
+
+            # here we create one array of complex numbers for each of the FIDs
             # i runs overa all fids in a ser file, in case of a fid file i = 0
             # TD1 is number of FIDs, TD2 is number of datapoints in each FID
             for i in range(0,  self.sizeTD1):
@@ -293,8 +293,8 @@ class nmrData(object):
                 realPart = self.data[i*self.sizeTD2*2:(i+1)*self.sizeTD2*2:2]
                 imagPart = sp.multiply(self.data[i*self.sizeTD2*2+1:(i+1)*self.sizeTD2*2+1:2], 1j)
                 self.allFid[0].append(sp.add(realPart, imagPart))
-            
-            
+
+
             # here we read the experiment title (only the one stored in pdata/1):
             # could be made to read titles from all pdata folders (if needed)
             try:
@@ -309,7 +309,7 @@ class nmrData(object):
                     pass
 
 
-                
+
         if datatype == 'spinsight':
             chStr = "" # first read the channel, if succesful read the carrier frequency.
             carrierStr = "carrier string not assigned"
@@ -324,10 +324,10 @@ class nmrData(object):
             count = 0
             while True:
                 count += 1
-                try: 
+                try:
                     line = self.fACQ.readline().strip().split("=")
                     print line
-                    if line[0] == "ch1": 
+                    if line[0] == "ch1":
                         chStr = line[1]
                         carrierStr = "sf" + chStr
                     elif line[0] == carrierStr:
@@ -348,12 +348,12 @@ class nmrData(object):
             #check if file named apnd exists
             if self.is2D == True:
                 self.sizeTD2 = int((os.stat(dataFile)).st_size)/8/self.sizeTD1
-            else: 
+            else:
                 self.sizeTD2 = (int((os.stat(dataFile)).st_size))/8
                 print "sizeTD2 is: ", self.sizeTD2
                 self.sizeTD1 = 1
                 print "sizeTD1 is: ", self.sizeTD1
-                                          
+
             #print "Length 1: ", self.sizeTD1*self.sizeTD2*2
             #print "Length 2: ", len(self.f.read(self.sizeTD1*self.sizeTD2*2*4))
             self.f.seek(0)
@@ -371,11 +371,11 @@ class nmrData(object):
             print "sizeTD1: ", self.sizeTD1
             self.fidTime = np.linspace(0, (self.sizeTD2-1)/float(self.sweepWidthTD2), self.sizeTD2)
 
-		
+
         if datatype == 'ntnmr':
             """ File information taken from J. van Becks matNMR, thanks! """
             self.f = open(path, mode='rb')
-		  
+
             """ Length """
             self.f.seek(16)
             self.structureSize = struct.unpack('<I', self.f.read(4))[0]
@@ -443,26 +443,26 @@ class nmrData(object):
         print "==============================================================="
         print "len allFid[0][" + str(whichFid) + "]: ", len(self.allFid[0][0])
 
-        
+
         oReal = np.mean(np.real(self.allFid[fromPos][whichFid][startOffset:]))
         stdReal = np.std(np.real(self.allFid[fromPos][whichFid][startOffset:])-oReal)
 
         print "offsetReal: ", oReal
         print "stdReal: ", stdReal
-        
+
         oImag = np.mean(np.imag(self.allFid[fromPos][whichFid][startOffset:]))
         stdImag = np.std(np.imag(self.allFid[fromPos][whichFid][startOffset:])-oImag)
 
         print "offsetImag: ", oImag
         print "stdImag: ", stdImag
 
-        
+
         self.allFid[toPos] = [np.real(fid) - oReal +1j*(np.imag(fid) - oImag) for fid in self.allFid[fromPos]]
 
-                
+
     def lineBroadening(self, fromPos, toPos, LB):
         """Applies line broadening of given widh (in Hz) to the FID. Resulting spectrum
-        (after fft is called) will be convolution of the original spectrum (fromPos) 
+        (after fft is called) will be convolution of the original spectrum (fromPos)
         and Lorentzian with full-width-at-half-maximum equal to LB"""
         self.checkToPos(toPos)
         self.allFid[toPos] = sp.multiply(self.allFid[fromPos][:], sp.exp(-self.fidTime*LB*np.pi))
@@ -485,13 +485,22 @@ class nmrData(object):
         - order: polynomial order of the baseline correction. Use order = 1 for linear baseline correction
         - applyLocally: set to True for an only local baseline correction that extends only over the entire fitRange."""
 
-        self.checkToPos(toPos)
-        
+        #self.checkToPos(toPos)
+        #if toPos exists, erase the data therein
+        if len(self.allFid) >toPos:
+            self.allFid[toPos] = []
+        #if toPos does not exist, create it
+        else:
+            self.allFid.append([])
+        #check that now the toPos exists:
+        assert len(self.allFid) > toPos, "toPos too high"
+        #print "Hilo!"
+
         for k in range(self.sizeTD1):
             xVals = []
             yVals = []
             indices = []
-            
+
 
             for pair in fitRange:
                 i1,i2 = self.getIndices(pair, scale = scale)
@@ -500,10 +509,10 @@ class nmrData(object):
 
                 xVals.extend(self.frequency[i1:i2])
                 yVals.extend(self.allFid[fromPos][k][i1:i2])
-                
+
 
             z = np.polyfit(xVals, yVals, order)
-            
+
 
             p = np.poly1d(z)
 
@@ -524,7 +533,7 @@ class nmrData(object):
         self.allFid[toPos] = [fid*phaseFactor for fid in self.allFid[fromPos]]
 
     def autoPhase0(self, fromPos, index, start, stop, scale = "Hz"):
-        """This function should get fromPos and index pointing to a spectrum. 
+        """This function should get fromPos and index pointing to a spectrum.
         It returns the phase for maximimizing the integral over the real part
         in the spectral region of interest, in degrees."""
 
@@ -535,7 +544,7 @@ class nmrData(object):
 
         for k in range(len(integrals)):
             integrals[k] = np.sum(np.real(self.allFid[fromPos][index][i1:i2]*np.exp(-1j*float(phiTest[k])/180.*np.pi)))
-            
+
         return phiTest[np.argmax(integrals)]
 
     def fwhm(self, fromPos, index, start, stop, scale = "Hz", debug = False):
@@ -544,15 +553,15 @@ class nmrData(object):
         y = np.real(self.allFid[fromPos][index][i1:i2])
 
         linewidth = fwhm.fwhm(x, y)
-        
+
         if debug: print("Linewidth: {} Hz".format(linewidth))
-        
+
         return linewidth
 
-        
+
     def phaseFirstOrder(self, fromPos, toPos, phi1, degree = False, noChangeOnResonance=False, pivot = 0, scale= "Hz"):
         """This should only be applied to Fourier transformed spectral data
-        It will lead to a zero phase shift at the upper end of the spectrum and to a 
+        It will lead to a zero phase shift at the upper end of the spectrum and to a
         phase shift of phi1 at the lower end, linear interpolation inbetween.
         this is the spinsight convention.
         """
@@ -563,15 +572,15 @@ class nmrData(object):
             pivot = 0
         elif pivot !=0:
             print "Using pivot for first order phase correction"
-            index = self.getIndex(pivot, scale= scale)            
+            index = self.getIndex(pivot, scale= scale)
             phaseValues = phaseValues - phaseValues[index]
             0
         if degree == True:
             phaseValues = phaseValues*np.pi/180
-            
+
         self.allFid[toPos] =  [spectrum*np.exp(-1j*phaseValues) for spectrum in self.allFid[fromPos]]
 
-        
+
     def leftShift(self, fromPos, toPos, shiftPoints):
         self.checkToPos(toPos)
         self.allFid[toPos] = [self.allFid[fromPos][k][shiftPoints:] for k in range(len(self.allFid[fromPos]))]
@@ -582,7 +591,7 @@ class nmrData(object):
         self.checkToPos(toPos)
         z = np.zeros(totalPoints)
         self.allFid[toPos] = [np.concatenate((k, z[:-len(k)])) for k in self.allFid[fromPos]]
-            
+
     def getJoinedPartialSpectra(self, fromPos, start, stop, scale = "Hz", returnX = False):
         spectra = []
         for index in range(self.sizeTD1):
@@ -623,13 +632,13 @@ class nmrData(object):
         return np.array([self.integrateRealPart(fromPos, k, start, stop, scale = scale, part = part)
                          for k in range(self.sizeTD1)])
 
-    
+
     def getPeak(self, fromPos, index, start, stop, negative = False, scale="Hz"):
         """This function returns peak intensities in a given range; it searches for negative peaks if negative = True"""
- 
+
         i1, i2 = self.getIndices([start, stop], scale=scale)
         spec = self.allFid[fromPos][index]
-        
+
         if negative == False:
             maxVal = np.max(np.real(spec[i1:i2]))
         elif negative ==  True:
@@ -639,12 +648,12 @@ class nmrData(object):
 
     def getCenterFrequency(self, fromPos, index, start, stop, scale ="Hz"):
         i1, i2 = self.getIndices([start, stop], scale=scale)
-   
+
         freqList = np.linspace(start, stop, num = (i2 - i1))
         #print freqList
         return np.sum(freqList*np.real(self.allFid[fromPos][index][i1:i2]))/self.integrateRealPart(fromPos, index, start, stop, scale = scale)
 
-    
+
     def getIndexFromFrequency(self, freq):
         return np.argmin(abs(self.frequency - freq))
 
@@ -666,7 +675,7 @@ class nmrData(object):
         else:
             return i1, i2
 
-            
+
     def checkToPos(self, toPos):
         if len(self.allFid) <= toPos:
             self.allFid.append([])
@@ -682,20 +691,20 @@ class nmrData(object):
         this function constructs a chemical shift axis given a reference of the form
         reference = [offset, ppm]
 
-        For example if a signal of known chemical shift 3.14 ppm occurs at -350 Hz, then the 
+        For example if a signal of known chemical shift 3.14 ppm occurs at -350 Hz, then the
         axis would be constructed using
         getPPMScale(reference=[-350, 3.14])
 
         If reference is left empty, the 0 ppm value is assumed to be at the carrier frequency.
-        
-        scale can be 'offset' or 'absolute' - offset is used for signal frequency measured from 
+
+        scale can be 'offset' or 'absolute' - offset is used for signal frequency measured from
         the carrier, absolute is used of absolute signal frequency (in Hz).
-        The 'absolute' is useful when creating a ppm scale based on data from 
-        different experiment with different SFO1 
+        The 'absolute' is useful when creating a ppm scale based on data from
+        different experiment with different SFO1
         """
-        
+
         assert scale == 'offset' or scale == 'absolute', 'unknown scale'
-        
+
         if reference == []:
             self.ppmScale = self.frequency/self.carrier*1e6
         else:
@@ -712,7 +721,7 @@ class nmrData(object):
             self.ppmScale = (self.frequency + self.carrier - f0)/f0*1e6
 
     def process(self, lb = 0, phase = 0, ls = 0, ft_only = []):
-        """Process routine for NMR data. 
+        """Process routine for NMR data.
 
         lb: line broadening in Hz
         phase: phase correction in degree
@@ -747,100 +756,100 @@ class nmrData(object):
                 start = self.getIndexFromPPM(xlim[0])
                 stop = self.getIndexFromPPM(xlim[1])
 
- 
+
         if complexType == "r":
             data = zip(xData[start:stop], yDataR[start:stop])
 
         np.savetxt(filename, data, fmt=fmt, delimiter="\t")
-    
+
     def printTitle(self):
         for line in self.title: print line
-        
-        
-    
-    def autoPhase1(self, fromPos, index, start = -1e6, stop = 1e6, derivative = 1, 
+
+
+
+    def autoPhase1(self, fromPos, index, start = -1e6, stop = 1e6, derivative = 1,
                    penalty = 1e3, scale  = 'Hz', debug = False):
-        """Automatic phase correction (0 + 1 order) based on entropy 
+        """Automatic phase correction (0 + 1 order) based on entropy
         minimization (Chen et al: J. Mag. Res. 158, 164-168 (2002)).
-        Minimizes entropy of phased spectrum + a penalty function (which is 
+        Minimizes entropy of phased spectrum + a penalty function (which is
         equal to integral of intensity**2 in regions where intensity<0 multiplied
         by the "penalty" parameter given in autoPhase input).
         Returns phase correction coefs in radians in array [ph0, ph1]
         which can be used by method phase01 to apply the phase correction.
         Derivative should be set to 1-4, increasing penalty puts more
-        emphasis on non-negative spectrum. 
+        emphasis on non-negative spectrum.
         By default the spectrum in range +/-1MHz around offset is considered,
-        the interval can be set using the start and stop which can be 
+        the interval can be set using the start and stop which can be
         in either 'Hz' or 'ppm' scale"""
-        
+
         assert start < stop, "start should be smaller than stop"
         assert penalty > 0, "penalty shoud be possitive"
         assert type(derivative) is types.IntType, "derivative should be a (small possitive) integer"
         assert derivative > 0,  "need derivative > 0"
-        
+
         spectrum = np.array(self.allFid[fromPos][index])
-        
+
         # normalize the spectrum:
         spectrum = spectrum/np.abs(spectrum).sum()
-        
-        # zero everything that is out of start-stop frequency window 
+
+        # zero everything that is out of start-stop frequency window
         if scale == 'Hz':
             for i in range(len(spectrum)):
-                if self.frequency[i] < start: 
+                if self.frequency[i] < start:
                     spectrum[i] = 0
                 if self.frequency[i] > stop:
                     spectrum[i] = 0
         if scale == 'ppm':
             for i in range(len(spectrum)):
-                if self.ppmScale[i] < start: 
+                if self.ppmScale[i] < start:
                     spectrum[i] = 0
                 if self.ppmScale[i] > stop:
                     spectrum[i] = 0
-                    
-        #record initial values of penalty and entropy:     
+
+        #record initial values of penalty and entropy:
         penalty_start = self.__penalty(spectrum, penalty)
         entropy_start = self.__entropy(spectrum, derivative)
-        
+
         # find the phase correction that minimizes the objective function
         correction = [0, 0]
-        res = sp.optimize.minimize(self.__tryPhase, correction, 
+        res = sp.optimize.minimize(self.__tryPhase, correction,
                                    args = (spectrum, derivative, penalty,))
-        
+
         if debug:
             spectrum = self.__phase01(spectrum, res.x)
             print 'penalty change:', self.__penalty(spectrum, penalty) - penalty_start
             print 'entropy change:', self.__entropy(spectrum, derivative) - entropy_start
-        
+
         return res.x
-    
+
     def phase01(self, fromPos, toPos, correction):
         """apply zero and first order phase correction to spectra at fromPos
-        and write the result to toPos. correction angles are in radians and 
+        and write the result to toPos. correction angles are in radians and
         are stored in array correction = [ph0, ph1]. first order
         correction leads to no change at first point of spectrum and maximum
-        (ph1) change at the last point. 
-        This function can be used to apply the phase correction returned by 
+        (ph1) change at the last point.
+        This function can be used to apply the phase correction returned by
         autoPhase1"""
         self.checkToPos(toPos)
         #here we apply the correction
         self.allFid[toPos] = [ self.__phase01(spectrum, correction) for spectrum in self.allFid[fromPos]]
-        
-    
+
+
     def __phase01(self, spectrum, correction):
         """Returns a spectrum (np.array) to which a specified phase correction
         was applied. ph0 and ph1 are in rad"""
         ph0, ph1 = correction[0], correction[1]
         phaseValues = np.linspace(0, ph1, num = len(spectrum)) + ph0
         corrections = np.exp(1j*phaseValues)
-        
+
         return np.array([spectrum[i]*corrections[i] for i in range(len(spectrum))])
-    
+
     def __entropy(self, spectrum, m):
-        """Calculates get m-th derivative of the real part of spectrum and 
+        """Calculates get m-th derivative of the real part of spectrum and
         returns entropy of its absolute value. """
         assert type(m) is types.IntType, 'm should be a (possitive) integer'
         assert m > 0, 'need m > 0'
-        
+
         #get the real part of the spectrum
         spect = np.array(spectrum)
         spect = spect.real
@@ -849,18 +858,18 @@ class nmrData(object):
         spectrumDerivative = spect
         for i in range(m):
             spectrumDerivative = np.gradient(spectrumDerivative)
-        
+
         # now get the entropy of the abslolute value of the m-th derivative:
         entropy = sp.stats.entropy(np.abs(spectrumDerivative))
         return entropy
-        
-        
-    
+
+
+
     def __penalty(self, spectrum, gamma):
         """return penalty function for the spectrum - sum of squares of
         all negative points in normalized spectrum multiplied by gamma"""
-        
-        
+
+
         penalty = 0
         #normalize the real part of the spectrum:
         spect = spectrum.real/np.abs(spectrum.real).sum()
@@ -869,20 +878,20 @@ class nmrData(object):
             if point < 0:
                 penalty += point**2
         return penalty*gamma
-        
-    
+
+
     def __tryPhase(self, correction, spectrum, m, gamma):
-        """Apply the phase correction to the spectrum, evaluate 
+        """Apply the phase correction to the spectrum, evaluate
         entropy and penalty of the resulting spectrum and return
         their sum (aka objective function)"""
-        
-        
+
+
         phased = self.__phase01(spectrum, correction)
         objective = self.__entropy(phased, m) + self.__penalty(phased, gamma)
         return objective
 
-          
-                  
+
+
 
 class container(object):
       def __init__(self):
@@ -894,7 +903,7 @@ class container(object):
 
 
 
-      
+
 
 if __name__ == "__main__":
       print nmrData.__doc__
