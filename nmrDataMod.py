@@ -42,6 +42,7 @@ class nmrData(object):
         self.allFid.append([])
         self.sizeTD1 = sizeTD1
         self.title = ['no title']
+        self.vdList = []
 
         self.parDictionary = {}
         
@@ -258,6 +259,10 @@ class nmrData(object):
                         if debug: print "sizeTD1: ", self.sizeTD1
                     elif len(line) == 0:
                         break
+
+                if os.path.isfile(directory + "/vdlist"):
+                    if debug: print "VD File exists!"
+                    self.vdList = np.loadtxt(directory + "/vdlist")
                     
             if debug:
                 print "TD2: ", self.sizeTD2
