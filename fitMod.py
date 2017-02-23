@@ -30,13 +30,14 @@ class Model(object):
         self.popt = []
         self.pcov = []
 
-    def fitGeneral(self, x, y, p0):
+    def fitGeneral(self, x, y, p0, silence = False):
         self.popt, self.pcov = curve_fit(self.model, np.array(x), np.array(y), p0 = p0)
 
         errors = self.getError(self.pcov, len(x) - len(p0))
-        for k in range(len(self.popt)):
-            print self.paramNames[k] + ": " + str(self.popt[k])  + "(" + str(errors[k]) + ")"
-        print "parameters stored in self.popt"
+        if not silence:
+            for k in range(len(self.popt)):
+                print self.paramNames[k] + ": " + str(self.popt[k])  + "(" + str(errors[k]) + ")"
+
 
     def getError(self,var_matrix, dof):
         a = 1 - 0.05/2
@@ -406,3 +407,57 @@ class liqXtalHaller(Model):
 
 
         self.fitGeneral(x,y,p0)
+
+
+class doubleGaussian(Model):
+    """This class represents second order dynamics, according to eq. 7 in paper on kinetics in H2O@C60
+    It implents the solution of the following equation:
+    DSolve[y'[x] == - 2 k (y[x] - f0)^2, y[x], x]
+
+    The parameters are A, B, k and the fit equation is B + A/(1 + k*t)
+    """
+    #self.outputString = Model.outputString
+
+    def __init__(self, normalizedGaussians = True):
+        self.paramNames = ["A1", "x01","sigma1", "A2", "x02", "sigma2"]
+        self.model = self.model1
+        self.outputString = ""
+        self.normalizedGaussians = normalizedGaussians
+
+
+    def gaussian(self, x, mu, sig):
+        if self.normalizedGaussians:
+            return 1./(np.sqrt(2.*np.pi)*sig)*np.exp(-np.power((x - mu)/sig, 2.)/2)
+        else:
+            #print "Gaussian Normalization off"
+            return np.exp(-np.power((x - mu)/sig, 2.)/2)
+
+        
+    def model1(self, x, A1, x01, sigma1, A2, x02, sigma2):
+        return A1*self.gaussian(x, x01, sigma1) + A2*self.gaussian(x, x02, sigma2) 
+
+
+    def fit(self,x,y,p0 = []):
+        assert len(p0) == 6, "Initial parameters required!"
+        
+        print "p0 is: ", p0
+        self.fitGeneral(x,y,p0)
+
+class doubleGaussianAmplitudesOnly(doubleGaussian):
+    def __init__(self, x01, sigma1, x02, sigma2, normalizedGaussians = False):
+        self.paramNames = ["A1", "A2"]
+        self.normalizedGaussians = normalizedGaussians
+        self.outputString = ""
+        self.x01 = x01
+        self.sigma1 = sigma1
+        self.x02 = x02
+        self.sigma2 = sigma2
+        self.model = self.model2
+
+    def model2(self, x, A1, A2):
+        return self.model1(x, A1, self.x01, self.sigma1, A2, self.x02, self.sigma2)
+
+    def fit(self, x, y, p0 = []):
+        assert len(p0) == 2, "Initial parameters required."
+        self.fitGeneral(x, y, p0, silence = True)
+    
