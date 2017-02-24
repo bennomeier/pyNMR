@@ -29,14 +29,15 @@ class Model(object):
         self.p0 = 0
         self.popt = []
         self.pcov = []
-
+        self.errors = []
+        
     def fitGeneral(self, x, y, p0, silence = False):
         self.popt, self.pcov = curve_fit(self.model, np.array(x), np.array(y), p0 = p0)
 
-        errors = self.getError(self.pcov, len(x) - len(p0))
+        self.errors = self.getError(self.pcov, len(x) - len(p0))
         if not silence:
             for k in range(len(self.popt)):
-                print self.paramNames[k] + ": " + str(self.popt[k])  + "(" + str(errors[k]) + ")"
+                print self.paramNames[k] + ": " + str(self.popt[k])  + "(" + str(self.errors[k]) + ")"
 
 
     def getError(self,var_matrix, dof):
