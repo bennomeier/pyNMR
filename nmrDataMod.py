@@ -233,14 +233,14 @@ class nmrData(object):
                         delays1 = acqusFile.readline().strip()
                         delays2 = acqusFile.readline().strip()
                         self.parDictionary["d"] = [float(d) for d in delays1.strip().split(" ")] + [float(d) for d in delays2.strip().split(" ")]
-<<<<<<< HEAD
+#<<<<<<< HEAD
                     elif line[0] == "##$L":
                         loopCounters = acqusFile.readline().strip()
                         self.parDictionary["l"] = [float(l) for l in loopCounters.strip().split(" ")]
-=======
+#=======
 
 
->>>>>>> 6307d0eecdfeedc77431bd9953c3e59f6ae81403
+#>>>>>>> 6307d0eecdfeedc77431bd9953c3e59f6ae81403
                     else:
                         self.parDictionary[line[0][2:].strip()] = line[1].strip()
 
