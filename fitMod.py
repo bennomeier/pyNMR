@@ -352,8 +352,8 @@ class saturationRecovery(Model):
 
     def fit(self, x, y, p0 = []):
         if len(p0) == 0 and self.offset == True:
-            A = y[0]-y[-1]
-            B = y[-1]
+            A = y[-1]-y[0]
+            B = y[0]
             k = 1
             p0 = [A, B, k]
             print "Parameters have been estimated: ", p0
@@ -432,14 +432,14 @@ class doubleGaussian(Model):
             #print "Gaussian Normalization off"
             return np.exp(-np.power((x - mu)/sig, 2.)/2)
 
-        
+
     def model1(self, x, A1, x01, sigma1, A2, x02, sigma2):
-        return A1*self.gaussian(x, x01, sigma1) + A2*self.gaussian(x, x02, sigma2) 
+        return A1*self.gaussian(x, x01, sigma1) + A2*self.gaussian(x, x02, sigma2)
 
 
     def fit(self,x,y,p0 = []):
         assert len(p0) == 6, "Initial parameters required!"
-        
+
         print "p0 is: ", p0
         self.fitGeneral(x,y,p0)
 
@@ -460,4 +460,3 @@ class doubleGaussianAmplitudesOnly(doubleGaussian):
     def fit(self, x, y, p0 = []):
         assert len(p0) == 2, "Initial parameters required."
         self.fitGeneral(x, y, p0, silence = True)
-    
