@@ -30,7 +30,7 @@ class Model(object):
         self.popt = []
         self.pcov = []
         self.errors = []
-        
+
     def fitGeneral(self, x, y, p0, silence = False):
         self.popt, self.pcov = curve_fit(self.model, np.array(x), np.array(y), p0 = p0)
 
@@ -75,7 +75,8 @@ class t1InversionRecovery(Model):
                 p0 = [np.max(y), np.max(x)/2]
             elif len(self.paramNames) == 3:
                 p0 = [np.max(y), np.max(x)/2, 2]
-            print "Parameters have been estimated: ", p0
+            if not silence:
+                print "Parameters have been estimated: ", p0
         self.p0 = self.fitGeneral(x,y,p0)
 
 
@@ -133,7 +134,8 @@ class polarizability(Model):
                 p0 = [1, np.min(y)]
             elif len(self.paramNames) == 1:
                 p0 = [np.min(y)]
-            print "Parameters have been estimated: ", p0
+            if not silence:
+                print "Parameters have been estimated: ", p0
         self.fitGeneral(x,y, p0)
 
 
@@ -178,7 +180,8 @@ class nutationCurve(Model):
                 tau = 10
                 offset = y[-1]
                 p0 = [A, tau, offset]
-            print "Parameters have been estimated: ", p0
+            if not silence:
+                print "Parameters have been estimated: ", p0
         self.p0 = self.fitGeneral(x,y,p0)
         return self.p0
 
@@ -187,18 +190,19 @@ class exponentialDecay(Model):
     def __init__(self, offset=False):
         """This is the init routine
         """
-
-        print "We're going to the zoo."
+        if not silence:
+            print "We're going to the zoo."
         self.outputString = ""
-
-        print "Offset value is: ", offset
+        if not silence:
+            print "Offset value is: ", offset
         if offset == False:
             self.paramNames = ["A", "tau"]
             self.model = self.exponentialDecay
         else:
             self.paramNames = ["A", "tau", "offset"]
             self.model = self.exponentialDecayOffset
-        print self.paramNames
+        if not silence:
+            print self.paramNames
 
     def exponentialDecay(self, t, A, tau):
         """A model for fitting an exponential Decay"""
@@ -220,7 +224,8 @@ class exponentialDecay(Model):
                 tau = 30
                 offset = y[-1]
                 p0 = [A, tau, offset]
-            print "Parameters have been estimated: ", p0
+            if not silence:
+                print "Parameters have been estimated: ", p0
 
         self.p0 = self.fitGeneral(x,y,p0)
 
@@ -249,8 +254,8 @@ class secondOrder2(Model):
             A = y[0] - B
             k = 0.1
             p0 = [A, B, k]
-
-        print "p0 is: ", p0
+        if not silence:
+            print "p0 is: ", p0
         self.fitGeneral(x,y,p0)
 
 
@@ -273,7 +278,8 @@ class curie(Model):
             B = (y[0]-y[1])*x[0]*x[1]/(x[1] - x[0])
 
             p0 = [A, B]
-            print "Parameters have been estimated: ", p0
+            if not silence:
+                print "Parameters have been estimated: ", p0
 
         self.fitGeneral(x,y,p0)
 
@@ -294,7 +300,8 @@ class curieWeiss(Model):
             C = 1
             T_c = 1
             p0 = [A, C, T_c]
-            print "Parameters have been estimated: ", p0
+            if not silence:
+                print "Parameters have been estimated: ", p0
 
         self.fitGeneral(x,y,p0)
 
@@ -357,12 +364,14 @@ class saturationRecovery(Model):
             B = y[0]
             k = 1
             p0 = [A, B, k]
-            print "Parameters have been estimated: ", p0
+            if not silence:
+                print "Parameters have been estimated: ", p0
         elif len(p0) == 0 and self.offset == False:
             A = y[0]-y[-1]
             k = 1
             p0 = [A, k]
-            print "Parameters have been estimated: ", p0
+            if not silence:
+                print "Parameters have been estimated: ", p0
 
         self.fitGeneral(x,y,p0)
 
@@ -404,7 +413,8 @@ class liqXtalHaller(Model):
             exponent = 0.219
             scale = 1
             p0 = [transitionTemperature, temperatureShift, exponent, scale]
-            print "Parameters have been estimated: ", p0
+            if not silence:
+                print "Parameters have been estimated: ", p0
 
 
         self.fitGeneral(x,y,p0)
@@ -440,8 +450,8 @@ class doubleGaussian(Model):
 
     def fit(self,x,y,p0 = []):
         assert len(p0) == 6, "Initial parameters required!"
-
-        print "p0 is: ", p0
+        if not silence:
+            print "p0 is: ", p0
         self.fitGeneral(x,y,p0)
 
 class doubleGaussianAmplitudesOnly(doubleGaussian):
