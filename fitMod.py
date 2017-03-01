@@ -30,12 +30,14 @@ class Model(object):
         self.popt = []
         self.pcov = []
         self.errors = []
+        self.silence = True
+        print self.silence
 
-    def fitGeneral(self, x, y, p0, silence = False):
+    def fitGeneral(self, x, y, p0):
         self.popt, self.pcov = curve_fit(self.model, np.array(x), np.array(y), p0 = p0)
 
         self.errors = self.getError(self.pcov, len(x) - len(p0))
-        if not silence:
+        if not self.silence:
             for k in range(len(self.popt)):
                 print self.paramNames[k] + ": " + str(self.popt[k])  + "(" + str(self.errors[k]) + ")"
 
@@ -51,7 +53,8 @@ class Model(object):
 class t1InversionRecovery(Model):
     """This class represents the T1 Inversion Recovery Model."""
 
-    def __init__(self, include_non_perfect_inversion=False):
+    def __init__(self, include_non_perfect_inversion=False, silence = True):
+        self.silence = silence
         if include_non_perfect_inversion:
             self.paramNames = ["A", "T1", "k"]
             self.model = self.model1
@@ -75,7 +78,7 @@ class t1InversionRecovery(Model):
                 p0 = [np.max(y), np.max(x)/2]
             elif len(self.paramNames) == 3:
                 p0 = [np.max(y), np.max(x)/2, 2]
-            if not silence:
+            if not self.silence:
                 print "Parameters have been estimated: ", p0
         self.p0 = self.fitGeneral(x,y,p0)
 
@@ -86,7 +89,8 @@ class polarizability(Model):
     """This class represents the classical polarizability model alpha + mu^2 / (3*k*T)
     """
 
-    def __init__(self, unit1="volume", unit2 = "Debye", fixDipole = 0):
+    def __init__(self, unit1="volume", unit2 = "Debye", fixDipole = 0, silence = True):
+        self.silence = silence
         self.unit1 = unit1
         self.unit2 = unit2
 
@@ -134,7 +138,7 @@ class polarizability(Model):
                 p0 = [1, np.min(y)]
             elif len(self.paramNames) == 1:
                 p0 = [np.min(y)]
-            if not silence:
+            if not self.silence:
                 print "Parameters have been estimated: ", p0
         self.fitGeneral(x,y, p0)
 
@@ -144,7 +148,8 @@ class polarizability(Model):
 class capacitance(Model):
     """This class represents the capacitance Model C = C0 + CH2O*exp(-t/tau)
     """
-    def __init__(self):
+    def __init__(self, silence = True):
+        self.silence = silence
         self.paramNames = ["C0", "CH2O", "tau"]
         self.model = self.model1
 
@@ -158,9 +163,10 @@ class capacitance(Model):
 
 class nutationCurve(Model):
     """This class represents the T1 Inversion Recovery Model."""
-    def __init__(self):
+    def __init__(self, silence = True):
         """This is the init routine
         """
+        self.silence = silence
         self.paramNames = ["A", "tau"]
         self.model = self.nutationCurve
 
@@ -180,20 +186,21 @@ class nutationCurve(Model):
                 tau = 10
                 offset = y[-1]
                 p0 = [A, tau, offset]
-            if not silence:
+            if not self.silence:
                 print "Parameters have been estimated: ", p0
         self.p0 = self.fitGeneral(x,y,p0)
         return self.p0
 
 class exponentialDecay(Model):
     """This class represents a simple exponential decay."""
-    def __init__(self, offset=False):
+    def __init__(self, offset=False, silence = True):
         """This is the init routine
         """
-        if not silence:
+        self.silence = silence
+        if not self.silence:
             print "We're going to the zoo."
         self.outputString = ""
-        if not silence:
+        if not self.silence:
             print "Offset value is: ", offset
         if offset == False:
             self.paramNames = ["A", "tau"]
@@ -201,7 +208,7 @@ class exponentialDecay(Model):
         else:
             self.paramNames = ["A", "tau", "offset"]
             self.model = self.exponentialDecayOffset
-        if not silence:
+        if not self.silence:
             print self.paramNames
 
     def exponentialDecay(self, t, A, tau):
@@ -224,7 +231,7 @@ class exponentialDecay(Model):
                 tau = 30
                 offset = y[-1]
                 p0 = [A, tau, offset]
-            if not silence:
+            if not self.silence:
                 print "Parameters have been estimated: ", p0
 
         self.p0 = self.fitGeneral(x,y,p0)
@@ -239,7 +246,8 @@ class secondOrder2(Model):
     """
     #self.outputString = Model.outputString
 
-    def __init__(self):
+    def __init__(self, silence = True):
+        self.silence = silence
         self.paramNames = ["A", "B","k"]
         self.model = self.model1
         self.outputString = ""
@@ -254,14 +262,15 @@ class secondOrder2(Model):
             A = y[0] - B
             k = 0.1
             p0 = [A, B, k]
-        if not silence:
+        if not self.silence:
             print "p0 is: ", p0
         self.fitGeneral(x,y,p0)
 
 
 class curie(Model):
     """This class represents a simple Curie dependence, A + B/T, T being the temperature."""
-    def __init__(self):
+    def __init__(self, silence = True):
+        self.silence = silence
         self.paramNames = ["A", "B"]
         self.model = self.curieCurve
 
@@ -278,7 +287,7 @@ class curie(Model):
             B = (y[0]-y[1])*x[0]*x[1]/(x[1] - x[0])
 
             p0 = [A, B]
-            if not silence:
+            if not self.silence:
                 print "Parameters have been estimated: ", p0
 
         self.fitGeneral(x,y,p0)
@@ -286,7 +295,8 @@ class curie(Model):
 
 class curieWeiss(Model):
     """This class represents a simple Curie dependence, A + B/T, T being the temperature."""
-    def __init__(self):
+    def __init__(self, silence = True):
+        self.silence = silence
         self.paramNames = ["A", "C", "T_c"]
         self.model = self.curieWeissCurve
 
@@ -300,16 +310,17 @@ class curieWeiss(Model):
             C = 1
             T_c = 1
             p0 = [A, C, T_c]
-            if not silence:
+            if not self.silence:
                 print "Parameters have been estimated: ", p0
 
         self.fitGeneral(x,y,p0)
 
 class clausiusMossoti(Model):
-    def __init__(self):
+    def __init__(self, silence = True):
         """Coefficients: alpha is the temperature independent part, for C60 the lit value is 85 A^3
        p0 is the dipole moment in Debye"""
 
+        self.silence = silence
         self.paramNames = ["alpha", "p_0","N"]
         self.model = self.clausiusMossoti
 
@@ -342,7 +353,8 @@ class clausiusMossoti(Model):
 
 class saturationRecovery(Model):
     """This class represents a simple"""
-    def __init__(self, offset = False):
+    def __init__(self, offset = False, silence = True):
+        self.silence = silence
         self.paramNames = ["B", "A", "k"]
         self.offset = offset
         if offset:
@@ -364,13 +376,13 @@ class saturationRecovery(Model):
             B = y[0]
             k = 1
             p0 = [A, B, k]
-            if not silence:
+            if not self.silence:
                 print "Parameters have been estimated: ", p0
         elif len(p0) == 0 and self.offset == False:
             A = y[0]-y[-1]
             k = 1
             p0 = [A, k]
-            if not silence:
+            if not self.silence:
                 print "Parameters have been estimated: ", p0
 
         self.fitGeneral(x,y,p0)
@@ -386,7 +398,8 @@ class liqXtalHaller(Model):
     So this model can be used to fit variables that should be proportional
     to the liquid crystal order parameter.
     """
-    def __init__(self):
+    def __init__(self, silence = True):
+        self.silence = silence
         self.paramNames = ["transitionTemperature", "temperatureShift", "exponent", "scale"]
         self.model = self.haller
 
@@ -413,7 +426,7 @@ class liqXtalHaller(Model):
             exponent = 0.219
             scale = 1
             p0 = [transitionTemperature, temperatureShift, exponent, scale]
-            if not silence:
+            if not self.silence:
                 print "Parameters have been estimated: ", p0
 
 
@@ -429,7 +442,8 @@ class doubleGaussian(Model):
     """
     #self.outputString = Model.outputString
 
-    def __init__(self, normalizedGaussians = True):
+    def __init__(self, normalizedGaussians = True, silence = True):
+        self.silence = silence
         self.paramNames = ["A1", "x01","sigma1", "A2", "x02", "sigma2"]
         self.model = self.model1
         self.outputString = ""
@@ -450,12 +464,13 @@ class doubleGaussian(Model):
 
     def fit(self,x,y,p0 = []):
         assert len(p0) == 6, "Initial parameters required!"
-        if not silence:
+        if not self.silence:
             print "p0 is: ", p0
         self.fitGeneral(x,y,p0)
 
 class doubleGaussianAmplitudesOnly(doubleGaussian):
-    def __init__(self, x01, sigma1, x02, sigma2, normalizedGaussians = False):
+    def __init__(self, x01, sigma1, x02, sigma2, normalizedGaussians = False, silence = True):
+        self.silence = silence
         self.paramNames = ["A1", "A2"]
         self.normalizedGaussians = normalizedGaussians
         self.outputString = ""
