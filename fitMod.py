@@ -486,3 +486,29 @@ class doubleGaussianAmplitudesOnly(doubleGaussian):
     def fit(self, x, y, p0 = []):
         assert len(p0) == 2, "Initial parameters required."
         self.fitGeneral(x, y, p0, silence = True)
+
+
+class saturationRecovery2(Model):
+    """Two component saturation recovery. One single exponential,
+    and one stretched exponential. Offset is always included. """
+    def __init__(self, silence = True):
+        self.silence = silence
+        self.paramNames = ["B", "A1", "T1", "A2", "T2", "b2"]
+        self.model = self.saturationRecoveryOffset2
+
+
+    def saturationRecoveryOffset2(self, t, B, A1, T1, A2, T2, b2):
+        return B + A1*(1 - np.exp(-t/T1)) + A2*(1 - np.exp(-(t/T2)**b2))
+
+
+    def fit(self, x, y, p0 = []):
+        if len(p0) == 0:
+            A = y[-1]-y[0]
+            B = y[0]
+            T12 = np.exp((np.log(x[0]) + np.log(x[-1]))/2)
+            p0 = [B, A/2, T12, A/2, T12, 1]
+            if not self.silence:
+                print "Parameters have been estimated: ", self.paramNames, p0
+
+
+        self.fitGeneral(x,y,p0)
