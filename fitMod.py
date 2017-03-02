@@ -33,8 +33,9 @@ class Model(object):
         self.silence = True
         print self.silence
 
-    def fitGeneral(self, x, y, p0):
-        self.popt, self.pcov = curve_fit(self.model, np.array(x), np.array(y), p0 = p0)
+    def fitGeneral(self, x, y, p0, maxfev = 1400):
+
+        self.popt, self.pcov = curve_fit(self.model, np.array(x), np.array(y), p0 = p0, maxfev = maxfev)
 
         self.errors = self.getError(self.pcov, len(x) - len(p0))
         if not self.silence:
@@ -501,7 +502,7 @@ class saturationRecovery2(Model):
         return B + A1*(1 - np.exp(-t/T1)) + A2*(1 - np.exp(-(t/T2)**b2))
 
 
-    def fit(self, x, y, p0 = []):
+    def fit(self, x, y, p0 = [], maxfev = 1400):
         if len(p0) == 0:
             A = y[-1]-y[0]
             B = y[0]
@@ -511,4 +512,5 @@ class saturationRecovery2(Model):
                 print "Parameters have been estimated: ", self.paramNames, p0
 
 
-        self.fitGeneral(x,y,p0)
+        
+        self.fitGeneral(x,y,p0, maxfev = maxfev)
