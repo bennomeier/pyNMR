@@ -512,5 +512,32 @@ class saturationRecovery2(Model):
                 print "Parameters have been estimated: ", self.paramNames, p0
 
 
-        
+
+        self.fitGeneral(x,y,p0, maxfev = maxfev)
+
+class saturationRecovery2exp(Model):
+    """Two component saturation recovery. Both are single exponential.
+    Offset is always included. """
+    def __init__(self, silence = True):
+        self.silence = silence
+        self.paramNames = ["B", "A1", "T1", "A2", "T2"]
+        self.model = self.saturationRecoveryOffset2exp
+
+
+    def saturationRecoveryOffset2exp(self, t, B, A1, T1, A2, T2):
+        return B + A1*(1 - np.exp(-t/T1)) + A2*(1 - np.exp(-t/T2))
+
+
+    def fit(self, x, y, p0 = [], maxfev = 1400):
+        if len(p0) == 0:
+            A = y[-1]-y[0]
+            B = y[0]
+            T1 = np.exp((2*np.log(x[0]) + np.log(x[-1]))/3)
+            T2 = np.exp((np.log(x[0]) + 2*np.log(x[-1]))/3)
+            p0 = [B, A/2, T1, A/2, T2]
+            if not self.silence:
+                print "Parameters have been estimated: ", self.paramNames, p0
+
+
+
         self.fitGeneral(x,y,p0, maxfev = maxfev)
