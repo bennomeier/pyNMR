@@ -541,3 +541,51 @@ class saturationRecovery2exp(Model):
 
 
         self.fitGeneral(x,y,p0, maxfev = maxfev)
+
+
+class exponentialDecay2comp(Model):
+    """This class represents a two exponential decay."""
+    def __init__(self, offset = False, silence = True):
+        """This is the init routine
+        """
+        self.silence = silence
+        if not self.silence:
+            print "We're going to the zoo."
+        self.outputString = ""
+        if not self.silence:
+            print "Offset value is: ", offset
+        if offset == False:
+            self.paramNames = ["A1", "tau1", "A2", "tau2"]
+            self.model = self.exponentialDecay2
+        else:
+            self.paramNames = ["A1", "tau1", "A2", "tau2", "offset"]
+            self.model = self.exponentialDecay2Offset
+        if not self.silence:
+            print self.paramNames
+
+    def exponentialDecay2(self, t, A1, tau1, A2, tau2):
+        """A model for fitting an exponential Decay"""
+        return A1*np.exp(-t/tau1) + A2*np.exp(-t/tau2)
+
+    def exponentialDecay2Offset(self, t, A1, tau1, A2, tau2, offset):
+        """A model for fitting an exponential Decay"""
+        return A1*np.exp(-t/tau1) + A2*np.exp(-t/tau2) + offset
+
+    def fit(self, x, y, p0 = []):
+        if len(p0) == 0:
+            if len(self.paramNames) == 4:
+                A = np.max(y)
+                #estimate piHalf pulse duration as time of maximum.
+                tau1 = x[0]
+                tau2 = x[-1]
+                p0 = [A/2, tau1, A/2, tau2]
+            elif len(self.paramNames) == 5:
+                A = np.max(y)
+                tau1 = x[0]
+                tau2 = x[-1]
+                offset = y[-1]
+                p0 = [A/2, tau1, A/2, tau2, offset]
+            if not self.silence:
+                print "Parameters have been estimated: ", p0
+
+        self.p0 = self.fitGeneral(x,y,p0)
