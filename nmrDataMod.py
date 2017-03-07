@@ -233,14 +233,14 @@ class nmrData(object):
                         delays1 = acqusFile.readline().strip()
                         delays2 = acqusFile.readline().strip()
                         self.parDictionary["d"] = [float(d) for d in delays1.strip().split(" ")] + [float(d) for d in delays2.strip().split(" ")]
-#<<<<<<< HEAD
+
                     elif line[0] == "##$L":
                         loopCounters = acqusFile.readline().strip()
                         self.parDictionary["l"] = [float(l) for l in loopCounters.strip().split(" ")]
-#=======
 
 
-#>>>>>>> 6307d0eecdfeedc77431bd9953c3e59f6ae81403
+
+
                     else:
                         self.parDictionary[line[0][2:].strip()] = line[1].strip()
 
@@ -895,6 +895,21 @@ class nmrData(object):
         phased = self.__phase01(spectrum, correction)
         objective = self.__entropy(phased, m) + self.__penalty(phased, gamma)
         return objective
+
+    def normalizeIntensity(self, fromPos, toPos, scaling = 1.0):
+        """Takes spectrum in fromPos, divides the intensities by number of scans
+        and receiver gain and writes the resulting spectrum to toPos. Useful for
+        comparing intensities of specta taken with different settings. Optional
+        parameter scaling can be used to correct for additional effects (e.g.
+        mass). Spectrum will be divided by this factor - higher scaling means
+        lower resulting intensity."""
+        self.checkToPos(toPos)
+        #delete whatever is in toPos:
+        self.allFid[toPos] = []
+        #scaling factor:
+        factor = float(self.parDictionary["$NS"])*float(self.parDictionary["$RG"])*scaling
+        for spectrum in self.allFid[fromPos]:
+            self.allFid[toPos].append([point/factor for point in spectrum])
 
 
 
