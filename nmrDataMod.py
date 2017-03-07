@@ -626,10 +626,19 @@ class nmrData(object):
         """
         i1, i2 = self.getIndices([start, stop], scale=scale)
 
+        #get the step in x-variable
+        if scale == "Hz":
+            step = np.abs(self.frequency[1] - self.frequency[0])
+        if scale == "ppm":
+            step = np.abs(self.ppmScale[1] - self.ppmScale[0])
+        else:
+            step = 1
+
+
         if part == "real":
-            retVal = np.sum(np.real(self.allFid[fromPos][index][i1:i2]))
+            retVal = np.sum(np.real(self.allFid[fromPos][index][i1:i2]))*step
         elif part == "magnitude":
-            retVal = np.sum(np.abs(self.allFid[fromPos][index][i1:i2]))
+            retVal = np.sum(np.abs(self.allFid[fromPos][index][i1:i2]))*step
 
         return retVal
 
