@@ -33,8 +33,9 @@ class Model(object):
         self.silence = True
         print self.silence
 
-    def fitGeneral(self, x, y, p0):
-        self.popt, self.pcov = curve_fit(self.model, np.array(x), np.array(y), p0 = p0)
+    def fitGeneral(self, x, y, p0, maxfev = 1400):
+
+        self.popt, self.pcov = curve_fit(self.model, np.array(x), np.array(y), p0 = p0, maxfev = maxfev)
 
         self.errors = self.getError(self.pcov, len(x) - len(p0))
         if not self.silence:
@@ -486,3 +487,57 @@ class doubleGaussianAmplitudesOnly(doubleGaussian):
     def fit(self, x, y, p0 = []):
         assert len(p0) == 2, "Initial parameters required."
         self.fitGeneral(x, y, p0, silence = True)
+
+
+class saturationRecovery2(Model):
+    """Two component saturation recovery. One single exponential,
+    and one stretched exponential. Offset is always included. """
+    def __init__(self, silence = True):
+        self.silence = silence
+        self.paramNames = ["B", "A1", "T1", "A2", "T2", "b2"]
+        self.model = self.saturationRecoveryOffset2
+
+
+    def saturationRecoveryOffset2(self, t, B, A1, T1, A2, T2, b2):
+        return B + A1*(1 - np.exp(-t/T1)) + A2*(1 - np.exp(-(t/T2)**b2))
+
+
+    def fit(self, x, y, p0 = [], maxfev = 1400):
+        if len(p0) == 0:
+            A = y[-1]-y[0]
+            B = y[0]
+            T12 = np.exp((np.log(x[0]) + np.log(x[-1]))/2)
+            p0 = [B, A/2, T12, A/2, T12, 1]
+            if not self.silence:
+                print "Parameters have been estimated: ", self.paramNames, p0
+
+
+
+        self.fitGeneral(x,y,p0, maxfev = maxfev)
+
+class saturationRecovery2exp(Model):
+    """Two component saturation recovery. Both are single exponential.
+    Offset is always included. """
+    def __init__(self, silence = True):
+        self.silence = silence
+        self.paramNames = ["B", "A1", "T1", "A2", "T2"]
+        self.model = self.saturationRecoveryOffset2exp
+
+
+    def saturationRecoveryOffset2exp(self, t, B, A1, T1, A2, T2):
+        return B + A1*(1 - np.exp(-t/T1)) + A2*(1 - np.exp(-t/T2))
+
+
+    def fit(self, x, y, p0 = [], maxfev = 1400):
+        if len(p0) == 0:
+            A = y[-1]-y[0]
+            B = y[0]
+            T1 = np.exp((2*np.log(x[0]) + np.log(x[-1]))/3)
+            T2 = np.exp((np.log(x[0]) + 2*np.log(x[-1]))/3)
+            p0 = [B, A/2, T1, A/2, T2]
+            if not self.silence:
+                print "Parameters have been estimated: ", self.paramNames, p0
+
+
+
+        self.fitGeneral(x,y,p0, maxfev = maxfev)
