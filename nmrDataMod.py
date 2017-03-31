@@ -30,7 +30,7 @@ class nmrData(object):
 
     supported type: 'Magritek', 'ntnmr', 'TopSpin', 'spinSight'
     """
-    def __init__(self, path, datatype, container=0, sizeTD1=0, process = False,  lb = 0, phase = 0, ls = 0, ft_only = [], debug = False, hiper_skip_footer = 0, hiper_skip_header = 3, endianess = "<"):
+    def __init__(self, path, datatype, container=0, sizeTD1=0, process = False,  lb = 0, phase = 0, ls = 0, zf = 0, ft_only = [], debug = False, hiper_skip_footer = 0, hiper_skip_header = 3, endianess = "<"):
         """ This reads the data """
         #plt.close()
         if datatype == '':
@@ -238,9 +238,6 @@ class nmrData(object):
                         loopCounters = acqusFile.readline().strip()
                         self.parDictionary["l"] = [float(l) for l in loopCounters.strip().split(" ")]
 
-
-
-
                     else:
                         self.parDictionary[line[0][2:].strip()] = line[1].strip()
 
@@ -275,31 +272,43 @@ class nmrData(object):
                 print "TD1: ", self.sizeTD1
                 print "Carrier:", self.carrier
 
+            # if self.is2D:
+            #     self.f = open(path + "/ser", mode='rb')
+            # else:
+            #     self.f = open(path + "fid", mode='rb')#
+            #           dataString = self.f.read(self.sizeTD2*2*self.sizeTD1*4)
+            #          if debug: print "len(dataString): ", len(dataString)
+            #         self.f.close()
+            #
+            #           # here we read the FID data from fid/ser file
+            #          # first convert the datasting into a list of numbers:
+            # if debug: print "Endianess: ", endianess
+            #     self.data = struct.unpack(endianess + 'i'*(self.sizeTD2*2*self.sizeTD1), dataString)
+
+            
             if self.is2D:
                 self.f = open(path + "/ser", mode='rb')
             else:
                 self.f = open(path + "fid", mode='rb')
+            
+            dataString = np.frombuffer(self.f.read(), dtype = endianess + "i4")
+            if debug: print "len(dataString) new: ", len(dataString)
 
-            dataString = self.f.read(self.sizeTD2*2*self.sizeTD1*4)
-            if debug: print "len(dataString): ", len(dataString)
+            self.data = dataString
+            self.sizeTD2 = len(self.data) / self.sizeTD1 / 2
 
             dwellTime = 1./self.sweepWidthTD2
             self.fidTime = np.linspace(0, (self.sizeTD2-1)*dwellTime, num = self.sizeTD2)
-
-            # here we read the FID data from fid/ser file
-            # first convert the datasting into a list of numbers:
-            if debug: print "Endianess: ", endianess
-            self.data = struct.unpack(endianess + 'i'*(self.sizeTD2*2*self.sizeTD1), dataString)
 
             # here we create one array of complex numbers for each of the FIDs
             # i runs overa all fids in a ser file, in case of a fid file i = 0
             # TD1 is number of FIDs, TD2 is number of datapoints in each FID
             for i in range(0,  self.sizeTD1):
+                #print "sizeTD2: ", self.sizeTD2
                 #print i
                 realPart = self.data[i*self.sizeTD2*2:(i+1)*self.sizeTD2*2:2]
                 imagPart = sp.multiply(self.data[i*self.sizeTD2*2+1:(i+1)*self.sizeTD2*2+1:2], 1j)
                 self.allFid[0].append(sp.add(realPart, imagPart))
-
 
             # here we read the experiment title (only the one stored in pdata/1):
             # could be made to read titles from all pdata folders (if needed)
@@ -313,8 +322,6 @@ class nmrData(object):
                     print "No title file."
                 else:
                     pass
-
-
 
         if datatype == 'spinsight':
             chStr = "" # first read the channel, if succesful read the carrier frequency.
@@ -431,7 +438,7 @@ class nmrData(object):
                 print "Data imported, Number of Experiments: ", self.sizeTD1
 
         if process == True:
-            self.process(ls = ls, lb = lb, phase = phase, ft_only = ft_only)
+            self.process(ls = ls, zf = zf, lb = lb, phase = phase, ft_only = ft_only)
 
 
     def offsetCorrection(self, fromPos, toPos, fraction = 0.75, whichFid = 0):
@@ -565,11 +572,13 @@ class nmrData(object):
         return linewidth
 
 
-    def phaseFirstOrder(self, fromPos, toPos, phi1, degree = False, noChangeOnResonance=False, pivot = 0, scale= "Hz"):
+    def phaseFirstOrder(self, fromPos, toPos, phi1, degree = True, noChangeOnResonance=False, pivot = 0, scale= "Hz"):
         """This should only be applied to Fourier transformed spectral data
         It will lead to a zero phase shift at the upper end of the spectrum and to a
         phase shift of phi1 at the lower end, linear interpolation inbetween.
         this is the spinsight convention.
+
+        If a pivot is provided the phase will not be changed at the pivot, but the total change accross the entire spectrum will still amount to phi1.
         """
         self.checkToPos(toPos)
         phaseValues = np.linspace(0,phi1,num=len(self.frequency))
@@ -735,7 +744,7 @@ class nmrData(object):
             #print "f0 is: ", f0
             self.ppmScale = (self.frequency + self.carrier - f0)/f0*1e6
 
-    def process(self, lb = 0, phase = 0, ls = 0, ft_only = []):
+    def process(self, lb = 0, zf = 0, phase = 0, ls = 0, ft_only = []):
         """Process routine for NMR data.
 
         lb: line broadening in Hz
@@ -745,6 +754,10 @@ class nmrData(object):
         self.lineBroadening(0,1,lb)
         self.phase(1,1,phase,degree=True)
         self.leftShift(1, 2, ls)
+
+        if zf > 0:
+            self.zeroFilling(2, 2, zf)
+            
         self.fourierTransform(2, 3, only = ft_only)
 
     def export(self, pos, count, filename, scale="Hz", xlim=[], complexType="r", fmt="%.3f"):
