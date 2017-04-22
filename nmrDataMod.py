@@ -285,12 +285,12 @@ class nmrData(object):
             # if debug: print "Endianess: ", endianess
             #     self.data = struct.unpack(endianess + 'i'*(self.sizeTD2*2*self.sizeTD1), dataString)
 
-            
+
             if self.is2D:
                 self.f = open(path + "/ser", mode='rb')
             else:
                 self.f = open(path + "fid", mode='rb')
-            
+
             dataString = np.frombuffer(self.f.read(), dtype = endianess + "i4")
             if debug: print "len(dataString) new: ", len(dataString)
 
@@ -599,7 +599,7 @@ class nmrData(object):
     def leftShift(self, fromPos, toPos, shiftPoints):
         self.checkToPos(toPos)
         self.allFid[toPos] = [self.allFid[fromPos][k][shiftPoints:] for k in range(len(self.allFid[fromPos]))]
-        self.fidTime = self.fidTime[shiftPoints:]
+        self.fidTime = self.fidTime[:len(self.fidTime) - shiftPoints]
         #self.frequency = np.linspace(-self.sweepWidthTD2/2,self.sweepWidthTD2/2,len(self.fidTime))
 
     def zeroFilling(self, fromPos, toPos, totalPoints):
@@ -757,7 +757,7 @@ class nmrData(object):
 
         if zf > 0:
             self.zeroFilling(2, 2, zf)
-            
+
         self.fourierTransform(2, 3, only = ft_only)
 
     def export(self, pos, count, filename, scale="Hz", xlim=[], complexType="r", fmt="%.3f"):
