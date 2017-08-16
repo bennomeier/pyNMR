@@ -169,12 +169,15 @@ class nmrData(object):
                 self.allFid[0].append(sp.add(realPart, imagPart))
 
         if datatype == 'TopSpin':
+            if debug:
+                print "hi, this is debug for the TopSpin datatype"
             #The acqus file containts the spectral width SW_h and 2*SizeTD2 as ##$TD
             #The acqu2s file contains TD1 as ##$TD
             directory = os.path.dirname(path)
             acqusFile = open(directory + "/acqus", mode='r')
 
-            #print "Importing TopSpin data"
+            if debug:
+                print "Importing TopSpin data"
 
             #check if acqu2sfile exists, if yes, experiment is 2D!
             if os.path.isfile(directory + "/acqu2s"):
@@ -185,12 +188,17 @@ class nmrData(object):
                 self.is2D = False
                 self.sizeTD1 = 1
 
-            #print "2D: ", self.is2D
+            if debug:
+                print "2D: ", self.is2D
 
             #this could be crafted into a common routine which gives names of parameters
             #parameters and works the same for e.g., spinsight and topspin
+            if debug:
+                print "reading acqus file"
             count = 0
             while True:
+                if debug:
+                    print "count = ", count
                 #try:
                 count += 1
                 line = acqusFile.readline().strip()
