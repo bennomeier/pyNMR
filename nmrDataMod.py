@@ -202,6 +202,8 @@ class nmrData(object):
                 #try:
                 count += 1
                 line = acqusFile.readline().strip()
+                if debug:
+                    print line
                 if "=" in line:
                     line = line.split("=")
                 elif len(line) > 0:
@@ -247,12 +249,22 @@ class nmrData(object):
                         self.parDictionary["l"] = [float(l) for l in loopCounters.strip().split(" ")]
 
                     else:
-                        self.parDictionary[line[0][2:].strip()] = line[1].strip()
+                        if debug:
+                            print "the catch all else"
+                        if len(line) > 1:
+                            self.parDictionary[line[0][2:].strip()] = line[1].strip()
+                        else:
+                            if debug:
+                                print "skipped too short line"
 
 
             if self.is2D == True:
+                if debug:
+                    print "reading acqu2s file"
                 count = 0
                 while True:
+                    if debug:
+                        print "count = ", count
                     #try:
                     count += 1
                     line = acqu2sFile.readline().strip()
