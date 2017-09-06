@@ -589,3 +589,57 @@ class exponentialDecay2comp(Model):
                 print "Parameters have been estimated: ", p0
 
         self.p0 = self.fitGeneral(x,y,p0)
+
+
+
+class o17waterMBBA(Model):
+    """This class represents 17O spectrum of H2O@C60 dissolved
+    in a nematic liquid crystal (MBBA). The spectrum consists of
+    5 lines (due to quadrupole splitting), each of these is split
+    into triplet with 1:2:1 intentsity ratio (O-H coupling, J and dd).
+    Model parameters are center frequency, quadrupole and O-H splittings,
+    relative intensities of the 5 quadrupole split lines, and linewidths."""
+
+    def __init__(self, silence = True):
+        self.silence = silence
+        self.paramNames = ["centerFreq", "amplitude0", "amplitude1",
+        "amplitude2", "half-width0", "half-width1",
+        "half-width2", "splittingQ", "splittingOH"]
+        self.model = self.model1
+
+    def lineLorentzian(self, f, f0, amp, hwhm):
+        numerator =  hwhm**2
+        denominator = ( f - f0 )**2 + hwhm**2
+        y = amp*(numerator/denominator)
+        return y
+
+    def triplet(self, f, f0, amp, hwhm, split):
+        line1 = self.lineLorentzian(f, f0 - split, amp/2, hwhm)
+        line2 = self.lineLorentzian(f, f0        , amp  , hwhm)
+        line3 = self.lineLorentzian(f, f0 + split, amp/2, hwhm)
+        return line1 + line2 + line3
+
+
+    def model1(self, f, f0, amp0, amp1, amp2,
+               hwhm0, hwhm1, hwhm2, splitQ, splitOH):
+        """A Model for fitting 17O spectrum of H2O@C60 in MBBA.
+        Amplitudes and widhts are numbered from central (0) to
+        outer quadrupole transitions (2)
+        """
+        triplet1 = self.triplet(f, f0 - 2*splitQ, amp2, hwhm2, splitOH)
+        triplet2 = self.triplet(f, f0 - 1*splitQ, amp1, hwhm1, splitOH)
+        triplet3 = self.triplet(f, f0           , amp0, hwhm0, splitOH)
+        triplet4 = self.triplet(f, f0 + 1*splitQ, amp1, hwhm1, splitOH)
+        triplet5 = self.triplet(f, f0 + 2*splitQ, amp2, hwhm2, splitOH)
+        y = triplet1 + triplet2 + triplet3 + triplet4 + triplet5
+        return y
+
+
+
+    def fit(self, x, y, p0 = []):
+        if len(p0) == 0:
+            p0 = [0,np.max(y), np.max(y)/2, np.max(y)/4,
+                  100, 200, 300, 10000, 150]
+            if not self.silence:
+                print "Parameters have been estimated: ", p0
+        self.p0 = self.fitGeneral(x,y,p0)
