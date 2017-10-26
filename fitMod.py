@@ -643,3 +643,64 @@ class o17waterMBBA(Model):
             if not self.silence:
                 print "Parameters have been estimated: ", p0
         self.p0 = self.fitGeneral(x,y,p0)
+
+class o17waterISO(Model):
+    """This class represents 1H or 17O spectrum of H2O@C60 dissolved
+    in an isotropic solvent. The 1H spectrum consists of
+    6 lines (due to J coupling to 17O nucleus) with 3 different linewidths: one
+    for each |m_17O|. All six lines have the same intensity.
+    The 17O spectrum consits of 3 lines with intensity ratio 1:2:1 and
+    two different linewidths.
+    Nucleus is either 1H or 17O (string). """
+
+    def __init__(self, nucleus = "1H", silence = True):
+        assert nucleus == "1H" or nucleus == "17O", "nucleus must be 1H or 17O"
+        self.silence = silence
+        self.nucleus = nucleus
+        if nucleus == "1H":
+            self.paramNames = ["centerFreq", "J", "amplitude",
+            "half-width1", "half-width2", "half-width3"]
+            self.model = self.model1
+        elif nucleus == "17O":
+            self.paramNames = ["centerFreq", "J", "amplitude",
+            "half-width0", "half-width1"]
+            self.model = self.model17
+
+    def lineLorentzian(self, f, f0, amp, hwhm):
+        numerator =  hwhm
+        denominator = (( f - f0 )**2 + hwhm**2)*np.pi
+        y = amp*(numerator/denominator)
+        return y
+
+    def model1(self, f, f0, J, amp, hw1, hw2, hw3):
+        """model for 1H spectrum: 6 equidistant lines,
+        equal intensities, 3 different widths, symmetric around f0"""
+
+        #list of half widths
+        hw = [0,hw1, hw2, hw3]
+        y = 0
+        for m in [1,2,3]:
+            y +=  self.lineLorentzian(f, f0 + J*m - J/2.0, amp, hw[m])
+            y +=  self.lineLorentzian(f, f0 - J*m + J/2.0, amp, hw[m])
+        return y
+
+    def model17(self, f, f0, J, amp, hw0, hw1):
+        """model for 17O spectrum: 1:2:1 triplet, two different linewidths"""
+        hw = [hw0, hw1]
+        y = 0
+        for m in [0,1]:
+            y += self.lineLorentzian(f, f0 + m*J, amp, hw[m])
+            y += self.lineLorentzian(f, f0 - m*J, amp, hw[m])
+        return y
+
+    def fit(self, x, y, p0 = []):
+        if len(p0) == 0:
+            if self.nucleus == "1H":
+                p0 = [0,78,1,20,20,20]
+            if self.nucleus == "17O":
+                p0 = [0,78,1,20,20]
+
+
+            if not self.silence:
+                print "Parameters have been estimated: ", p0
+        self.p0 = self.fitGeneral(x,y,p0)
