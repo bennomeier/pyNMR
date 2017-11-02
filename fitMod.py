@@ -606,12 +606,13 @@ class o17waterMBBA(Model):
         "amplitude2", "half-width0", "half-width1",
         "half-width2", "splittingQ", "splittingOH"]
         self.model = self.model1
+        self.lineLorentzian = lorentz
 
-    def lineLorentzian(self, f, f0, amp, hwhm):
-        numerator =  hwhm**2
-        denominator = ( f - f0 )**2 + hwhm**2
-        y = amp*(numerator/denominator)
-        return y
+    #def lineLorentzian(self, f, f0, amp, hwhm):
+    #    numerator =  hwhm**2
+    #    denominator = ( f - f0 )**2 + hwhm**2
+    #    y = amp*(numerator/denominator)
+    #    return y
 
     def triplet(self, f, f0, amp, hwhm, split):
         line1 = self.lineLorentzian(f, f0 - split, amp/2, hwhm)
@@ -657,6 +658,7 @@ class o17waterISO(Model):
         assert nucleus == "1H" or nucleus == "17O", "nucleus must be 1H or 17O"
         self.silence = silence
         self.nucleus = nucleus
+        self.lineLorentzian = lorentz
         if nucleus == "1H":
             self.paramNames = ["centerFreq", "J", "amplitude",
             "half-width1", "half-width2", "half-width3"]
@@ -666,11 +668,11 @@ class o17waterISO(Model):
             "half-width0", "half-width1"]
             self.model = self.model17
 
-    def lineLorentzian(self, f, f0, amp, hwhm):
-        numerator =  hwhm
-        denominator = (( f - f0 )**2 + hwhm**2)*np.pi
-        y = amp*(numerator/denominator)
-        return y
+    #def lineLorentzian(self, f, f0, amp, hwhm):
+    #    numerator =  hwhm
+    #    denominator = (( f - f0 )**2 + hwhm**2)*np.pi
+    #    y = amp*(numerator/denominator)
+    #    return y
 
     def model1(self, f, f0, J, amp, hw1, hw2, hw3):
         """model for 1H spectrum: 6 equidistant lines,
@@ -704,3 +706,20 @@ class o17waterISO(Model):
             if not self.silence:
                 print "Parameters have been estimated: ", p0
         self.p0 = self.fitGeneral(x,y,p0)
+
+
+# lorentz lineshape, this is used repeatedly so it is a good idea
+# to have one common definition
+
+def lorentz(f, f0, amp, hwhm):
+    """Lorentzian lineshape with normalised intensity.
+    Parameters:
+    f0 is position of the maximum,
+    amp is integral intensity of the line,
+    hwhm is half width at half maximum """
+    numerator =  hwhm
+    denominator = (( f - f0 )**2 + hwhm**2)*np.pi
+    y = amp*(numerator/denominator)
+    return y
+
+# end of lorentz lineshape
