@@ -18,7 +18,8 @@ import fwhm
 import types
 from scipy import stats
 from scipy import optimize
-reload(fwhm)
+import imp
+imp.reload(fwhm)
 
 
 class nmrData(object):
@@ -34,7 +35,7 @@ class nmrData(object):
         """ This reads the data """
         #plt.close()
         if datatype == '':
-            print "No Datatype - Setting it to ntnmr"
+            print("No Datatype - Setting it to ntnmr")
             datatype = "ntnmr"
 
         self.carrier = 0
@@ -46,7 +47,7 @@ class nmrData(object):
 
         self.parDictionary = {}
 
-        if debug: print "The datatype is {0}".format(datatype)
+        if debug: print("The datatype is {0}".format(datatype))
 
         if datatype == "Hiper":
             """Hiper EPR Data import for EPR experiments at St Andrews, UK.
@@ -61,11 +62,11 @@ class nmrData(object):
             iData = data[:, 1]
             qData = data[:, 2]
             self.sizeTD2 = len(qData)
-            if debug: print "sizeTD2: ", self.sizeTD2
+            if debug: print("sizeTD2: ", self.sizeTD2)
 
             dwellTime = (timeList[1] - timeList[0])*1e-9
             self.sweepWidthTD2 = int(1. /dwellTime)
-            if debug: print "SweepWidthTD2: ", self.sweepWidthTD2
+            if debug: print("SweepWidthTD2: ", self.sweepWidthTD2)
 
             self.allFid[0].append(iData + 1j*qData)
             self.fidTime = np.linspace(0, (self.sizeTD2-1)*dwellTime, num = self.sizeTD2)
@@ -85,7 +86,7 @@ class nmrData(object):
                     if "=" in line:
                         line = line.split("=")
                     elif len(line) == 0 or count > 1000:
-                        if debug: print "Ended dreading acqus file at line ", count
+                        if debug: print("Ended dreading acqus file at line ", count)
                         break
                     else:
                         next
@@ -95,20 +96,20 @@ class nmrData(object):
 
 
                 self.sweepWidthTD2 = int(1./(float(self.parDictionary["dwellTime"])*1e-6))
-                if debug: print "SweepWidthTD2: ", self.sweepWidthTD2
+                if debug: print("SweepWidthTD2: ", self.sweepWidthTD2)
 
 
             if os.path.isfile(path + "/data.1d"):
                 f = open(path + "/data.1d", "rb")
 
                 f.seek(12)
-                print "Format: ", struct.unpack('<i', f.read(4))[0]
+                print("Format: ", struct.unpack('<i', f.read(4))[0])
 
                 #get this information out of the acqu file.
                 f.seek(16)
                 self.sizeTD2 = struct.unpack('<i', f.read(4))[0]
 
-                print "Size TD2: ", self.sizeTD2
+                print("Size TD2: ", self.sizeTD2)
 
                 f.seek(32)
                 dwellTime = 1./self.sweepWidthTD2
@@ -130,15 +131,15 @@ class nmrData(object):
                 f = open(path + "/data.2d", "rb")
 
                 f.seek(12)
-                print "Format: ", struct.unpack('<i', f.read(4))[0]
+                print("Format: ", struct.unpack('<i', f.read(4))[0])
 
                 #get this information out of the acqu file.
                 f.seek(16)
                 self.sizeTD2 = struct.unpack('<i', f.read(4))[0]
                 self.sizeTD1 = struct.unpack('<i', f.read(4))[0]
 
-                print "Size TD2: ", self.sizeTD2
-                print "Size TD1: ", self.sizeTD1
+                print("Size TD2: ", self.sizeTD2)
+                print("Size TD1: ", self.sizeTD1)
 
                 f.seek(32)
                 dwellTime = 1./self.sweepWidthTD2
@@ -155,7 +156,7 @@ class nmrData(object):
                 self.fidTime = np.linspace(0, (self.sizeTD2-1)*dwellTime, num = self.sizeTD2)
 
             else:
-                print "No 1D file found."
+                print("No 1D file found.")
 
         if datatype == 'TopSpinOld':
             self.f = open(path, mode='rb')
@@ -170,14 +171,14 @@ class nmrData(object):
 
         if datatype == 'TopSpin':
             if debug:
-                print "hi, this is debug for the TopSpin datatype"
+                print("hi, this is debug for the TopSpin datatype")
             #The acqus file containts the spectral width SW_h and 2*SizeTD2 as ##$TD
             #The acqu2s file contains TD1 as ##$TD
             directory = os.path.dirname(path)
             acqusFile = open(directory + "/acqus", mode='r')
 
             if debug:
-                print "Importing TopSpin data"
+                print("Importing TopSpin data")
 
             #check if acqu2sfile exists, if yes, experiment is 2D!
             if os.path.isfile(directory + "/acqu2s"):
@@ -189,27 +190,27 @@ class nmrData(object):
                 self.sizeTD1 = 1
 
             if debug:
-                print "2D: ", self.is2D
+                print("2D: ", self.is2D)
 
             #this could be crafted into a common routine which gives names of parameters
             #parameters and works the same for e.g., spinsight and topspin
             if debug:
-                print "reading acqus file"
+                print("reading acqus file")
             count = 0
             while True:
                 if debug:
-                    print "count = ", count
+                    print("count = ", count)
                 #try:
                 count += 1
                 line = acqusFile.readline().strip()
                 if debug:
-                    print line
+                    print(line)
                 if "=" in line:
                     line = line.split("=")
                 elif len(line) > 0:
                     line = line.split(" ")
                 elif len(line) == 0 or count > 1000:
-                    if debug: print "Ended reading acqus file at line ", count
+                    if debug: print("Ended reading acqus file at line ", count)
                     break
                 else:
                     next
@@ -219,13 +220,13 @@ class nmrData(object):
                     #this line might be chopping the last digit off....
                     #self.sweepWidthTD2 = int(float(line[1][:-1]))
                     self.sweepWidthTD2 = int(float(line[1]))
-                    if debug: print "SweepWidthTD2: ", self.sweepWidthTD2
+                    if debug: print("SweepWidthTD2: ", self.sweepWidthTD2)
                 elif line[0] == "##$TD":
                     self.sizeTD2 = int(line[1])/2
-                    if debug: print "sizeTD2: ", self.sizeTD2
+                    if debug: print("sizeTD2: ", self.sizeTD2)
                 elif line[0] == "##$SFO1":
                     self.carrier = float(line[1])*1e6
-                    if debug: print "SFO1:", self.carrier
+                    if debug: print("SFO1:", self.carrier)
 
                 elif len(line) == 0:
                     break
@@ -250,28 +251,28 @@ class nmrData(object):
 
                     else:
                         if debug:
-                            print "the catch all else"
+                            print("the catch all else")
                         if len(line) > 1:
                             self.parDictionary[line[0][2:].strip()] = line[1].strip()
                         else:
                             if debug:
-                                print "skipped too short line"
+                                print("skipped too short line")
 
 
             if self.is2D == True:
                 if debug:
-                    print "reading acqu2s file"
+                    print("reading acqu2s file")
                 count = 0
                 while True:
                     if debug:
-                        print "count = ", count
+                        print("count = ", count)
                     #try:
                     count += 1
                     line = acqu2sFile.readline().strip()
                     if "=" in line:
                         line = line.split("=")
                     elif len(line) == 0 or count > 1000:
-                        if debug: print "Ended reading acqu2s file at line ", count
+                        if debug: print("Ended reading acqu2s file at line ", count)
                         break
                     else:
                         next
@@ -279,18 +280,18 @@ class nmrData(object):
                     #print line[0]
                     if line[0] == "##$TD" and self.sizeTD1 == 0:
                         self.sizeTD1 = int(line[1])
-                        if debug: print "sizeTD1: ", self.sizeTD1
+                        if debug: print("sizeTD1: ", self.sizeTD1)
                     elif len(line) == 0:
                         break
 
                 if os.path.isfile(directory + "/vdlist"):
-                    if debug: print "VD File exists!"
+                    if debug: print("VD File exists!")
                     self.vdList = np.loadtxt(directory + "/vdlist")
 
             if debug:
-                print "TD2: ", self.sizeTD2
-                print "TD1: ", self.sizeTD1
-                print "Carrier:", self.carrier
+                print("TD2: ", self.sizeTD2)
+                print("TD1: ", self.sizeTD1)
+                print("Carrier:", self.carrier)
 
             # if self.is2D:
             #     self.f = open(path + "/ser", mode='rb')
@@ -312,10 +313,10 @@ class nmrData(object):
                 self.f = open(path + "fid", mode='rb')
 
             dataString = np.frombuffer(self.f.read(), dtype = endianess + "i4")
-            if debug: print "len(dataString) new: ", len(dataString)
+            if debug: print("len(dataString) new: ", len(dataString))
 
             self.data = dataString
-            self.sizeTD2 = len(self.data) / self.sizeTD1 / 2
+            self.sizeTD2 = int(len(self.data) / self.sizeTD1 / 2)
 
             dwellTime = 1./self.sweepWidthTD2
             self.fidTime = np.linspace(0, (self.sizeTD2-1)*dwellTime, num = self.sizeTD2)
@@ -339,7 +340,7 @@ class nmrData(object):
                 self.title = [line.strip() for line in title]
             except:
                 if debug:
-                    print "No title file."
+                    print("No title file.")
                 else:
                     pass
 
@@ -348,7 +349,7 @@ class nmrData(object):
             carrierStr = "carrier string not assigned"
             self.is2D = False
             dataFile = path + "/data"
-            print "dataFile is: ", dataFile
+            print("dataFile is: ", dataFile)
             self.f = open(dataFile, mode='rb')
             self.f.seek(0)
 
@@ -359,14 +360,14 @@ class nmrData(object):
                 count += 1
                 try:
                     line = self.fACQ.readline().strip().split("=")
-                    print line
+                    print(line)
                     if line[0] == "ch1":
                         chStr = line[1]
                         carrierStr = "sf" + chStr
                     elif line[0] == carrierStr:
                         self.carrier = float(line[1][:-1])*1e6
                     if line[0] == "dw":
-                        print "Hellop: ", line[1]
+                        print("Hellop: ", line[1])
                         self.sweepWidthTD2 = int(1/float(line[1][:-1]))
                         #print "sweepWidthTD2: ", self.sweepWidthTD2
                     elif line[0] == "array_num_values_pd" or line[0] == "array_num_values_tau" or line[0] == "array_num_values_pw90X" or line[0] == "array_num_values_tau1":
@@ -383,25 +384,25 @@ class nmrData(object):
                 self.sizeTD2 = int((os.stat(dataFile)).st_size)/8/self.sizeTD1
             else:
                 self.sizeTD2 = (int((os.stat(dataFile)).st_size))/8
-                print "sizeTD2 is: ", self.sizeTD2
+                print("sizeTD2 is: ", self.sizeTD2)
                 self.sizeTD1 = 1
-                print "sizeTD1 is: ", self.sizeTD1
+                print("sizeTD1 is: ", self.sizeTD1)
 
             #print "Length 1: ", self.sizeTD1*self.sizeTD2*2
             #print "Length 2: ", len(self.f.read(self.sizeTD1*self.sizeTD2*2*4))
             self.f.seek(0)
             self.data = struct.unpack('>' + 'i'*self.sizeTD1*self.sizeTD2*2, self.f.read(self.sizeTD1*self.sizeTD2*2*4))
-            print "Length of data: ", len(self.data)
+            print("Length of data: ", len(self.data))
 
             for i in range(self.sizeTD1):
-                print i
+                print(i)
                 realPart = np.array(self.data[i*self.sizeTD2:(i+1)*self.sizeTD2])
                 imagPart = np.array(self.data[self.sizeTD1*self.sizeTD2+i*self.sizeTD2:self.sizeTD1*self.sizeTD2+(i+1)*self.sizeTD2])
-                print "Length realPart: ", len(realPart)
-                print "Length imagPart: ", len(imagPart)
+                print("Length realPart: ", len(realPart))
+                print("Length imagPart: ", len(imagPart))
                 self.allFid[0].append(realPart + 1j*imagPart)
 
-            print "sizeTD1: ", self.sizeTD1
+            print("sizeTD1: ", self.sizeTD1)
             self.fidTime = np.linspace(0, (self.sizeTD2-1)/float(self.sweepWidthTD2), self.sizeTD2)
 
 
@@ -427,12 +428,12 @@ class nmrData(object):
             #SpectralFrequencyTD2/Anregungsfrequenz
             self.f.seek(104)
             self.spectralFrequencyTD2 = struct.unpack('<d', self.f.read(8))[0]*1e6
-            print 'spec TD2 is', self.spectralFrequencyTD2
+            print('spec TD2 is', self.spectralFrequencyTD2)
 
             #SpectralFrequencyTD1
             self.f.seek(112)
             self.spectralFrequencyTD1 = struct.unpack('<d', self.f.read(8))[0]
-            print "TD1 is", self.sizeTD1
+            print("TD1 is", self.sizeTD1)
 
             #SweepWidthTD2, SampleRate?
             self.f.seek(260)
@@ -455,7 +456,7 @@ class nmrData(object):
                 realPart = self.data[i*self.sizeTD2*2:(i+1)*self.sizeTD2*2:2]
                 imagPart = sp.multiply(self.data[i*self.sizeTD2*2+1:(i+1)*self.sizeTD2*2+1:2], 1j)
                 self.allFid[0].append(sp.add(realPart, imagPart))
-                print "Data imported, Number of Experiments: ", self.sizeTD1
+                print("Data imported, Number of Experiments: ", self.sizeTD1)
 
         if process == True:
             self.process(ls = ls, zf = zf, lb = lb, phase = phase, ft_only = ft_only)
@@ -467,27 +468,27 @@ class nmrData(object):
         l = len(self.allFid[fromPos][0])
         startOffset = int(fraction*l)
 
-        print "fid: ", whichFid
-        print "startOffset: ", startOffset
+        print("fid: ", whichFid)
+        print("startOffset: ", startOffset)
 
-        print "len allFid: ", len(self.allFid)
+        print("len allFid: ", len(self.allFid))
         #        print "len allFid[0]: ", len(self.allFid[
-        print "len allFid[0]: ", len(self.allFid[0])
-        print "==============================================================="
-        print "len allFid[0][" + str(whichFid) + "]: ", len(self.allFid[0][0])
+        print("len allFid[0]: ", len(self.allFid[0]))
+        print("===============================================================")
+        print("len allFid[0][" + str(whichFid) + "]: ", len(self.allFid[0][0]))
 
 
         oReal = np.mean(np.real(self.allFid[fromPos][whichFid][startOffset:]))
         stdReal = np.std(np.real(self.allFid[fromPos][whichFid][startOffset:])-oReal)
 
-        print "offsetReal: ", oReal
-        print "stdReal: ", stdReal
+        print("offsetReal: ", oReal)
+        print("stdReal: ", stdReal)
 
         oImag = np.mean(np.imag(self.allFid[fromPos][whichFid][startOffset:]))
         stdImag = np.std(np.imag(self.allFid[fromPos][whichFid][startOffset:])-oImag)
 
-        print "offsetImag: ", oImag
-        print "stdImag: ", stdImag
+        print("offsetImag: ", oImag)
+        print("stdImag: ", stdImag)
 
 
         self.allFid[toPos] = [np.real(fid) - oReal +1j*(np.imag(fid) - oImag) for fid in self.allFid[fromPos]]
@@ -587,7 +588,7 @@ class nmrData(object):
 
         linewidth = fwhm.fwhm(x, y)
 
-        if debug: print("Linewidth: {} Hz".format(linewidth))
+        if debug: print(("Linewidth: {} Hz".format(linewidth)))
 
         return linewidth
 
@@ -606,7 +607,7 @@ class nmrData(object):
         if noChangeOnResonance == True:
             pivot = 0
         elif pivot !=0:
-            print "Using pivot for first order phase correction"
+            print("Using pivot for first order phase correction")
             index = self.getIndex(pivot, scale= scale)
             phaseValues = phaseValues - phaseValues[index]
             0
@@ -633,7 +634,7 @@ class nmrData(object):
             spectra.extend(self.getPartialSpectrum(fromPos, index, start, stop, scale = scale))
 
         if returnX:
-            x = np.array(range(len(spectra))) * self.sizeTD1 / float(len(spectra)) + 0.5
+            x = np.array(list(range(len(spectra)))) * self.sizeTD1 / float(len(spectra)) + 0.5
             return x, spectra
         else:
             return spectra
@@ -727,7 +728,7 @@ class nmrData(object):
     def inverseFourierTransform(self, fromPos, toPos):
           #fid = ifft(ifftshift(spectrum))
           # fid = fid[0:len(fid/2)]
-          print "This function has not been checked!"
+          print("This function has not been checked!")
 
     def getPPMScale(self, reference=[], scale = 'offset'):
         """
@@ -806,12 +807,12 @@ class nmrData(object):
 
 
         if complexType == "r":
-            data = zip(xData[start:stop], yDataR[start:stop])
+            data = list(zip(xData[start:stop], yDataR[start:stop]))
 
         np.savetxt(filename, data, fmt=fmt, delimiter="\t")
 
     def printTitle(self):
-        for line in self.title: print line
+        for line in self.title: print(line)
 
 
 
@@ -832,7 +833,7 @@ class nmrData(object):
 
         assert start < stop, "start should be smaller than stop"
         assert penalty > 0, "penalty shoud be possitive"
-        assert type(derivative) is types.IntType, "derivative should be a (small possitive) integer"
+        assert type(derivative) is int, "derivative should be a (small possitive) integer"
         assert derivative > 0,  "need derivative > 0"
 
         spectrum = np.array(self.allFid[fromPos][index])
@@ -865,8 +866,8 @@ class nmrData(object):
 
         if debug:
             spectrum = self.__phase01(spectrum, res.x)
-            print 'penalty change:', self.__penalty(spectrum, penalty) - penalty_start
-            print 'entropy change:', self.__entropy(spectrum, derivative) - entropy_start
+            print('penalty change:', self.__penalty(spectrum, penalty) - penalty_start)
+            print('entropy change:', self.__entropy(spectrum, derivative) - entropy_start)
 
         return res.x
 
@@ -895,7 +896,7 @@ class nmrData(object):
     def __entropy(self, spectrum, m):
         """Calculates get m-th derivative of the real part of spectrum and
         returns entropy of its absolute value. """
-        assert type(m) is types.IntType, 'm should be a (possitive) integer'
+        assert type(m) is int, 'm should be a (possitive) integer'
         assert m > 0, 'need m > 0'
 
         #get the real part of the spectrum
@@ -969,6 +970,6 @@ class container(object):
 
 
 if __name__ == "__main__":
-      print nmrData.__doc__
+      print(nmrData.__doc__)
 
       nmrData = nmrData(2011051010, 'TopSpin')

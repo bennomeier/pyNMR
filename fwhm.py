@@ -51,22 +51,22 @@ def fwhm(x,y):
         linewidth = xPoints[1] - xPoints[0]
     else:
         linewidth = None
-        print sorted(xPoints)
+        print(sorted(xPoints))
     
     return linewidth
 
 def main():
     """Use a Gaussian to test the fwhm() routine"""
     
-    print "TEST\n============================"
+    print("TEST\n============================")
     x = np.linspace(-10,10,100)
     sigma = 2
     y = 3.1*np.exp(-x**2/(2*sigma**2))
     fwhmVal = fwhm(x,y)
 
-    print "The following two values should match closely."
-    print "Computed value: " + str(fwhmVal)
-    print "Analytical result for the Gaussian: " + str(2*np.sqrt(2*np.log(2))*2)
+    print("The following two values should match closely.")
+    print("Computed value: " + str(fwhmVal))
+    print("Analytical result for the Gaussian: " + str(2*np.sqrt(2*np.log(2))*2))
 
 if __name__ == "__main__":
     main()

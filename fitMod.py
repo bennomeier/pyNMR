@@ -1,4 +1,4 @@
-from __future__ import division
+
 from scipy.optimize import curve_fit
 import numpy as np
 from scipy.stats import t
@@ -31,7 +31,7 @@ class Model(object):
         self.pcov = []
         self.errors = []
         self.silence = True
-        print self.silence
+        print(self.silence)
 
     def fitGeneral(self, x, y, p0, maxfev = 1400):
 
@@ -40,7 +40,7 @@ class Model(object):
         self.errors = self.getError(self.pcov, len(x) - len(p0))
         if not self.silence:
             for k in range(len(self.popt)):
-                print self.paramNames[k] + ": " + str(self.popt[k])  + "(" + str(self.errors[k]) + ")"
+                print(self.paramNames[k] + ": " + str(self.popt[k])  + "(" + str(self.errors[k]) + ")")
 
 
     def getError(self,var_matrix, dof):
@@ -80,7 +80,7 @@ class t1InversionRecovery(Model):
             elif len(self.paramNames) == 3:
                 p0 = [np.max(y), np.max(x)/2, 2]
             if not self.silence:
-                print "Parameters have been estimated: ", p0
+                print("Parameters have been estimated: ", p0)
         self.p0 = self.fitGeneral(x,y,p0)
 
 
@@ -140,7 +140,7 @@ class polarizability(Model):
             elif len(self.paramNames) == 1:
                 p0 = [np.min(y)]
             if not self.silence:
-                print "Parameters have been estimated: ", p0
+                print("Parameters have been estimated: ", p0)
         self.fitGeneral(x,y, p0)
 
 
@@ -188,7 +188,7 @@ class nutationCurve(Model):
                 offset = y[-1]
                 p0 = [A, tau, offset]
             if not self.silence:
-                print "Parameters have been estimated: ", p0
+                print("Parameters have been estimated: ", p0)
         self.p0 = self.fitGeneral(x,y,p0)
         return self.p0
 
@@ -199,10 +199,10 @@ class exponentialDecay(Model):
         """
         self.silence = silence
         if not self.silence:
-            print "We're going to the zoo."
+            print("We're going to the zoo.")
         self.outputString = ""
         if not self.silence:
-            print "Offset value is: ", offset
+            print("Offset value is: ", offset)
         if offset == False:
             self.paramNames = ["A", "tau"]
             self.model = self.exponentialDecay
@@ -210,7 +210,7 @@ class exponentialDecay(Model):
             self.paramNames = ["A", "tau", "offset"]
             self.model = self.exponentialDecayOffset
         if not self.silence:
-            print self.paramNames
+            print(self.paramNames)
 
     def exponentialDecay(self, t, A, tau):
         """A model for fitting an exponential Decay"""
@@ -233,7 +233,7 @@ class exponentialDecay(Model):
                 offset = y[-1]
                 p0 = [A, tau, offset]
             if not self.silence:
-                print "Parameters have been estimated: ", p0
+                print("Parameters have been estimated: ", p0)
 
         self.p0 = self.fitGeneral(x,y,p0)
 
@@ -264,7 +264,7 @@ class secondOrder2(Model):
             k = 0.1
             p0 = [A, B, k]
         if not self.silence:
-            print "p0 is: ", p0
+            print("p0 is: ", p0)
         self.fitGeneral(x,y,p0)
 
 
@@ -289,7 +289,7 @@ class curie(Model):
 
             p0 = [A, B]
             if not self.silence:
-                print "Parameters have been estimated: ", p0
+                print("Parameters have been estimated: ", p0)
 
         self.fitGeneral(x,y,p0)
 
@@ -312,7 +312,7 @@ class curieWeiss(Model):
             T_c = 1
             p0 = [A, C, T_c]
             if not self.silence:
-                print "Parameters have been estimated: ", p0
+                print("Parameters have been estimated: ", p0)
 
         self.fitGeneral(x,y,p0)
 
@@ -378,13 +378,13 @@ class saturationRecovery(Model):
             k = 1
             p0 = [A, B, k]
             if not self.silence:
-                print "Parameters have been estimated: ", p0
+                print("Parameters have been estimated: ", p0)
         elif len(p0) == 0 and self.offset == False:
             A = y[0]-y[-1]
             k = 1
             p0 = [A, k]
             if not self.silence:
-                print "Parameters have been estimated: ", p0
+                print("Parameters have been estimated: ", p0)
 
         self.fitGeneral(x,y,p0)
 
@@ -428,7 +428,7 @@ class liqXtalHaller(Model):
             scale = 1
             p0 = [transitionTemperature, temperatureShift, exponent, scale]
             if not self.silence:
-                print "Parameters have been estimated: ", p0
+                print("Parameters have been estimated: ", p0)
 
 
         self.fitGeneral(x,y,p0)
@@ -466,7 +466,7 @@ class doubleGaussian(Model):
     def fit(self,x,y,p0 = []):
         assert len(p0) == 6, "Initial parameters required!"
         if not self.silence:
-            print "p0 is: ", p0
+            print("p0 is: ", p0)
         self.fitGeneral(x,y,p0)
 
 class doubleGaussianAmplitudesOnly(doubleGaussian):
@@ -509,7 +509,7 @@ class saturationRecovery2(Model):
             T12 = np.exp((np.log(x[0]) + np.log(x[-1]))/2)
             p0 = [B, A/2, T12, A/2, T12, 1]
             if not self.silence:
-                print "Parameters have been estimated: ", self.paramNames, p0
+                print("Parameters have been estimated: ", self.paramNames, p0)
 
 
 
@@ -536,7 +536,7 @@ class saturationRecovery2exp(Model):
             T2 = np.exp((np.log(x[0]) + 2*np.log(x[-1]))/3)
             p0 = [B, A/2, T1, A/2, T2]
             if not self.silence:
-                print "Parameters have been estimated: ", self.paramNames, p0
+                print("Parameters have been estimated: ", self.paramNames, p0)
 
 
 
@@ -550,10 +550,10 @@ class exponentialDecay2comp(Model):
         """
         self.silence = silence
         if not self.silence:
-            print "We're going to the zoo."
+            print("We're going to the zoo.")
         self.outputString = ""
         if not self.silence:
-            print "Offset value is: ", offset
+            print("Offset value is: ", offset)
         if offset == False:
             self.paramNames = ["A1", "tau1", "A2", "tau2"]
             self.model = self.exponentialDecay2
@@ -561,7 +561,7 @@ class exponentialDecay2comp(Model):
             self.paramNames = ["A1", "tau1", "A2", "tau2", "offset"]
             self.model = self.exponentialDecay2Offset
         if not self.silence:
-            print self.paramNames
+            print(self.paramNames)
 
     def exponentialDecay2(self, t, A1, tau1, A2, tau2):
         """A model for fitting an exponential Decay"""
@@ -586,7 +586,7 @@ class exponentialDecay2comp(Model):
                 offset = y[-1]
                 p0 = [A/2, tau1, A/2, tau2, offset]
             if not self.silence:
-                print "Parameters have been estimated: ", p0
+                print("Parameters have been estimated: ", p0)
 
         self.p0 = self.fitGeneral(x,y,p0)
 
@@ -642,7 +642,7 @@ class o17waterMBBA(Model):
             p0 = [0,np.max(y), np.max(y)/2, np.max(y)/4,
                   100, 200, 300, 10000, 150]
             if not self.silence:
-                print "Parameters have been estimated: ", p0
+                print("Parameters have been estimated: ", p0)
         self.p0 = self.fitGeneral(x,y,p0)
 
 class o17waterISO(Model):
@@ -704,7 +704,7 @@ class o17waterISO(Model):
 
 
             if not self.silence:
-                print "Parameters have been estimated: ", p0
+                print("Parameters have been estimated: ", p0)
         self.p0 = self.fitGeneral(x,y,p0)
 
 
