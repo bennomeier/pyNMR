@@ -43,6 +43,7 @@ class nmrData(object):
         self.sizeTD1 = sizeTD1
         self.title = ['no title']
         self.vdList = []
+        self.files = [] #here we store open files so we can close them later
 
         self.parDictionary = {}
 
@@ -175,6 +176,7 @@ class nmrData(object):
             #The acqu2s file contains TD1 as ##$TD
             directory = os.path.dirname(path)
             acqusFile = open(directory + "/acqus", mode='r')
+            self.files.append(acqusFile)
 
             if debug:
                 print "Importing TopSpin data"
@@ -182,7 +184,10 @@ class nmrData(object):
             #check if acqu2sfile exists, if yes, experiment is 2D!
             if os.path.isfile(directory + "/acqu2s"):
                 acqu2sFile = open(directory + "/acqu2s", mode='r')
+                self.files.append(acqu2sFile)
                 acqu2File = open(directory + "/acqu2", mode='r')
+                self.files.append(acqu2File)
+
                 self.is2D = True
             else:
                 self.is2D = False
@@ -311,6 +316,8 @@ class nmrData(object):
             else:
                 self.f = open(path + "fid", mode='rb')
 
+            self.files.append(self.f)
+
             dataString = np.frombuffer(self.f.read(), dtype = endianess + "i4")
             if debug: print "len(dataString) new: ", len(dataString)
 
@@ -335,6 +342,7 @@ class nmrData(object):
             try:
                 pathToTitle = directory + '/pdata/1/title'
                 titleFile = open(pathToTitle, mode='r')
+                self.files.append(titleFile)
                 title = list(titleFile)
                 self.title = [line.strip() for line in title]
             except:
@@ -342,6 +350,9 @@ class nmrData(object):
                     print "No title file."
                 else:
                     pass
+            #close the files we opened:
+            for item in self.files:
+                item.close()
 
         if datatype == 'spinsight':
             chStr = "" # first read the channel, if succesful read the carrier frequency.
