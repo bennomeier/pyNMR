@@ -27,7 +27,7 @@ def molarity(mass, radical, volume, molarMass = 0):
     volume: solvent volume in L
     """
     if len(molecule) > 0:
-        assert radical in molarMasses.keys(), "unknown molecule"
+        assert radical in list(molarMasses.keys()), "unknown molecule"
         molarMass = molarMasses[radical]
     else:
         assert molarMass > 0, "Molar Mass not specified."
@@ -73,7 +73,7 @@ def t1(concentration, radical, solvent, nucleus, T = 300):
 
     T1 = 1/t1Inv
 
-    print("T1 is {0} ms".format(T1*1e3))
+    print(("T1 is {0} ms".format(T1*1e3)))
     return T1
 
 
@@ -83,10 +83,10 @@ if __name__ == "__main__":
     volume = 1e-3
 
     molarConcentration = molarity(mass, molecule, volume)
-    print "We have a {} molar solution of {}".format(molarConcentration, molecule)
+    print("We have a {} molar solution of {}".format(molarConcentration, molecule))
 
     t1This = t1(molarConcentration, molecule, "water", "1H")
-    print "T1 calculated: {} ms".format(t1This*1000)
+    print("T1 calculated: {} ms".format(t1This*1000))
 
     #TEMPO in water and carbon
     molecule = "TEMPOL"
@@ -94,16 +94,23 @@ if __name__ == "__main__":
     volume = 1e-3
 
     molarConcentration = molarity(mass, molecule, volume)
-    print "We have a {} molar solution of {}".format(molarConcentration, molecule)
+    print("We have a {} molar solution of {}".format(molarConcentration, molecule))
 
     t1This = t1(molarConcentration, molecule, "water-glycerol", "13C")
-    print "T1 calculated: {} ms".format(t1This*1000)
+    print("T1 calculated: {} ms".format(t1This*1000))
 
 
-    print " Trityl and Pyruvic Acid"
-    print "========================"
+    print(" Trityl and Pyruvic Acid")
+    print("========================")
     molcarConcentration = 50e-3
     t1This = t1(molarConcentration, "Trityl", "water", "13C")
-    print "T1 calculated: {} ms".format(t1This*1000)
+    print("T1 calculated: {} ms".format(t1This*1000))
+
+    print("Trityl and Naphthalene")
+    print("======================")
+    molarConcentration = 20e-3
+    t1This = t1(molarConcentration, "Trityl", "water", "13C")
+    print("T1 calculated: {} s".format(t1This))
+    
 
 
