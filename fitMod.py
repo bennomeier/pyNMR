@@ -170,6 +170,7 @@ class nutationCurve(Model):
         self.silence = silence
         self.paramNames = ["A", "tau"]
         self.model = self.nutationCurve
+        self.B1 = 0
 
     def nutationCurve(self, t, A, tau):
         """A model for fitting a perfect nutation"""
@@ -180,7 +181,7 @@ class nutationCurve(Model):
             if len(self.paramNames) == 2:
                 A = np.max(y)
                 #estimate piHalf pulse duration as time of maximum.
-                tau = 10# x(y.index(A))
+                tau = x[np.argmax(y)]
                 p0 = [A, tau]
             elif len(self.paramNames) == 3:#incl. offset
                 A = np.max(y)
@@ -189,8 +190,8 @@ class nutationCurve(Model):
                 p0 = [A, tau, offset]
             if not self.silence:
                 print("Parameters have been estimated: ", p0)
-        self.p0 = self.fitGeneral(x,y,p0)
-        return self.p0
+        self.fitGeneral(x,y,p0)
+        self.B1 = 1/(4*self.popt[1])*1e3 #B1 in kHz, assuming pulse durations in units of us
 
 class exponentialDecay(Model):
     """This class represents a simple exponential decay."""
