@@ -1,11 +1,11 @@
-from pylab import *
+import numpy as np
 
 def loessInternal( x, h, xp, yp ):
-    w = exp( -0.5*( ((x-xp)/(2*h))**2 )/sqrt(2*pi*h**2) )
-    b = sum(w*xp)*sum(w*yp) - sum(w)*sum(w*xp*yp)
+    w = np.exp( -0.5*( ((x-xp)/(2*h))**2 )/np.sqrt(2*np.pi*h**2) )
+    b = np.sum(w*xp)*np.sum(w*yp) - np.sum(w)*np.sum(w*xp*yp)
 
-    b /= sum(w*xp)**2 - sum(w)*sum(w*xp**2)
-    a = ( sum(w*yp) - b*sum(w*xp) )/sum(w)
+    b /= np.sum(w*xp)**2 - np.sum(w)*np.sum(w*xp**2)
+    a = ( np.sum(w*yp) - b*np.sum(w*xp) )/np.sum(w)
 
     return a + b*x
 
@@ -29,7 +29,7 @@ def splitLoess(x, y, sigma, SPLIT):
     x2 = x[SPLIT:]
     y2 = y[SPLIT:]
     
-    y1Loess = loess.loess(x1, y1, sigma)
-    y2Loess = loess.loess(x2, y2, sigma)
+    y1Loess = loess(x1, y1, sigma)
+    y2Loess = loess(x2, y2, sigma)
     
     return np.concatenate([y1Loess, y2Loess], axis = 0)
