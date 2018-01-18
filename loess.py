@@ -21,3 +21,15 @@ def loess(x,y,h):
         out.append( loessInternal(k, h, x, y))
     return out
     
+
+def splitLoess(x, y, sigma, SPLIT):
+    x1 = x[:SPLIT]
+    y1 = y[:SPLIT]
+    
+    x2 = x[SPLIT:]
+    y2 = y[SPLIT:]
+    
+    y1Loess = loess.loess(x1, y1, sigma)
+    y2Loess = loess.loess(x2, y2, sigma)
+    
+    return np.concatenate([y1Loess, y2Loess], axis = 0)
