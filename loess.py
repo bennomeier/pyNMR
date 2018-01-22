@@ -1,7 +1,15 @@
 import numpy as np
 
-def loessInternal( x, h, xp, yp ):
-    w = np.exp( -0.5*( ((x-xp)/(2*h))**2 )/np.sqrt(2*np.pi*h**2) )
+def loessInternal( x, h, xp, yp , kernel = "Gaussian"):
+    if kernel == "Gaussian":
+        w = np.exp( - (x-xp)**2/(2*h**2) )/np.sqrt(2*np.pi*h**2)
+    elif kernel == "TriCube":
+        w =  (1 - np.abs((x - xp) / h)**3)**3
+        for i, xThis in enumerate(xp):
+            if np.abs(xThis - x) > h:
+                w[i] = 0
+
+        
     b = np.sum(w*xp)*np.sum(w*yp) - np.sum(w)*np.sum(w*xp*yp)
 
     b /= np.sum(w*xp)**2 - np.sum(w)*np.sum(w*xp**2)
@@ -9,7 +17,7 @@ def loessInternal( x, h, xp, yp ):
 
     return a + b*x
 
-def loess(x,y,h):
+def loess(x,y,h, kernel = "Gaussian"):
     """LOESS model free bandwidth reduction.
 
     See "Data Analysis with Open Source Tools" by P. K. Janert for fdetails.
@@ -18,8 +26,8 @@ def loess(x,y,h):
     microseconds don't work. h is bandwidth in units of x"""
     out = []
     for k in x:
-        out.append( loessInternal(k, h, x, y))
-    return out
+        out.append( loessInternal(k, h, x, y, kernel = kernel))
+    return np.array(out)
     
 
 def splitLoess(x, y, sigma, SPLIT):
