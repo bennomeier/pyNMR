@@ -436,11 +436,7 @@ class liqXtalHaller(Model):
 
 
 class doubleGaussian(Model):
-    """This class represents second order dynamics, according to eq. 7 in paper on kinetics in H2O@C60
-    It implents the solution of the following equation:
-    DSolve[y'[x] == - 2 k (y[x] - f0)^2, y[x], x]
-
-    The parameters are A, B, k and the fit equation is B + A/(1 + k*t)
+    """Two gaussians with independent widths and amplitudes. 
     """
     #self.outputString = Model.outputString
 
