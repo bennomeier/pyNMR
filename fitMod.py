@@ -770,13 +770,15 @@ class linear(Model):
 
         return intercept + x*slope
 
-    def fit(self, x, y, p0 = self.p0 ):
+    def fit(self, x, y, p0 = [] ):
+        if len(p0) == 0:
+            p0 = self.p0
         if len(p0) == 0:
             p0 = [0,1]
             if not self.silence:
                 print("Parameters have been estimated: ", p0)
 
-        self.fitGeneral(x,y,p0, ftol = ftol)
+        self.fitGeneral(x,y,p0)
 ################################################################################
 
 
