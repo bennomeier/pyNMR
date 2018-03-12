@@ -33,9 +33,9 @@ class Model(object):
         self.silence = True
         print(self.silence)
 
-    def fitGeneral(self, x, y, p0, maxfev = 1400):
+    def fitGeneral(self, x, y, p0, maxfev = 1400, ftol = 1e-8):
 
-        self.popt, self.pcov = curve_fit(self.model, np.array(x), np.array(y), p0 = p0, maxfev = maxfev)
+        self.popt, self.pcov = curve_fit(self.model, np.array(x), np.array(y), p0 = p0, maxfev = maxfev, ftol = ftol)
 
         self.errors = self.getError(self.pcov, len(x) - len(p0))
         if not self.silence:
@@ -436,7 +436,7 @@ class liqXtalHaller(Model):
 
 
 class doubleGaussian(Model):
-    """Two gaussians with independent widths and amplitudes. 
+    """Two gaussians with independent widths and amplitudes.
     """
     #self.outputString = Model.outputString
 
@@ -703,6 +703,60 @@ class o17waterISO(Model):
             if not self.silence:
                 print("Parameters have been estimated: ", p0)
         self.p0 = self.fitGeneral(x,y,p0)
+
+class liqXtalHallerOffset(Model):
+    """Modified Haller model. The Haller fuction has an offset added to it
+    (so for T>T_trans it does not go to 0 but to the offset)
+
+    This class represents a simple model for temperature dependence of
+    liquid crystal order parameter (Haller equation):
+    S(T) = (1-T/Tdag)**exp
+    where Tdag = Ttrans + deltaT (deltaT ~ 1-3K)
+    The Haller equation is modified here - a scaling factor and offset
+    are added:
+    X(T) = scale*(1-T/Tdag)**exp + offset
+    So this model can be used to fit variables that should be linearly
+    dependent on the liquid crystal order parameter.
+    """
+    def __init__(self, silence = True):
+        self.silence = silence
+        self.paramNames = ["transitionTemperature", "temperatureShift",
+        "exponent", "scale", "offset"]
+        self.model = self.haller2
+
+    def haller2(self, temperatures, transitionTemperature, temperatureShift, exponent, scale, offset):
+        """Returns Haller estimate of liquid crystal order parameter
+        (Haller1975 http://dx.doi.org/10.1016/0079-6786(75)90008-4). Defaults are for MBBA with C60.
+        Note: the original expression does not have the scaling factor in it,
+        the factor is included in order to fit things that are expected to be
+        be proportional to the liquid crystal order parameter."""
+        tCross = transitionTemperature + temperatureShift
+        results = []
+        for t in temperatures:
+            if t < transitionTemperature:
+                 results.append(scale*(1 - t/tCross)**exponent + offset)
+            else:
+                 results.append(offset)
+        return np.array(results)
+
+
+    def fit(self, x, y, p0 = [], ftol = 1e-8 ):
+        if len(p0) == 0:
+            transitionTemperature = 308
+            temperatureShift = 1
+            exponent = 0.219
+            scale = 100
+            offset = 80
+            p0 = [transitionTemperature, temperatureShift, exponent, scale,
+            offset]
+            if not self.silence:
+                print("Parameters have been estimated: ", p0)
+
+
+        self.fitGeneral(x,y,p0, ftol = ftol)
+
+
+################################################################################
 
 
 # lorentz lineshape, this is used repeatedly so it is a good idea
