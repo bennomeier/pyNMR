@@ -755,7 +755,28 @@ class liqXtalHallerOffset(Model):
 
         self.fitGeneral(x,y,p0, ftol = ftol)
 
+class linear(Model):
+    """Simple lienar fit.
+    y = intercept + slope*x
+    """
+    def __init__(self, silence = True, p0 = []):
+        self.silence = silence
+        self.paramNames = ["intercept", "slope"]
+        self.model = self.linear
+        self.p0 = p0
 
+    def linear(self, x, intercept, slope):
+        """y = intercept + x*slope"""
+
+        return intercept + x*slope
+
+    def fit(self, x, y, p0 = self.p0 ):
+        if len(p0) == 0:
+            p0 = [0,1]
+            if not self.silence:
+                print("Parameters have been estimated: ", p0)
+
+        self.fitGeneral(x,y,p0, ftol = ftol)
 ################################################################################
 
 
