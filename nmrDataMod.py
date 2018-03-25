@@ -31,7 +31,7 @@ class nmrData(object):
 
     supported type: 'Magritek', 'ntnmr', 'TopSpin', 'spinSight'
     """
-    def __init__(self, path, datatype, container=0, sizeTD1=0, process = False,  lb = 0, phase = 0, ls = 0, zf = 0, ft_only = [], debug = False, hiper_skip_footer = 0, hiper_skip_header = 3, endianess = "<"):
+    def __init__(self, path, datatype, container=0, sizeTD1=0, process = False,  lb = 0, phase = 0, ls = 0, zf = 0, ft_only = [], debug = False, hiper_skip_footer = 0, hiper_skip_header = 3, endianess = "<", maxLoad = 0):
         """ This reads the data """
         #plt.close()
         if datatype == '':
@@ -331,6 +331,9 @@ class nmrData(object):
             # here we create one array of complex numbers for each of the FIDs
             # i runs overa all fids in a ser file, in case of a fid file i = 0
             # TD1 is number of FIDs, TD2 is number of datapoints in each FID
+            if maxLoad > 0:
+               self.sizeTD1 = maxLoad
+            
             for i in range(0,  self.sizeTD1):
                 #print "sizeTD2: ", self.sizeTD2
                 #print i
@@ -510,7 +513,9 @@ class nmrData(object):
         (after fft is called) will be convolution of the original spectrum (fromPos)
         and Lorentzian with full-width-at-half-maximum equal to LB"""
         self.checkToPos(toPos)
-        self.allFid[toPos] = sp.multiply(self.allFid[fromPos][:], sp.exp(-self.fidTime*LB*np.pi))
+        print("Len Fid Time: {}".format(len(self.fidTime)))
+        print("Len All Fid 0: {}".format(len(self.allFid[fromPos][0])))
+        self.allFid[toPos] = sp.multiply(self.allFid[fromPos][:], sp.exp(-self.fidTime[:len(self.allFid[fromPos][0])]*LB*np.pi))
 
     def fourierTransform(self, fromPos, toPos, only = []):
         self.checkToPos(toPos)
@@ -631,7 +636,7 @@ class nmrData(object):
     def leftShift(self, fromPos, toPos, shiftPoints):
         self.checkToPos(toPos)
         self.allFid[toPos] = [self.allFid[fromPos][k][shiftPoints:] for k in range(len(self.allFid[fromPos]))]
-        self.fidTime = self.fidTime[:len(self.fidTime) - shiftPoints]
+        self.fidTime = self.fidTime[:len(self.allFid[toPos][0])]
         #self.frequency = np.linspace(-self.sweepWidthTD2/2,self.sweepWidthTD2/2,len(self.fidTime))
 
     def zeroFilling(self, fromPos, toPos, totalPoints):
