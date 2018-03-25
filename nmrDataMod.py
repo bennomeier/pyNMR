@@ -513,8 +513,8 @@ class nmrData(object):
         (after fft is called) will be convolution of the original spectrum (fromPos)
         and Lorentzian with full-width-at-half-maximum equal to LB"""
         self.checkToPos(toPos)
-        print("Len Fid Time: {}".format(len(self.fidTime)))
-        print("Len All Fid 0: {}".format(len(self.allFid[fromPos][0])))
+        #print("Len Fid Time: {}".format(len(self.fidTime)))
+        #print("Len All Fid 0: {}".format(len(self.allFid[fromPos][0])))
         self.allFid[toPos] = sp.multiply(self.allFid[fromPos][:], sp.exp(-self.fidTime[:len(self.allFid[fromPos][0])]*LB*np.pi))
 
     def fourierTransform(self, fromPos, toPos, only = []):
