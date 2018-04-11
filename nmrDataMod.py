@@ -29,7 +29,7 @@ class nmrData(object):
     Usage:
     > nmrData = nmrData(path, type)
 
-    supported type: 'Magritek', 'ntnmr', 'TopSpin', 'spinSight'
+    supported type: 'Magritek', 'ntnmr', 'TopSpin', 'spinSight', 'varian'
     """
     def __init__(self, path, datatype, container=0, sizeTD1=0, process = False,  lb = 0, phase = 0, ls = 0, zf = 0, ft_only = [], debug = False, hiper_skip_footer = 0, hiper_skip_header = 3, endianess = "<", maxLoad = 0):
         """ This reads the data """
@@ -159,6 +159,23 @@ class nmrData(object):
             else:
                 print("No 1D file found.")
 
+        if datatype == "varian":
+            if os.path.isfile(path + "/fid"):
+
+                oneDimData = True
+                headerskip_init = 8
+                headerskip = 7
+                f = open(path + "/fid", 'rb');
+                data_array = np.fromfile(f, '>f', -1)
+                self.allFid[0] = data_array[(headerskip_init + headerskip)::2] + 1j*data_array[(headerskip_init + headerskip + 1)::2]
+
+                #plt.plot(np.real(fids)[0:200],'b-')
+                #plt.plot(np.imag(fids)[0:200],'g-')
+                #plt.show()
+                    
+            else:
+                print("No fid file found.")
+    
         if datatype == 'TopSpinOld':
             self.f = open(path, mode='rb')
             self.sizeTD2=1
