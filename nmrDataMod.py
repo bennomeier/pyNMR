@@ -162,13 +162,24 @@ class nmrData(object):
         if datatype == "varian":
             if os.path.isfile(path + "/fid"):
 
-                oneDimData = True
+                # need to figure out how to read these from parameter file
+                oneDimData = False
+                specpoints = 19841
+
                 headerskip_init = 8
                 headerskip = 7
                 f = open(path + "/fid", 'rb');
                 data_array = np.fromfile(f, '>f', -1)
-                self.allFid[0] = data_array[(headerskip_init + headerskip)::2] + 1j*data_array[(headerskip_init + headerskip + 1)::2]
-
+                if oneDimData:
+                    self.allFid[0] = data_array[(headerskip_init + headerskip)::2] + 1j*data_array[(headerskip_init + headerskip + 1)::2]
+                else:
+                    Nacq = (len(data_array) - headerskip_init) / (2 * specpoints + headerskip)
+                    for n in range(0, Nacq-1):
+                        skipn = headerskip_init + (n+1)*headerskip + n*2*specpoints;
+                        realPart = data_array[skipn+0:skipn+2*specpoints:2]
+                        imagPart = 1j*data_array[skipn+1:skipn+2*specpoints:2]
+                        self.allFid[0].append(sp.add(realPart, imagPart))
+                
                 #plt.plot(np.real(fids)[0:200],'b-')
                 #plt.plot(np.imag(fids)[0:200],'g-')
                 #plt.show()
