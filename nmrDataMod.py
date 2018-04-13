@@ -160,30 +160,49 @@ class nmrData(object):
                 print("No 1D file found.")
 
         if datatype == "varian":
+
+            if os.path.isfile(path + "/procpar"):
+                parFile = open(path + "/procpar", 'r') 
+
+                rows = parFile.readlines()
+                lineCounter = 0;
+                for line in rows:
+                    if line.find("sw ") > -1:
+                        nextLine = rows[lineCounter+1]
+                        params = nextLine.split(" ")
+                        # this next line may be wrong: should be the number of points in an FID, but may differ
+                        # str->float->int conversion necessary since data is actually a decimal
+                        self.sizeTD2 = int(float(params[1]))
+                    elif line.find("acqcycles") > -1:
+                        nextLine = rows[lineCounter+1]
+                        params = nextLine.split(" ")
+                        self.sizeTD1 = int(params[1])
+                        if self.sizeTD1 > 1:
+                            self.is2D = True
+                        else:
+                            self.is2D = False
+                    lineCounter = lineCounter+1
+            else:
+                print("No procpar file found.")
+                
             if os.path.isfile(path + "/fid"):
-
                 # need to figure out how to read these from parameter file
-                oneDimData = False
-                specpoints = 19841
-
+                specpoints = self.sizeTD2
                 headerskip_init = 8
                 headerskip = 7
                 f = open(path + "/fid", 'rb');
                 data_array = np.fromfile(f, '>f', -1)
-                if oneDimData:
+                if not self.is2D:
                     self.allFid[0] = data_array[(headerskip_init + headerskip)::2] + 1j*data_array[(headerskip_init + headerskip + 1)::2]
                 else:
                     Nacq = (len(data_array) - headerskip_init) / (2 * specpoints + headerskip)
-                    for n in range(0, Nacq-1):
+                    if Nacq != self.sizeTD1:
+                        print "warning: inconsistent sizes"
+                    for n in range(0, Nacq):
                         skipn = headerskip_init + (n+1)*headerskip + n*2*specpoints;
                         realPart = data_array[skipn+0:skipn+2*specpoints:2]
                         imagPart = 1j*data_array[skipn+1:skipn+2*specpoints:2]
                         self.allFid[0].append(sp.add(realPart, imagPart))
-                
-                #plt.plot(np.real(fids)[0:200],'b-')
-                #plt.plot(np.imag(fids)[0:200],'g-')
-                #plt.show()
-                    
             else:
                 print("No fid file found.")
     
