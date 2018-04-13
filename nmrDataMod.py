@@ -161,6 +161,7 @@ class nmrData(object):
 
         if datatype == "varian":
 
+            # read the header file
             if os.path.isfile(path + "/procpar"):
                 parFile = open(path + "/procpar", 'r') 
                 rows = parFile.readlines()
@@ -182,9 +183,9 @@ class nmrData(object):
                     lineCounter = lineCounter+1
             else:
                 print("No procpar file found.")
-                
+
+            # read the binary data file
             if os.path.isfile(path + "/fid"):
-                # need to figure out how to read these from parameter file
                 specpoints = self.sizeTD2
                 headerskip_init = 8
                 headerskip = 7
