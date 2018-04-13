@@ -163,16 +163,14 @@ class nmrData(object):
 
             if os.path.isfile(path + "/procpar"):
                 parFile = open(path + "/procpar", 'r') 
-
                 rows = parFile.readlines()
                 lineCounter = 0;
                 for line in rows:
-                    if line.find("sw ") > -1:
+                    if line.find("np ") > -1:
                         nextLine = rows[lineCounter+1]
                         params = nextLine.split(" ")
-                        # this next line may be wrong: should be the number of points in an FID, but may differ
-                        # str->float->int conversion necessary since data is actually a decimal
-                        self.sizeTD2 = int(float(params[1]))
+                        totalComplexPoints = int(params[1]) #np =is R+I
+                        self.sizeTD2 = totalComplexPoints/2
                     elif line.find("acqcycles") > -1:
                         nextLine = rows[lineCounter+1]
                         params = nextLine.split(" ")
