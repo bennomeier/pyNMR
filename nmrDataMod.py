@@ -29,7 +29,7 @@ class nmrData(object):
     Usage:
     > nmrData = nmrData(path, type)
 
-    supported type: 'Magritek', 'ntnmr', 'TopSpin', 'spinSight'
+    supported type: 'Magritek', 'ntnmr', 'TopSpin', 'spinSight', 'varian'
     """
     def __init__(self, path, datatype, container=0, sizeTD1=0, process = False,  lb = 0, phase = 0, ls = 0, zf = 0, ft_only = [], debug = False, hiper_skip_footer = 0, hiper_skip_header = 3, endianess = "<", maxLoad = 0):
         """ This reads the data """
@@ -159,6 +159,52 @@ class nmrData(object):
             else:
                 print("No 1D file found.")
 
+        if datatype == "varian":
+
+            # read the header file
+            if os.path.isfile(path + "/procpar"):
+                parFile = open(path + "/procpar", 'r') 
+                rows = parFile.readlines()
+                lineCounter = 0;
+                for line in rows:
+                    if line.find("np ") > -1:
+                        nextLine = rows[lineCounter+1]
+                        params = nextLine.split(" ")
+                        totalComplexPoints = int(params[1]) #np =is R+I
+                        self.sizeTD2 = totalComplexPoints/2
+                    elif line.find("acqcycles") > -1:
+                        nextLine = rows[lineCounter+1]
+                        params = nextLine.split(" ")
+                        self.sizeTD1 = int(params[1])
+                        if self.sizeTD1 > 1:
+                            self.is2D = True
+                        else:
+                            self.is2D = False
+                    lineCounter = lineCounter+1
+            else:
+                print("No procpar file found.")
+
+            # read the binary data file
+            if os.path.isfile(path + "/fid"):
+                specpoints = self.sizeTD2
+                headerskip_init = 8
+                headerskip = 7
+                f = open(path + "/fid", 'rb');
+                data_array = np.fromfile(f, '>f', -1)
+                if not self.is2D:
+                    self.allFid[0] = data_array[(headerskip_init + headerskip)::2] + 1j*data_array[(headerskip_init + headerskip + 1)::2]
+                else:
+                    Nacq = (len(data_array) - headerskip_init) / (2 * specpoints + headerskip)
+                    if Nacq != self.sizeTD1:
+                        print "warning: inconsistent sizes"
+                    for n in range(0, Nacq):
+                        skipn = headerskip_init + (n+1)*headerskip + n*2*specpoints;
+                        realPart = data_array[skipn+0:skipn+2*specpoints:2]
+                        imagPart = 1j*data_array[skipn+1:skipn+2*specpoints:2]
+                        self.allFid[0].append(sp.add(realPart, imagPart))
+            else:
+                print("No fid file found.")
+    
         if datatype == 'TopSpinOld':
             self.f = open(path, mode='rb')
             self.sizeTD2=1
