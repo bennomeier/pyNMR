@@ -779,6 +779,27 @@ class linear(Model):
                 print("Parameters have been estimated: ", p0)
 
         self.fitGeneral(x,y,p0)
+
+class lorentzian(Model):
+    """Single lorentzian line"""
+
+    def __init__(self, silence = True):
+        self.silence = silence
+        self.paramNames = ["centerFreq", "amplitude",  "half-width"]
+        self.model = self.model1
+        self.lineLorentzian = lorentz
+
+    def model1(self, f, f0, amp, hwhm):
+        y = self.lineLorentzian(f,f0,amp,hwhm)
+        return y
+
+    def fit(self, x, y, p0 = []):
+        if len(p0) == 0:
+            p0 = [0,1,1]
+            if not self.silence:
+                print("Parameters have been estimated: ", p0)
+        self.p0 = self.fitGeneral(x,y,p0)
+
 ################################################################################
 
 
