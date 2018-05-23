@@ -196,7 +196,7 @@ class nmrData(object):
                 else:
                     Nacq = (len(data_array) - headerskip_init) / (2 * specpoints + headerskip)
                     if Nacq != self.sizeTD1:
-                        print "warning: inconsistent sizes"
+                        print("warning: inconsistent sizes")
                     for n in range(0, Nacq):
                         skipn = headerskip_init + (n+1)*headerskip + n*2*specpoints;
                         realPart = data_array[skipn+0:skipn+2*specpoints:2]
