@@ -273,7 +273,7 @@ class nmrData(object):
                     self.sweepWidthTD2 = int(float(line[1]))
                     if debug: print("SweepWidthTD2: ", self.sweepWidthTD2)
                 elif line[0] == "##$TD":
-                    self.sizeTD2 = int(line[1])/2
+                    self.sizeTD2 = int(int(line[1])/2)
                     if debug: print("sizeTD2: ", self.sizeTD2)
                 elif line[0] == "##$SFO1":
                     self.carrier = float(line[1])*1e6
@@ -369,7 +369,9 @@ class nmrData(object):
             if debug: print("len(dataString) new: ", len(dataString))
 
             self.data = dataString
-            self.sizeTD2 = int(len(self.data) / self.sizeTD1 / 2)
+            #this is not how it should be done.
+            if self.sizeTD2 == 0:
+                self.sizeTD2 = int(len(self.data) / self.sizeTD1 / 2)
 
             dwellTime = 1./self.sweepWidthTD2
             self.fidTime = np.linspace(0, (self.sizeTD2-1)*dwellTime, num = self.sizeTD2)
