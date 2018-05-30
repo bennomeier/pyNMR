@@ -585,19 +585,23 @@ class nmrData(object):
 
         #self.checkToPos(toPos)
         #if toPos exists, erase the data therein
-        if len(self.allFid) >toPos:
-            self.allFid[toPos] = []
+        #if len(self.allFid) >toPos:
+        #    self.allFid[toPos] = []
         #if toPos does not exist, create it
-        else:
-            self.allFid.append([])
+        #else:
+        #    self.allFid.append([])
         #check that now the toPos exists:
-        assert len(self.allFid) > toPos, "toPos too high"
+        #assert len(self.allFid) > toPos, "toPos too high"
         #print "Hilo!"
+        self.checkToPos(toPos)
 
-        for k in range(self.sizeTD1):
+
+        fidList = []
+        for k in range(len(self.allFid[fromPos])):
             xVals = []
             yVals = []
             indices = []
+            thisFid = []
 
 
             for pair in fitRange:
@@ -606,19 +610,23 @@ class nmrData(object):
                 indices.extend([i1,i2])
 
                 xVals.extend(self.frequency[i1:i2])
-                yVals.extend(self.allFid[fromPos][k][i1:i2])
+                yVals.extend(np.real(self.allFid[fromPos][k][i1:i2]))
 
 
             z = np.polyfit(xVals, yVals, order)
 
 
             p = np.poly1d(z)
-
+            self.p = p
+            
             if applyLocally:
-                self.allFid[toPos].append(self.allFid[fromPos][k])
-                self.allFid[fromPos][k][min(indices):max(indices)] -= p(self.frequency[min(indices):max(indices)])
+                thisFid = self.allFid[fromPos][k]
+                thisFid[min(indices):max(indices)] -= p(self.frequency[min(indices):max(indices)])
             else:
-                self.allFid[toPos].append(self.allFid[fromPos][k] - p(self.frequency))
+                thisFid = self.allFid[fromPos][k] - p(self.frequency)
+            fidList.append(thisFid)
+            
+        self.allFid[toPos] = fidList
 
 
     def phase(self, fromPos, toPos, phase, degree=True):
@@ -685,6 +693,7 @@ class nmrData(object):
         self.checkToPos(toPos)
         self.allFid[toPos] = [self.allFid[fromPos][k][shiftPoints:] for k in range(len(self.allFid[fromPos]))]
         self.fidTime = self.fidTime[:len(self.allFid[toPos][0])]
+        print("LeftShift complete.")
         #self.frequency = np.linspace(-self.sweepWidthTD2/2,self.sweepWidthTD2/2,len(self.fidTime))
 
     def zeroFilling(self, fromPos, toPos, totalPoints):
@@ -739,7 +748,7 @@ class nmrData(object):
     def integrateAllRealPart(self, fromPos, start, stop, scale="Hz", part = "real"):
         #return all integrals by calling integrateRealPart sizeTD1 times
         return np.array([self.integrateRealPart(fromPos, k, start, stop, scale = scale, part = part)
-                         for k in range(self.sizeTD1)])
+                         for k in range(len(self.allFid[fromPos]))])
 
 
     def getPeak(self, fromPos, index, start, stop, negative = False, scale="Hz"):
@@ -1017,6 +1026,13 @@ class nmrData(object):
         factor = float(self.parDictionary["$NS"])*float(self.parDictionary["$RG"])*scaling
         for spectrum in self.allFid[fromPos]:
             self.allFid[toPos].append([point/factor for point in spectrum])
+
+    def __getitem__(self, key):
+        return [np.real(self.allFid[key][x]) for x in range(len(self.allFid[key]))]
+
+    def __len__(self):
+        return len(self.allFid)
+              
 
 
 
