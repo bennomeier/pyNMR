@@ -48,7 +48,9 @@ class nmrData(object):
 
         self.parDictionary = {}
 
-        if debug: print("The datatype is {0}".format(datatype))
+        self.debug = debug
+        
+        if self.debug: print("The datatype is {0}".format(datatype))
 
         if datatype == "Hiper":
             """Hiper EPR Data import for EPR experiments at St Andrews, UK.
@@ -63,11 +65,11 @@ class nmrData(object):
             iData = data[:, 1]
             qData = data[:, 2]
             self.sizeTD2 = len(qData)
-            if debug: print("sizeTD2: ", self.sizeTD2)
+            if self.debug: print("sizeTD2: ", self.sizeTD2)
 
             dwellTime = (timeList[1] - timeList[0])*1e-9
             self.sweepWidthTD2 = int(1. /dwellTime)
-            if debug: print("SweepWidthTD2: ", self.sweepWidthTD2)
+            if self.debug: print("SweepWidthTD2: ", self.sweepWidthTD2)
 
             self.allFid[0].append(iData + 1j*qData)
             self.fidTime = np.linspace(0, (self.sizeTD2-1)*dwellTime, num = self.sizeTD2)
@@ -87,7 +89,7 @@ class nmrData(object):
                     if "=" in line:
                         line = line.split("=")
                     elif len(line) == 0 or count > 1000:
-                        if debug: print("Ended dreading acqus file at line ", count)
+                        if self.debug: print("Ended dreading acqus file at line ", count)
                         break
                     else:
                         next
@@ -97,7 +99,7 @@ class nmrData(object):
 
 
                 self.sweepWidthTD2 = int(1./(float(self.parDictionary["dwellTime"])*1e-6))
-                if debug: print("SweepWidthTD2: ", self.sweepWidthTD2)
+                if self.debug: print("SweepWidthTD2: ", self.sweepWidthTD2)
 
 
             if os.path.isfile(path + "/data.1d"):
@@ -217,15 +219,15 @@ class nmrData(object):
                 self.allFid[0].append(sp.add(realPart, imagPart))
 
         if datatype == 'TopSpin':
-            if debug:
-                print("hi, this is debug for the TopSpin datatype")
+            if self.debug:
+                print("hi, this is self.debug for the TopSpin datatype")
             #The acqus file containts the spectral width SW_h and 2*SizeTD2 as ##$TD
             #The acqu2s file contains TD1 as ##$TD
             directory = os.path.dirname(path)
             acqusFile = open(directory + "/acqus", mode='r')
             self.files.append(acqusFile)
 
-            if debug:
+            if self.debug:
                 print("Importing TopSpin data")
 
             #check if acqu2sfile exists, if yes, experiment is 2D!
@@ -240,28 +242,28 @@ class nmrData(object):
                 self.is2D = False
                 self.sizeTD1 = 1
 
-            if debug:
+            if self.debug:
                 print("2D: ", self.is2D)
 
             #this could be crafted into a common routine which gives names of parameters
             #parameters and works the same for e.g., spinsight and topspin
-            if debug:
+            if self.debug:
                 print("reading acqus file")
             count = 0
             while True:
-                if debug:
+                if self.debug:
                     print("count = ", count)
                 #try:
                 count += 1
                 line = acqusFile.readline().strip()
-                if debug:
+                if self.debug:
                     print(line)
                 if "=" in line:
                     line = line.split("=")
                 elif len(line) > 0:
                     line = line.split(" ")
                 elif len(line) == 0 or count > 1000:
-                    if debug: print("Ended reading acqus file at line ", count)
+                    if self.debug: print("Ended reading acqus file at line ", count)
                     break
                 else:
                     next
@@ -271,13 +273,13 @@ class nmrData(object):
                     #this line might be chopping the last digit off....
                     #self.sweepWidthTD2 = int(float(line[1][:-1]))
                     self.sweepWidthTD2 = int(float(line[1]))
-                    if debug: print("SweepWidthTD2: ", self.sweepWidthTD2)
+                    if self.debug: print("SweepWidthTD2: ", self.sweepWidthTD2)
                 elif line[0] == "##$TD":
                     self.sizeTD2 = int(int(line[1])/2)
-                    if debug: print("sizeTD2: ", self.sizeTD2)
+                    if self.debug: print("sizeTD2: ", self.sizeTD2)
                 elif line[0] == "##$SFO1":
                     self.carrier = float(line[1])*1e6
-                    if debug: print("SFO1:", self.carrier)
+                    if self.debug: print("SFO1:", self.carrier)
 
                 elif len(line) == 0:
                     break
@@ -301,21 +303,21 @@ class nmrData(object):
                         self.parDictionary["l"] = [float(l) for l in loopCounters.strip().split(" ")]
 
                     else:
-                        if debug:
+                        if self.debug:
                             print("the catch all else")
                         if len(line) > 1:
                             self.parDictionary[line[0][2:].strip()] = line[1].strip()
                         else:
-                            if debug:
+                            if self.debug:
                                 print("skipped too short line")
 
 
             if self.is2D == True:
-                if debug:
+                if self.debug:
                     print("reading acqu2s file")
                 count = 0
                 while True:
-                    if debug:
+                    if self.debug:
                         print("count = ", count)
                     #try:
                     count += 1
@@ -323,7 +325,7 @@ class nmrData(object):
                     if "=" in line:
                         line = line.split("=")
                     elif len(line) == 0 or count > 1000:
-                        if debug: print("Ended reading acqu2s file at line ", count)
+                        if self.debug: print("Ended reading acqu2s file at line ", count)
                         break
                     else:
                         next
@@ -331,15 +333,15 @@ class nmrData(object):
                     #print line[0]
                     if line[0] == "##$TD" and self.sizeTD1 == 0:
                         self.sizeTD1 = int(line[1])
-                        if debug: print("sizeTD1: ", self.sizeTD1)
+                        if self.debug: print("sizeTD1: ", self.sizeTD1)
                     elif len(line) == 0:
                         break
 
                 if os.path.isfile(directory + "/vdlist"):
-                    if debug: print("VD File exists!")
+                    if self.debug: print("VD File exists!")
                     self.vdList = np.loadtxt(directory + "/vdlist")
 
-            if debug:
+            if self.debug:
                 print("TD2: ", self.sizeTD2)
                 print("TD1: ", self.sizeTD1)
                 print("Carrier:", self.carrier)
@@ -349,12 +351,12 @@ class nmrData(object):
             # else:
             #     self.f = open(path + "fid", mode='rb')#
             #           dataString = self.f.read(self.sizeTD2*2*self.sizeTD1*4)
-            #          if debug: print "len(dataString): ", len(dataString)
+            #          if self.debug: print "len(dataString): ", len(dataString)
             #         self.f.close()
             #
             #           # here we read the FID data from fid/ser file
             #          # first convert the datasting into a list of numbers:
-            # if debug: print "Endianess: ", endianess
+            # if self.debug: print "Endianess: ", endianess
             #     self.data = struct.unpack(endianess + 'i'*(self.sizeTD2*2*self.sizeTD1), dataString)
 
 
@@ -366,7 +368,7 @@ class nmrData(object):
             self.files.append(self.f)
 
             dataString = np.frombuffer(self.f.read(), dtype = endianess + "i4")
-            if debug: print("len(dataString) new: ", len(dataString))
+            if self.debug: print("len(dataString) new: ", len(dataString))
 
             self.data = dataString
             #this is not how it should be done.
@@ -398,13 +400,17 @@ class nmrData(object):
                 title = list(titleFile)
                 self.title = [line.strip() for line in title]
             except:
-                if debug:
+                if self.debug:
                     print("No title file.")
                 else:
                     pass
             #close the files we opened:
             for item in self.files:
                 item.close()
+
+            # delete all file handles so that nmrdata objects can be pickled.
+            self.files = []
+            del self.f
 
         if datatype == 'spinsight':
             chStr = "" # first read the channel, if succesful read the carrier frequency.
@@ -625,7 +631,8 @@ class nmrData(object):
             else:
                 thisFid = self.allFid[fromPos][k] - p(self.frequency)
             fidList.append(thisFid)
-            
+
+        #print("BaselineCorrection done. Polynomial: " + p.__repr__())
         self.allFid[toPos] = fidList
 
 
@@ -653,14 +660,14 @@ class nmrData(object):
 
         return phiTest[np.argmax(integrals)]
 
-    def fwhm(self, fromPos, index, start, stop, scale = "Hz", debug = False):
+    def fwhm(self, fromPos, index, start, stop, scale = "Hz"):
         i1, i2 = self.getIndices([start, stop], scale=scale)
         x = self.frequency[i1:i2]
         y = np.real(self.allFid[fromPos][index][i1:i2])
 
         linewidth = fwhm.fwhm(x, y)
 
-        if debug: print(("Linewidth: {} Hz".format(linewidth)))
+        if self.debug: print(("Linewidth: {} Hz".format(linewidth)))
 
         return linewidth
 
@@ -679,10 +686,16 @@ class nmrData(object):
         if noChangeOnResonance == True:
             pivot = 0
         elif pivot !=0:
-            print("Using pivot for first order phase correction")
             index = self.getIndex(pivot, scale= scale)
             phaseValues = phaseValues - phaseValues[index]
-            0
+
+            if self.debug:
+                print("Using pivot for first order phase correction")
+                print("Phi1: {}".format(phi1))
+                print("Degree: " + str(degree))
+                print("Index: {}".format(index))
+                print("Frequency at index: {} Hz".format(self.frequency[index]))
+            
         if degree == True:
             phaseValues = phaseValues*np.pi/180
 
@@ -693,7 +706,6 @@ class nmrData(object):
         self.checkToPos(toPos)
         self.allFid[toPos] = [self.allFid[fromPos][k][shiftPoints:] for k in range(len(self.allFid[fromPos]))]
         self.fidTime = self.fidTime[:len(self.allFid[toPos][0])]
-        print("LeftShift complete.")
         #self.frequency = np.linspace(-self.sweepWidthTD2/2,self.sweepWidthTD2/2,len(self.fidTime))
 
     def zeroFilling(self, fromPos, toPos, totalPoints):
@@ -729,15 +741,13 @@ class nmrData(object):
         """
         i1, i2 = self.getIndices([start, stop], scale=scale)
 
-        #get the step in x-variable
         if scale == "Hz":
             step = np.abs(self.frequency[1] - self.frequency[0])
-        if scale == "ppm":
+        elif scale == "ppm":
             step = np.abs(self.ppmScale[1] - self.ppmScale[0])
         else:
             step = 1
-
-
+  
         if part == "real":
             retVal = np.sum(np.real(self.allFid[fromPos][index][i1:i2]))*step
         elif part == "magnitude":
@@ -890,7 +900,7 @@ class nmrData(object):
 
 
     def autoPhase1(self, fromPos, index, start = -1e6, stop = 1e6, derivative = 1,
-                   penalty = 1e3, scale  = 'Hz', debug = False):
+                   penalty = 1e3, scale  = 'Hz'):
         """Automatic phase correction (0 + 1 order) based on entropy
         minimization (Chen et al: J. Mag. Res. 158, 164-168 (2002)).
         Minimizes entropy of phased spectrum + a penalty function (which is
@@ -937,7 +947,7 @@ class nmrData(object):
         res = sp.optimize.minimize(self.__tryPhase, correction,
                                    args = (spectrum, derivative, penalty,))
 
-        if debug:
+        if self.debug:
             spectrum = self.__phase01(spectrum, res.x)
             print('penalty change:', self.__penalty(spectrum, penalty) - penalty_start)
             print('entropy change:', self.__entropy(spectrum, derivative) - entropy_start)
