@@ -800,6 +800,35 @@ class lorentzian(Model):
                 print("Parameters have been estimated: ", p0)
         self.p0 = self.fitGeneral(x,y,p0)
 
+
+class doubleLorentzian(Model):
+    """Single lorentzian line"""
+
+    def __init__(self, silence = True):
+        self.silence = silence
+        self.paramNames = ["centerFreq1", "centerFreq2", "amplitude1", "amplitude2", "half-width"]
+        self.model = self.model1
+        self.lineLorentzian = lorentz
+
+    def model1(self, f, f0, f1, amp0, amp1, hwhm):
+        y = self.lineLorentzian(f,f0,amp0,hwhm) + self.lineLorentzian(f,f1,amp1,hwhm)
+        return y
+
+    def fit(self, x, y, p0 = []):
+        if len(p0) == 0:
+            p0 = [0,0,1,1,1]
+            if not self.silence:
+                print("Parameters have been estimated: ", p0)
+        self.p0 = self.fitGeneral(x,y,p0)
+
+        amp0 = self.popt[2]
+        amp1 = self.popt[3]
+
+        self.fwhm = 2*self.popt[4]
+        self.f0 = self.popt[0]
+        self.f1 = self.popt[1]
+        self.pol = ( amp0 / (amp0 + amp1) - 0.5 )*200
+
 ################################################################################
 
 
