@@ -601,19 +601,19 @@ class nmrData(object):
         #print "Hilo!"
         self.checkToPos(toPos)
 
-
         fidList = []
         for k in range(len(self.allFid[fromPos])):
             xVals = []
             yVals = []
             indices = []
             thisFid = []
-
-
+            
             for pair in fitRange:
                 i1,i2 = self.getIndices(pair, scale = scale)
 
                 indices.extend([i1,i2])
+
+                assert i1 != i2, "Empty Frequency Range - Frequency for Baseline Corrrection outside spectral range?"
 
                 xVals.extend(self.frequency[i1:i2])
                 yVals.extend(np.real(self.allFid[fromPos][k][i1:i2]))
