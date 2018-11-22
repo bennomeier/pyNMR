@@ -29,7 +29,7 @@ class nmrData(object):
     Usage:
     > nmrData = nmrData(path, type)
 
-    supported type: 'Magritek', 'ntnmr', 'TopSpin', 'spinSight', 'varian'
+    supported type: 'Magritek', 'ntnmr', 'TopSpin', 'spinSight', 'varian', 'TopSpin4'
     """
     def __init__(self, path, datatype, container=0, sizeTD1=0, process = False,  lb = 0, phase = 0, ls = 0, zf = 0, ft_only = [], debug = False, hiper_skip_footer = 0, hiper_skip_header = 3, endianess = "<", maxLoad = 0):
         """ This reads the data """
@@ -49,7 +49,7 @@ class nmrData(object):
         self.parDictionary = {}
 
         self.debug = debug
-        
+
         if self.debug: print("The datatype is {0}".format(datatype))
 
         if datatype == "Hiper":
@@ -165,7 +165,7 @@ class nmrData(object):
 
             # read the header file
             if os.path.isfile(path + "/procpar"):
-                parFile = open(path + "/procpar", 'r') 
+                parFile = open(path + "/procpar", 'r')
                 rows = parFile.readlines()
                 lineCounter = 0;
                 for line in rows:
@@ -206,7 +206,7 @@ class nmrData(object):
                         self.allFid[0].append(sp.add(realPart, imagPart))
             else:
                 print("No fid file found.")
-    
+
         if datatype == 'TopSpinOld':
             self.f = open(path, mode='rb')
             self.sizeTD2=1
@@ -383,7 +383,7 @@ class nmrData(object):
             # TD1 is number of FIDs, TD2 is number of datapoints in each FID
             if maxLoad > 0:
                self.sizeTD1 = maxLoad
-            
+
             for i in range(0,  self.sizeTD1):
                 #print "sizeTD2: ", self.sizeTD2
                 #print i
@@ -529,6 +529,201 @@ class nmrData(object):
         if process == True:
             self.process(ls = ls, zf = zf, lb = lb, phase = phase, ft_only = ft_only)
 
+        if datatype == 'TopSpin4':
+            if self.debug:
+                print("hi, this is self.debug for the TopSpin4 datatype")
+            #The acqus file containts the spectral width SW_h and 2*SizeTD2 as ##$TD
+            #The acqu2s file contains TD1 as ##$TD
+            directory = os.path.dirname(path)
+            acqusFile = open(directory + "/acqus", mode='r')
+            self.files.append(acqusFile)
+
+            if self.debug:
+                print("Importing TopSpin4 data")
+
+            #check if acqu2sfile exists, if yes, experiment is 2D!
+            if os.path.isfile(directory + "/acqu2s"):
+                acqu2sFile = open(directory + "/acqu2s", mode='r')
+                self.files.append(acqu2sFile)
+                acqu2File = open(directory + "/acqu2", mode='r')
+                self.files.append(acqu2File)
+
+                self.is2D = True
+            else:
+                self.is2D = False
+                self.sizeTD1 = 1
+
+            if self.debug:
+                print("2D: ", self.is2D)
+
+            #this could be crafted into a common routine which gives names of parameters
+            #parameters and works the same for e.g., spinsight and topspin
+            if self.debug:
+                print("reading acqus file")
+            count = 0
+            while True:
+                if self.debug:
+                    print("count = ", count)
+                #try:
+                count += 1
+                line = acqusFile.readline().strip()
+                if self.debug:
+                    print(line)
+                if "=" in line:
+                    line = line.split("=")
+                elif len(line) > 0:
+                    line = line.split(" ")
+                elif len(line) == 0 or count > 1000:
+                    if self.debug: print("Ended reading acqus file at line ", count)
+                    break
+                else:
+                    next
+
+                    #print line[0]
+                if line[0] == "##$SW_h":
+                    #this line might be chopping the last digit off....
+                    #self.sweepWidthTD2 = int(float(line[1][:-1]))
+                    self.sweepWidthTD2 = int(float(line[1]))
+                    if self.debug: print("SweepWidthTD2: ", self.sweepWidthTD2)
+                elif line[0] == "##$TD":
+                    self.sizeTD2 = int(int(line[1])/2)
+                    if self.debug: print("sizeTD2: ", self.sizeTD2)
+                elif line[0] == "##$SFO1":
+                    self.carrier = float(line[1])*1e6
+                    if self.debug: print("SFO1:", self.carrier)
+
+                elif len(line) == 0:
+                    break
+
+
+                if len(line[0]) > 1:
+                    if "@" in line[-1]:
+                        #this line contains date, time, some unknown stuff and user, does not work with all bruker files, hence try only"
+                        try:
+                            self.parDictionary["date"] = line[1].strip()
+                            self.parDictionary["time"] = line[2].strip()
+                        except:
+                            pass
+                    elif line[0] == "##$D":
+                        delays1 = acqusFile.readline().strip()
+                        delays2 = acqusFile.readline().strip()
+                        self.parDictionary["d"] = [float(d) for d in delays1.strip().split(" ")] + [float(d) for d in delays2.strip().split(" ")]
+
+                    elif line[0] == "##$L":
+                        loopCounters = acqusFile.readline().strip()
+                        self.parDictionary["l"] = [float(l) for l in loopCounters.strip().split(" ")]
+
+                    else:
+                        if self.debug:
+                            print("the catch all else")
+                        if len(line) > 1:
+                            self.parDictionary[line[0][2:].strip()] = line[1].strip()
+                        else:
+                            if self.debug:
+                                print("skipped too short line")
+
+
+            if self.is2D == True:
+                if self.debug:
+                    print("reading acqu2s file")
+                count = 0
+                while True:
+                    if self.debug:
+                        print("count = ", count)
+                    #try:
+                    count += 1
+                    line = acqu2sFile.readline().strip()
+                    if "=" in line:
+                        line = line.split("=")
+                    elif len(line) == 0 or count > 1000:
+                        if self.debug: print("Ended reading acqu2s file at line ", count)
+                        break
+                    else:
+                        next
+
+                    #print line[0]
+                    if line[0] == "##$TD" and self.sizeTD1 == 0:
+                        self.sizeTD1 = int(line[1])
+                        if self.debug: print("sizeTD1: ", self.sizeTD1)
+                    elif len(line) == 0:
+                        break
+
+                if os.path.isfile(directory + "/vdlist"):
+                    if self.debug: print("VD File exists!")
+                    self.vdList = np.loadtxt(directory + "/vdlist")
+
+            if self.debug:
+                print("TD2: ", self.sizeTD2)
+                print("TD1: ", self.sizeTD1)
+                print("Carrier:", self.carrier)
+
+            # if self.is2D:
+            #     self.f = open(path + "/ser", mode='rb')
+            # else:
+            #     self.f = open(path + "fid", mode='rb')#
+            #           dataString = self.f.read(self.sizeTD2*2*self.sizeTD1*4)
+            #          if self.debug: print "len(dataString): ", len(dataString)
+            #         self.f.close()
+            #
+            #           # here we read the FID data from fid/ser file
+            #          # first convert the datasting into a list of numbers:
+            # if self.debug: print "Endianess: ", endianess
+            #     self.data = struct.unpack(endianess + 'i'*(self.sizeTD2*2*self.sizeTD1), dataString)
+
+
+            if self.is2D:
+                self.f = open(path + "/ser", mode='rb')
+            else:
+                self.f = open(path + "fid", mode='rb')
+
+            self.files.append(self.f)
+
+            dataString = np.frombuffer(self.f.read(), dtype = endianess + "f8")
+            if self.debug: print("len(dataString) new: ", len(dataString))
+
+            self.data = dataString
+            #this is not how it should be done.
+            if self.sizeTD2 == 0:
+                self.sizeTD2 = int(len(self.data) / self.sizeTD1 / 2)
+
+            dwellTime = 1./self.sweepWidthTD2
+            self.fidTime = np.linspace(0, (self.sizeTD2-1)*dwellTime, num = self.sizeTD2)
+
+            # here we create one array of complex numbers for each of the FIDs
+            # i runs overa all fids in a ser file, in case of a fid file i = 0
+            # TD1 is number of FIDs, TD2 is number of datapoints in each FID
+            if maxLoad > 0:
+               self.sizeTD1 = maxLoad
+
+            for i in range(0,  self.sizeTD1):
+                #print "sizeTD2: ", self.sizeTD2
+                #print i
+                realPart = self.data[i*self.sizeTD2*2:(i+1)*self.sizeTD2*2:2]
+                imagPart = sp.multiply(self.data[i*self.sizeTD2*2+1:(i+1)*self.sizeTD2*2+1:2], 1j)
+                self.allFid[0].append(sp.add(realPart, imagPart))
+
+            # here we read the experiment title (only the one stored in pdata/1):
+            # could be made to read titles from all pdata folders (if needed)
+            try:
+                pathToTitle = directory + '/pdata/1/title'
+                titleFile = open(pathToTitle, mode='r')
+                self.files.append(titleFile)
+                title = list(titleFile)
+                self.title = [line.strip() for line in title]
+            except:
+                if self.debug:
+                    print("No title file.")
+                else:
+                    pass
+            #close the files we opened:
+            for item in self.files:
+                item.close()
+
+            # delete all file handles so that nmrdata objects can be pickled.
+            self.files = []
+            del self.f
+
+
 
     def offsetCorrection(self, fromPos, toPos, fraction = 0.75, whichFid = 0):
 
@@ -607,7 +802,7 @@ class nmrData(object):
             yVals = []
             indices = []
             thisFid = []
-            
+
             for pair in fitRange:
                 i1,i2 = self.getIndices(pair, scale = scale)
 
@@ -624,7 +819,7 @@ class nmrData(object):
 
             p = np.poly1d(z)
             self.p = p
-            
+
             if applyLocally:
                 thisFid = self.allFid[fromPos][k]
                 thisFid[min(indices):max(indices)] -= p(self.frequency[min(indices):max(indices)])
@@ -695,7 +890,7 @@ class nmrData(object):
                 print("Degree: " + str(degree))
                 print("Index: {}".format(index))
                 print("Frequency at index: {} Hz".format(self.frequency[index]))
-            
+
         if degree == True:
             phaseValues = phaseValues*np.pi/180
 
@@ -747,7 +942,7 @@ class nmrData(object):
             step = np.abs(self.ppmScale[1] - self.ppmScale[0])
         else:
             step = 1
-  
+
         if part == "real":
             retVal = np.sum(np.real(self.allFid[fromPos][index][i1:i2]))*step
         elif part == "magnitude":
@@ -1042,7 +1237,7 @@ class nmrData(object):
 
     def __len__(self):
         return len(self.allFid)
-              
+
 
 
 
