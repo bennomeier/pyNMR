@@ -49,7 +49,7 @@ class nmrData(object):
         self.parDictionary = {}
 
         self.debug = debug
-        
+
         if self.debug: print("The datatype is {0}".format(datatype))
 
         if datatype == "Hiper":
@@ -165,7 +165,7 @@ class nmrData(object):
 
             # read the header file
             if os.path.isfile(path + "/procpar"):
-                parFile = open(path + "/procpar", 'r') 
+                parFile = open(path + "/procpar", 'r')
                 rows = parFile.readlines()
                 lineCounter = 0;
                 for line in rows:
@@ -206,7 +206,7 @@ class nmrData(object):
                         self.allFid[0].append(sp.add(realPart, imagPart))
             else:
                 print("No fid file found.")
-    
+
         if datatype == 'TopSpinOld':
             self.f = open(path, mode='rb')
             self.sizeTD2=1
@@ -383,7 +383,7 @@ class nmrData(object):
             # TD1 is number of FIDs, TD2 is number of datapoints in each FID
             if maxLoad > 0:
                self.sizeTD1 = maxLoad
-            
+
             for i in range(0,  self.sizeTD1):
                 #print "sizeTD2: ", self.sizeTD2
                 #print i
@@ -607,7 +607,7 @@ class nmrData(object):
             yVals = []
             indices = []
             thisFid = []
-            
+
             for pair in fitRange:
                 i1,i2 = self.getIndices(pair, scale = scale)
 
@@ -624,7 +624,7 @@ class nmrData(object):
 
             p = np.poly1d(z)
             self.p = p
-            
+
             if applyLocally:
                 thisFid = self.allFid[fromPos][k]
                 thisFid[min(indices):max(indices)] -= p(self.frequency[min(indices):max(indices)])
@@ -695,7 +695,7 @@ class nmrData(object):
                 print("Degree: " + str(degree))
                 print("Index: {}".format(index))
                 print("Frequency at index: {} Hz".format(self.frequency[index]))
-            
+
         if degree == True:
             phaseValues = phaseValues*np.pi/180
 
@@ -747,7 +747,7 @@ class nmrData(object):
             step = np.abs(self.ppmScale[1] - self.ppmScale[0])
         else:
             step = 1
-  
+
         if part == "real":
             retVal = np.sum(np.real(self.allFid[fromPos][index][i1:i2]))*step
         elif part == "magnitude":
@@ -855,9 +855,10 @@ class nmrData(object):
         phase: phase correction in degree
         ls: left shift (number of points)
         """
-        self.lineBroadening(0,1,lb)
-        self.phase(1,1,phase,degree=True)
-        self.leftShift(1, 2, ls)
+
+        self.phase(0,0,phase,degree=True)
+        self.leftShift(0, 1, ls)
+        self.lineBroadening(1,2,lb)
 
         if zf > 0:
             self.zeroFilling(2, 2, zf)
@@ -1042,7 +1043,7 @@ class nmrData(object):
 
     def __len__(self):
         return len(self.allFid)
-              
+
 
 
 
