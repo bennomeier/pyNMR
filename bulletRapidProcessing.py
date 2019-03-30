@@ -86,8 +86,8 @@ class Experiment(ndm.nmrData):
 
     def nutation(self, center = 0, width = 60000, returnData = False,
     showFigure = True, saveFigure = False):
-        """Shows nutation curve. Specta are integrated in specified interval
-        (center and width in Hz)"""
+        """Shows nutation curve. Intensities are taken from specta integration
+        in specified interval (center and width in Hz)"""
 
         # get pulse durations
         path = self.fullPath + "vplist"
@@ -131,7 +131,7 @@ class Experiment(ndm.nmrData):
         Input is thermal intensity at given temperature, pulse used to observe it,
         pulse that was used for observation in DNP buildup, Larmor Frequency of
         the observed nucleus and a factor corresponding to different sensitivities
-        of the rf at buildup and DNP temperatures (if the rf is 2x more sensitive
+        of the rf at thermal and DNP temperatures (if the rf is 2x more sensitive
         at the DNP temperature than at thermal temperature then factor = 2).
         You can override this by manually writing the self.scaling dict.
         """
@@ -151,6 +151,12 @@ class Experiment(ndm.nmrData):
     def buildup(self, center = 0, width = 60000, returnData = False,
                 delay = 1, getPolarization = False, saveFigure = False,
                 showFigure = True):
+        """Plots buildup curve. If getPolarization = True it estimates
+        the absolute polarization using self.scaling. The scaling must be
+        created beforehand by running getSCaling (or you can write the
+        self.scaling dict manually). Delay is time between two consecutive
+        observations. Intensities are taken from specta integrationself.
+        Spectra are integrated in specified interval (center, width). """
 
         self.delay = delay
 
