@@ -1050,9 +1050,10 @@ class nmrData(object):
         phase: phase correction in degree
         ls: left shift (number of points)
         """
-        self.lineBroadening(0,1,lb)
-        self.phase(1,1,phase,degree=True)
-        self.leftShift(1, 2, ls)
+
+        self.phase(0,0,phase,degree=True)
+        self.leftShift(0, 1, ls)
+        self.lineBroadening(1,2,lb)
 
         if zf > 0:
             self.zeroFilling(2, 2, zf)
