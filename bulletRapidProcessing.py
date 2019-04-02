@@ -202,12 +202,12 @@ class Experiment(ndm.nmrData):
             return self.result
 
 
-    def microwaveSpectrum(self, center = 0, width = 60000, start = 0, step = 1, returnData = False, saveFigure = False,
+    def microwaveSpectrum(self, center = 0, width = 60000, startMW = 0, stepMW = 1, returnData = False, saveFigure = False,
                 showFigure = True):
-        """Microwave spectrum. Start - lowest MW frequency measured in MHz,
-        step - MW frequency step between two points in MHz.
+        """Microwave spectrum. startMW - lowest MW frequency measured in MHz,
+        stepMW - MW frequency step between two points in MHz.
         Intensities are taken from spectra integrationself.
-        Spectra are integrated in specified interval (center, width). """
+        Spectra are integrated in a specified interval (center, width). """
 
         # get the integrals
         integrals = []
@@ -220,7 +220,7 @@ class Experiment(ndm.nmrData):
 
         # generate MW frequency axis
         n = len(self.integrals)
-        self.MWfrequency = np.linspace(start,start+(n-1)*step, n)
+        self.MWfrequency = np.linspace(startMW,startMW+(n-1)*stepMW, n)
 
         self.result = np.array([self.MWfrequency, self.integrals])
 
