@@ -200,3 +200,41 @@ class Experiment(ndm.nmrData):
 
         if returnData:
             return self.result
+
+
+    def microwaveSpectrum(self, center = 0, width = 60000, start = 0, step = 1, returnData = False, saveFigure = False,
+                showFigure = True):
+        """Microwave spectrum. Start - lowest MW frequency measured in MHz,
+        step - MW frequency step between two points in MHz.
+        Intensities are taken from spectra integrationself.
+        Spectra are integrated in specified interval (center, width). """
+
+        # get the integrals
+        integrals = []
+        start = center -width/2
+        stop = center + width/2
+        for index in range(len(self.allFid[-1])):
+            integral = self.integrateRealPart(-1, index, start, stop )
+            integrals.append(integral)
+        self.integrals = np.array(integrals)
+
+        # generate MW frequency axis
+        n = len(self.integrals)
+        self.MWfrequency = np.linspace(start,start+(n-1)*step, n)
+
+        self.result = np.array([self.MWfrequency, self.integrals])
+
+        if showFigure:
+            if self.interface == "ipynb":
+                plt.plot(self.result[0], self.result[1], "--o")
+                plt.grid()
+                plt.xlabel("MW Frequency (MHz)")
+                plt.ylabel("Integral Intensity")
+                plt.title("Microwave Spectrum: " + self.folder+"/" + str(self.expno))
+                if saveFigure:
+                    name = "MWspectrum_" + self.folder + "_" +str(self.expno) +".pdf"
+                    plt.savefig(name)
+                plt.show()
+
+        if returnData:
+            return self.result
