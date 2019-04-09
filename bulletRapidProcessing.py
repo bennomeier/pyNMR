@@ -76,10 +76,10 @@ class Experiment(ndm.nmrData):
                 plt.xlabel("Frequency offset (Hz)")
                 plt.ylabel("Intensity (arb. u.)")
                 plt.title("Spectrum: " + self.folder+"/" + str(self.expno))
-                plt.show()
                 if saveFigure:
                     name = "spect_" + self.folder + "_" +str(self.expno) +".pdf"
                     plt.savefig(name)
+                plt.show()
 
         if returnData:
             return result
