@@ -1,0 +1,101 @@
+CONFIGURATION INFORMATION
+=========================
+
+Path         : /opt/topspin3.6.2/conf/instr/spect/uxnmr.info
+Date         : Fri May  8 13:27:02 2020
+Release      : TopSpin 3.6.2
+Installed in : /opt/topspin3.6.2
+Host         : CZC950B470
+OS           : CentOS Linux release 7.6.1810 (Core) 
+CPU          : Intel(R) Xeon(R) W-2123 CPU @ 3.60GHz (8 cores at 1200 MHz with Hyperthreading)
+User         : nmrsu (NMR Super User)
+System       : Avance III 400 NMR spectrometer
+1H-frequency : 400.23 MHz
+Description  : Avance III
+Configured in: CZC950B470:/opt/topspin3.6.2/conf/instr/spect
+
+IPSO: connected to spectrometer subnet
+- TCP/IP address = 149.236.99.90
+ - IPSO type: AQS
+- Tctrl : 1
+- Fctrls: 2
+- Gctrl1: without digital preemphasis
+- Rctrl : 1
+- FREDs : none
+- DPP : none
+
+DRU1: AQS DRU Z100977/00637 ECL 04.00
+- TCP/IP address = 149.236.99.89
+- Firmware Version = 170619
+- DRU1 controls AQS-Rack and HPPR/2
+
+AQS: connected to 149.236.99.89:/dev/tty10
+  _Slot_ SBSB _____________________Board_____________________
+  Number Addr Type HW-VS FW-VS ID  ECL Name   Description
+  -----------------------------------------------------------
+     2   0x10 0x72   0x3    AW  R  3.0 REC-1  AQS RXAD400 Z102116/773 ECL 03.00
+     3   0x34 0xc0   0x1        X  2.0 REF-1  REF-600 Reference Board for AQS Receiver
+     4   0x24 0x11   0x8    AE  S  2.0 SGU-1  AQS SGU/2 400 Z103080/00476 ECL 02.00 FPGA-Vs=AF
+     5   0x25 0x11   0x8    AE  S  2.0 SGU-2  AQS SGU/2 400 Z103080/00481 ECL 02.00 FPGA-Vs=AF
+     9   0x36  0x5     0        A  6.0 BLA-1  BLA2BB 150/60 20-400 W1345049/1864 ECL 6
+    21   0x21 0xcf     0        P  1.0 PSD-1  PSD/3 Power Supply Distribution Board
+    --   0x20 0xd1     0        B  2.1 MASTER AQS/3 Chassis
+     1   0x20  0x7     0        B      MASTER AQS Rack Master
+  Logical Receiver/SGU configuration:
+
+
+Router: 1 AQS-Minirouter
+
+Amplifiers (AQS configuration):
+  RO  Amplifier  Module  Nucleus  Power/W  Switchbox Name PN/SN/FW
+   1      1         1        B      150    N         BLA2BB 150/60 20-400 W1345049/1864/-
+   2      1         2        B       60    N         BLA2BB 150/60 20-400 W1345049/1864/-
+   3      2         1       2H       20    N         2HTX in BSMS -/-/-
+
+
+BSMS: BSMS/2 connected to ethernet
+- TCP/IP address = 149.236.99.20
+- ELCB firmware version = 20190521
+- GAB current limits = 0.0/X, 0.0/Y, 10.0/Z (in A)
+- SCB channels = 20
+- Shim System = BOSS1-SB
+- 2HTX Amplifier: available
+- Lock: installed
+
+Eurotherm VTU: device connected to 149.236.99.90:/dev/tty05
+
+Preamplifiers :
+HPPR2: - HPPR/2 preamplifier connected to 149.236.99.89:/dev/tty10
+    Type      : HPPR/2
+    Controller: no Cover, with Application firmware = aQ
+                no LED display for tuning and matching
+    Module  1 : 1H/2H 1H (virtual 50 Ohm reference: 279.6%/81.6deg)
+                PN=Z003951, SN=00230 from 20070717
+    Module  2 : 1H/2H 2H (virtual 50 Ohm reference: 111.0%/-72.3deg)
+                PN=Z003951, SN=00230 from 20070717
+    Module  3 : XBB19F 2HS
+                PN=Z003955, SN=00240 from 20070726
+
+
+
+Gradient Controller cable connections
+--------------------------------------------------------------------
+GCtrl1: connected to GAB in BSMS
+
+RF cable connections (assumed)
+--------------------------------------------------------------------
+SGU1 NORM output -> input 2 of transmitter 1 (BLA2BB 150/60 20-400 W1345049/1864)
+SGU1 AUX  output -> input 1 of transmitter 2 (2HTX in BSMS)
+SGU2 NORM output -> input 3 of transmitter 1 (BLA2BB 150/60 20-400 W1345049/1864)
+SGU2 AUX  output -> TUNE signal input of HPPR
+
+Blanking cable connections (assumed)
+--------------------------------------------------------------------
+transmitter 1 = BLA2BB 150/60 20-400 W1345049/1864:
+- amplifier B-150W uses blanking 1
+- amplifier B-60W uses blanking 2
+
+transmitter 2 = 2HTX in BSMS:
+- amplifier 2H-20W uses blanking 3
+
+

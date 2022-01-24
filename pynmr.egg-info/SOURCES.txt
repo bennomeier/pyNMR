@@ -1,0 +1,8 @@
+LICENSE
+setup.py
+pynmr.egg-info/PKG-INFO
+pynmr.egg-info/SOURCES.txt
+pynmr.egg-info/dependency_links.txt
+pynmr.egg-info/not-zip-safe
+pynmr.egg-info/requires.txt
+pynmr.egg-info/top_level.txt

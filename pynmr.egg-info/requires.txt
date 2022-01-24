@@ -1,0 +1,9 @@
+numpy
+spindata
+scipy
+paramiko
+pyqtgraph
+PyQt5
+struct
+BeautifulSoup
+spindata

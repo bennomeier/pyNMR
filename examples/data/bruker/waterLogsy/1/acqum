@@ -1,0 +1,41 @@
+##TITLE= Parameter file, TopSpin 3.5 pl 6
+##JCAMPDX= 5.0
+##DATATYPE= Parameter Values
+##NPOINTS= 1	$$ modification sequence number
+##ORIGIN= Bruker BioSpin GmbH
+##OWNER= nmr
+$$ 2020-08-03 13:21:02.358 +0200  nmr@IBG-4-cohn
+$$ /opt/topspin3.5pl6/data/benno/nmr/WaterLogsy2_27072020/14/acqum
+$$ process /opt/topspin3.5pl6/prog/mod/edparproc
+##$COMMENT= <>
+##$ECF= 1
+##$ECHOLST= (0..15)
+1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
+##$ECOLLST= (0..15)
+1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
+##$FLIPA= 0
+##$FOV1= 0
+##$FOV2= 0
+##$FOV3= 0
+##$FRARE= 1
+##$HEADER= <>
+##$INSTIT= <>
+##$METHOD= <>
+##$NECHOES= 1
+##$NPROJEC= 32
+##$NSLICES= 32
+##$PATPOS= 0
+##$RUNEXAM= -1
+##$SDIST= 1
+##$SOANGLE= 0
+##$SORIENT= 0
+##$SOT= <>
+##$SPOS= 0
+##$SPOSDIR= <>
+##$STHICK= 3
+##$T2DIST= 30
+##$TINV= 50
+##$TREC= 2700
+##$TREP= 3000
+##$TSCAN= 50000
+##END=

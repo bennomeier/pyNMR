@@ -1,0 +1,23 @@
+##TITLE= Parameter file, TopSpin 3.5 pl 6
+##JCAMPDX= 5.0
+##DATATYPE= Parameter Values
+##NPOINTS= 4	$$ modification sequence number
+##ORIGIN= Bruker BioSpin GmbH
+##OWNER= nmr
+$$ 2020-07-09 16:41:50.743 +0200  nmr@IBG-4-cohn
+$$ /opt/topspin3.5pl6/data/benno/nmr/STD_improved_Probe5_09072020/4/acqu2s
+$$ process /opt/topspin3.5pl6/prog/mod/go4
+##$ACQT0= 0
+##$BF1= 400.25
+##$FnMODE= 0
+##$NUC1= <1H>
+##$NusJSP= 0
+##$NusT2= 1
+##$NusTD= 2
+##$O1= 1881.175
+##$ProjAngle= 0
+##$SFO1= 400.251881175
+##$SW= 2.00002140037375
+##$SW_h= 800.51232788985
+##$TD= 2
+##END=

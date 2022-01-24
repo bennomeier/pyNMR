@@ -1,3 +1,5 @@
 *.pyc
 *.py~
 *.org~
+*~ 
+.DS_Store

@@ -1,0 +1,237 @@
+EDIT_PAR COMMAND FILE
+
+DI_MODE         LONG
+ED_ENTRY        ACQU
+ORDER           FILE
+
+
+HEADER		"F2 - Acquisition Parameters"
+T_NAME		Date_
+		TYPE	R64
+		CLASS	ACQU
+		SUBRANGE 0.0 50000000
+		REL	"Date_=itodate(DATE)"
+		INV_REL	"DATE=datetoi(Date_,DATE)"
+		FORMAT	"%14.0f"
+		TEXT	" "
+END
+T_NAME		Time
+		TYPE	R32
+		CLASS	ACQU
+		SUBRANGE 0.0 1000000
+		REL	"Time=itotime(DATE)"
+		INV_REL	"DATE=timetoi(Time,DATE)"
+		FORMAT	"%14.2f h"
+		TEXT	" "
+END
+NAME		INSTRUM
+		TEXT	" "
+END
+NAME		PROBHD
+		FORMAT	"%14.14s"
+		TEXT	" "
+END
+NAME		PULPROG
+		TEXT	" "
+END
+NAME		TD
+		TEXT	" "
+END
+NAME		SOLVENT
+		TEXT	" "
+END
+NAME		NS
+		TEXT	" "
+END
+NAME		DS
+		TEXT	" "
+END
+T_NAME		SWH
+		TYPE	R32
+		CLASS	ACQU
+		SUBRANGE 0.0 1e8
+		REL	"SWH=SW*SFO1"
+		INV_REL "SW=SWH/SFO1"
+		UNIT	"Hz"
+		FORMAT	"%14.3f Hz"
+		TEXT	" "
+END
+T_NAME          FIDRES
+                TYPE    R32
+                CLASS   ACQU
+                SUBRANGE 0.0 100000
+                REL     "FIDRES=2*SW*SFO1/TD"
+                INV_REL "TD = nextpow(2*SW*SFO1/FIDRES)"
+		UNIT	"Hz"
+		FORMAT	"%14.6f Hz"
+		TEXT	" "
+END
+T_NAME          AQ
+		TYPE	R32
+		CLASS	ACQU
+		SUBRANGE 0.0 1000
+		REL	"AQ=aqcalc(SW,SFO1,TD,DIGTYP)"
+		INV_REL	"TD=tdcalc(SW,SFO1,1.0e6*AQ,DIGTYP)"
+		UNIT	"sec"
+		FORMAT	"%14.7f sec"
+		TEXT	" "
+END
+NAME		RG
+		TEXT	" "
+END
+T_NAME          DW
+		TYPE	R32
+		CLASS	ACQU
+		SUBRANGE 0.0 1000000
+		REL	"DW=1/(2*SW*SFO1)"
+		INV_REL	"SW=1000000/(2*(0.005+DW)*SFO1)"
+		UNIT	"usec"
+		FORMAT	"%14.3lf usec"
+		TEXT	" "
+END
+NAME		DE
+		FORMAT	"%14.2f usec"
+		TEXT	" "
+END
+NAME		TE
+		FORMAT	"%14.1f K"
+		TEXT	" "
+END
+T_NAME		CNST3
+		TYPE	R32
+		CLASS	ACQU
+		SUBRANGE -1e38 1e38
+		REL	"CNST3=CNST[3]"
+		INV_REL	"CNST[3]=CNST3"
+		FORMAT	"%14.7f"
+		TEXT	" "
+END
+T_NAME		D0
+		TYPE	R32
+		CLASS	ACQU
+		SUBRANGE 0.0 1e38
+		REL	"D0=D[0]"
+		INV_REL	"D[0]=D0"
+		UNIT	"sec"
+		FORMAT	"%14.8f sec"
+		TEXT	" "
+END
+T_NAME		D1
+		TYPE	R32
+		CLASS	ACQU
+		SUBRANGE 0.0 1e38
+		REL	"D1=D[1]"
+		INV_REL	"D[1]=D1"
+		UNIT	"sec"
+		FORMAT	"%14.8f sec"
+		TEXT	" "
+END
+T_NAME		D4
+		TYPE	R32
+		CLASS	ACQU
+		SUBRANGE 0.0 1e38
+		REL	"D4=D[4]"
+		INV_REL	"D[4]=D4"
+		UNIT	"sec"
+		FORMAT	"%14.8f sec"
+		TEXT	" "
+END
+T_NAME		D11
+		TYPE	R32
+		CLASS	ACQU
+		SUBRANGE 0.0 1e38
+		REL	"D11=D[11]"
+		INV_REL	"D[11]=D11"
+		UNIT	"sec"
+		FORMAT	"%14.8f sec"
+		TEXT	" "
+END
+T_NAME		IN0
+		TYPE	R32
+		CLASS	ACQU
+		SUBRANGE 0.0 1e38
+		REL	"IN0=IN[0]"
+		INV_REL	"IN[0]=IN0"
+		UNIT	"sec"
+		FORMAT	"%14.8f sec"
+		TEXT	" "
+END
+NAME		TDav
+		TEXT	" "
+END
+NAME		SFO1
+		FORMAT	"%14.7f MHz"
+		TEXT	" "
+END
+NAME		NUC1
+		NONEDIT
+		TEXT	" "
+END
+T_NAME		P1
+		TYPE	R32
+		CLASS	ACQU
+		SUBRANGE 0.0 1.0e10
+		REL	"P1=P[1]"
+		INV_REL	"P[1]=P1"
+		UNIT	"usec"
+		FORMAT	"%14.2f usec"
+		TEXT	" "
+END
+T_NAME		P2
+		TYPE	R32
+		CLASS	ACQU
+		SUBRANGE 0.0 1.0e10
+		REL	"P2=P[2]"
+		INV_REL	"P[2]=P2"
+		UNIT	"usec"
+		FORMAT	"%14.2f usec"
+		TEXT	" "
+END
+T_NAME		PLW1
+		TYPE	R32
+		CLASS	ACQU
+		REL	"PLW1=PLW[1]"
+		INV_REL	"PLW[1]=PLW1"
+		UNIT	"W"
+		FORMAT	"%14.8f W"
+		TEXT	"power PLW1 "
+END
+NAME		SFO2
+		FORMAT	"%14.7f MHz"
+		TEXT	" "
+END
+NAME		NUC2
+		NONEDIT
+		TEXT	" "
+END
+NAME		CPDPRG[2]
+		TEXT	" "
+END
+T_NAME		PCPD2
+		TYPE	R32
+		CLASS	ACQU
+		SUBRANGE 0 1e38
+		REL	"PCPD2=PCPD[2]"
+		INV_REL	"PCPD[2]=PCPD2"
+		UNIT	"usec"
+		FORMAT	"%14.2f usec"
+		TEXT	" "
+END
+T_NAME		PLW2
+		TYPE	R32
+		CLASS	ACQU
+		REL	"PLW2=PLW[2]"
+		INV_REL	"PLW[2]=PLW2"
+		UNIT	"W"
+		FORMAT	"%14.8f W"
+		TEXT	"power PLW2 "
+END
+T_NAME		PLW12
+		TYPE	R32
+		CLASS	ACQU
+		REL	"PLW12=PLW[12]"
+		INV_REL	"PLW[12]=PLW12"
+		UNIT	"W"
+		FORMAT	"%14.8f W"
+		TEXT	"power PLW12 "
+END

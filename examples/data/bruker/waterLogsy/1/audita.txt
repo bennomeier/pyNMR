@@ -1,0 +1,18 @@
+##TITLE= Audit trail, TopSpin 3.5 pl 6
+##JCAMPDX= 5.01
+##ORIGIN= Bruker BioSpin GmbH
+##OWNER= nmr
+$$ /opt/topspin3.5pl6/data/benno/nmr/WaterLogsy2_27072020/14/audita.txt
+##AUDIT TRAIL=  $$ (NUMBER, WHEN, WHO, WHERE, PROCESS, VERSION, WHAT)
+(   1,<2020-08-03 17:31:59.299 +0200>,<nmr>,<IBG-4-cohn>,<go4>,<TopSpin 3.5.6>,
+      <created by zg
+	started at 2020-08-03 13:32:09.530 +0200,
+	POWCHK enabled, PULCHK disabled,
+       configuration hash MD5:
+       AE 27 52 20 80 87 7B 90 0B 93 45 E1 F1 0F CC 69
+       data hash MD5: 32K
+       A5 7C 92 6C AF 51 94 C2 F0 A9 54 22 C8 90 F5 26>)
+##END=
+
+$$ hash MD5
+$$ D4 C9 2B E2 A4 A4 05 2A 88 B6 1B 6C C9 83 89 64

@@ -1,0 +1,139 @@
+CONFIGURATION INFORMATION
+=========================
+
+Path         : /opt/topspin3.5pl6/conf/instr/spect/uxnmr.info
+Date         : Mon Feb 10 10:27:26 2020
+Release      : TopSpin 3.5 pl 6
+Installed in : /opt/topspin3.5pl6
+Host         : IBG-4-cohn
+OS           : CentOS Linux release 7.3.1611 (Core) 
+CPU          : Intel(R) Xeon(R) CPU E5-1620 v3 @ 3.50GHz (8 cores at 1200 MHz with Hyperthreading)
+User         : nmr (NMR User)
+System       : Avance III HD 400 NMR spectrometer
+1H-frequency : 400.25 MHz
+Description  : CABINET 400HD OB 
+Bruker Order : 10237025
+Configured in: IBG-4-cohn:/opt/topspin3.5pl6/conf/instr/spect
+
+IPSO: connected to spectrometer subnet
+- TCP/IP address = 149.236.99.91
+ - IPSO type: AQS
+- Tctrl : 1
+- Fctrls: 3
+- Gctrl1: without digital preemphasis
+- Rctrl : 1
+- FREDs : none
+- DPP : none
+
+DRU1: AQS DRU-E Z102520/05383 ECL 07.00
+- TCP/IP address = 149.236.99.89
+- Firmware Version = 151014
+- DRU1 controls AQS-Rack and HPPR/2
+
+AQS: connected to 149.236.99.89:/dev/tty10
+  _Slot_ SBSB _____________________Board_____________________
+  Number Addr Type HW-VS FW-VS ID  ECL Name   Description
+  -----------------------------------------------------------
+     2   0x10 0x43   0x5    CD  R  0.4 REC-1  AQS RXAD/2 600 Z130588/2870 ECL 00.04
+     3   0x34 0xd6   0x1        X  5.1 REF-1  REF/3-600 Reference Board for AQS/3 Receiver
+     4   0x24 0x32     0        S  3.2 SGU-1  AQS SGU/3 600 (2CH) Z117129/03292 ECL 03.02 FPGA-Vs=20131031
+     5   0x26 0x32     0        S  3.2 SGU-2  AQS SGU/3 600 (2CH) Z117129/03293 ECL 03.02 FPGA-Vs=20131031
+    13   0xa0 0x93     0        V  0.1 PS-1   
+    14   0xa1 0x91     0        V  1.2 PS-2   AQS PSM-D Power Supply Module
+    --   0x20 0xd8     0        B  2.0 MASTER AQS/3+ Chassis
+     1   0x20  0x7     0        B      MASTER AQS Rack Master
+  Logical Receiver/SGU configuration:
+
+
+Router: none installed
+
+
+Transmitters at the spectrometer subnet:
+----------------------------------------
+BLA_W1345099_0261 W1345099/0261 ECL 41:
+- TCP/IP address = 149.236.99.93
+- Firmware VS    = 20120627
+- Amplifier      = BLAXH2H500/100/150 E 200-600MHZ INR: W1345099/0261 ECL 41
+- Router         = BLMMR32 RF AMPLIFIER MODULE: W1345204/5688 ECL 21
+- Controller     = BLA CONTROL BOARD 6 2CH: W1522050/1774 ECL 60
+- QNP-Accessory  : 1 X-input and 1 H-input
+BLA_W1345093_1158 W1345093/1158 ECL 12:
+- TCP/IP address = 149.236.99.92
+- Firmware VS    = 20120627
+- Amplifier      = BLAX500 E 6-365MHZ INR: W1345093/1158 ECL 12
+- Router         = BLMMR31 RF AMPLIFIER MODULE: W1345212/005434 ECL 21
+- Controller     = BLA CONTROL BOARD 6 2CH: W1522050/011668 ECL 60
+LTRX Z109888/02015 ECL 04.01:
+- TCP/IP address = 149.236.99.20
+- Amplifier      = BSMS/2 LOCK TRANSCEIVER 400: Z109888/02015 ECL 04.01
+
+BSMS: BSMS/2 connected to ethernet
+- TCP/IP address = 149.236.99.20
+- ELCB firmware version = 20170712
+- GAB current limits = 0.0/X, 0.0/Y, 10.0/Z (in A)
+- SCB channels = 40
+- Shim System = BOSS3-SB
+- L-TRX = BSMS/2 LOCK TRANSCEIVER 400: Z109888/02015 ECL 04.01
+- Lock: on L-TRX board
+- VTU_SPB = BSMS/2 SPB SENSOR & PNEUMATIC BD: Z115191/03464 ECL 05.02
+- VTU_VPSB1 = BSMS/2 VARIABLE POWER SUPPLY BD: Z115193/03820 ECL 01.05
+
+VTU: in BSMS/2 connected to ethernet
+- TCP/IP address = 149.236.99.20
+
+Sample Changers at the spectrometer subnet:
+-------------------------------------------------
+Sample Changer 1: BACS2_H15000-01_931
+- TCP/IP address   = 149.236.99.60
+
+Preamplifiers :
+HPPR2: - HPPR/2 preamplifier connected to 149.236.99.89:/dev/tty10
+    Type      : HPPR/2
+    Controller: Cover/2, with DRU Application firmware = c.
+                no LED display for tuning and matching
+    Module  1 : HPLNA 19F1H (virtual 50 Ohm reference: 99.8%/-0.1deg, reflection meter)
+                PN=Z103203, SN=00615 from 20160803
+    Module  2 : 2H
+                PN=Z003471, SN=00291 from 20160714
+    Module  3 : XBB19F 2HS
+                PN=Z003504, SN=01449 from 20160803
+    Module  4 : XBB19F 2HS
+                PN=Z003504, SN=01450 from 20160803
+
+
+
+Gradient Controller cable connections
+--------------------------------------------------------------------
+GCtrl1: connected to GAB in BSMS
+
+RF cable connections (detected)
+--------------------------------------------------------------------
+SGU1 NORM output -> input 1 of transmitter 1 (BLAXH2H500/100/150 E 200-600MHZ BLAX500 E 6-365MHZ INR W1345099/0261 at TCP/IP 149.236.99.93)
+SGU1 AUX  output -> input 2 of transmitter 2 (BLAX500 E 6-365MHZ INR W1345093/1158 at TCP/IP 149.236.99.92)
+SGU2 NORM output -> input 2 of transmitter 1 (BLAXH2H500/100/150 E 200-600MHZ BLAX500 E 6-365MHZ INR W1345099/0261 at TCP/IP 149.236.99.93)
+SGU2 AUX  output -> TUNE signal input of HPPR
+SGU3 NORM output -> input 1 of transmitter 2 (BLAX500 E 6-365MHZ INR W1345093/1158 at TCP/IP 149.236.99.92)
+SGU3 AUX  output -> input 4 of transmitter 1 (BLAXH2H500/100/150 E 200-600MHZ BLAX500 E 6-365MHZ INR W1345099/0261 at TCP/IP 149.236.99.93)
+
+Blanking cable connections (detected)
+--------------------------------------------------------------------
+transmitter 1 = BLAXH2H500/100/150 E 200-600MHZ BLAX500 E 6-365MHZ INR W1345099/0261 at TCP/IP 149.236.99.93:
+- amplifier 1H-100W uses blanking 2
+- amplifier X-500W uses blanking 1
+- amplifier 2H-150W uses blanking 7
+
+transmitter 2 = BLAX500 E 6-365MHZ INR W1345093/1158 at TCP/IP 149.236.99.92:
+- amplifier X-500W uses blanking 4
+
+transmitter 3 = BSMS/2 LOCK TRANSCEIVER 400 Z109888/02015 at TCP/IP 149.236.99.20:
+- amplifier 2H-5W needs no blanking
+
+
+Switchbox (3 outputs: X / F / H) routing
+--------------------------------------------------------------------
+transmitter 1 = BLAXH2H500/100/150 E 200-600MHZ BLAX500 E 6-365MHZ INR W1345099/0261 at TCP/IP 149.236.99.93:
+- amplifier X-500W at blanking 1 can be routed to switchbox output 1 = X and output 2 = F
+- amplifier 1H-100W at blanking 2 can be routed to switchbox output 1 = X, output 2 = F and output 3 = H
+- amplifier 2H-150W at blanking 7 can be routed to switchbox output 5 (unknown)
+
+

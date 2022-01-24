@@ -1,0 +1,26 @@
+##TITLE= Parameter file, TopSpin 3.6.2
+##JCAMPDX= 5.0
+##DATATYPE= Parameter Values
+##NPOINTS= 15	$$ modification sequence number
+##ORIGIN= Bruker BioSpin GmbH
+##OWNER= nmrsu
+$$ 2021-03-15 15:27:13.646 +0100  nmrsu@ibg-4-charlie
+$$ /opt/nmrdata/user/dnp_210315_1_solids/2/scon2
+$$ process /opt/topspin3.6.2/prog/mod/go4
+##$BLKTR= (0..19)
+3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3
+##$DE1= 4.5
+##$DEADC= 0.5
+##$DEPA= 4.5
+##$DERX= 1.5
+##$FILCOR= 0
+##$GRADCHAN= 0
+##$GRADPRE= (0..1)
+10 10
+##$HD_BLKTR= (0..19)
+1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
+##$HD_DE1= 5
+##$HD_DEADC= 0
+##$HD_DEPA= 2.5
+##$HD_DERX= 0
+##END=

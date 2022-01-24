@@ -1,0 +1,296 @@
+# 1 "/opt/topspin3.5pl6/exp/stan/nmr/lists/pp/user/WaterLogsy.bm"
+;WaterLOGSY
+;avance-version (12/01/11)
+;
+; A. Gossert, H. Kovacs Jan. 2016
+;
+;1D sequence
+;water suppression using excitation sculpting with gradients
+;with flip-back pulse (optional)
+;with spinlock (optional)
+;
+;C. Dalvit, GP. Fogliatto, A. Stewart, M. Veronesi & 
+;   B. Stockman, J. Biomol. NMR 21, 349-359 (2001)
+;C. Dalvit, 
+;   J. Biomol. NMR 11, 437 - 444 (1998)
+;AD. Gossert, C. Henry, MJJ. Blommers, W. Jahnke & 
+;   C. Fernandez, J. Biomol. NMR 43, 211-217 (2009)
+;
+;$CLASS=HighRes
+;$DIM=1D
+;$TYPE=
+;$SUBTYPE=
+;$COMMENT=
+
+; use ZGOPTNS in ased to define the flags; e.g. -DAUTO
+; -DPO : Polarization optimized version
+; -DSL : Spin lock for suppression of protein signals
+
+# 32 "/opt/topspin3.5pl6/exp/stan/nmr/lists/pp/user/WaterLogsy.bm"
+;pl1 : f1 channel - power level for pulse (default)
+;pl33: f1 channel - power level for trim pulse
+;sp1 : f1 channel - shaped pulse 180 degree
+;sp11: f1 channel - shaped pulse  90 degree  (H2O on resonance)
+;sp21: f1 channel - shaped pulse 180 degree (H2O on resonance)
+;p1 : f1 channel -  90 degree high power pulse
+;p2 : f1 channel - 180 degree high power pulse
+;p7 : f1 channel - 180 degree shaped pulse (H2O on resonance)  [7.5 ms]
+;p12: f1 channel - 180 degree shaped pulse (Squa100.1000)      [2 ms]
+;p16: homospoil/gradient pulse                                 [1 ms]
+;p29: f1 channel -  90 degree shaped pulse (flipback pulse)    [4 ms]
+;d1 : relaxation delay: 1-5 * T1                               [2-3 s]
+;d8 : mixing time                                              [0.8-1.5 ms]
+;d12: delay for power switching                                [20 us]
+;d16: delay for homospoil/gradient recovery
+;d29: mixing time for CLEANEX spinlock
+;ns: 8 * n, total number of scans: NS * TD0
+;ds: 4
+
+
+;for z-only gradients:
+;gpz1: 57%
+;gpz2: 80%
+;gpz3: 0.2%
+;gpz4: 31%
+;gpz5: 11%
+# 59 "/opt/topspin3.5pl6/exp/stan/nmr/lists/pp/user/WaterLogsy.bm"
+;use gradient files:
+;gpnam1: SMSQ10.100
+;gpnam2: SMSQ10.100
+;gpnam3: SMSQ10.100
+;gpnam4: SMSQ10.100
+;gpnam5: SMSQ10.100
+
+
+# 68 "/opt/topspin3.5pl6/exp/stan/nmr/lists/pp/user/WaterLogsy.bm"
+prosol relations=<triple2>
+
+
+# 1 "/opt/topspin3.5pl6/exp/stan/nmr/lists/pp/Avance.incl" 1
+;Avance3aqs.incl
+;   for AV III with AQS IPSO
+;
+;avance-version (15/06/05)
+;
+;$CLASS=HighRes Incl
+;$COMMENT=
+# 176 "/opt/topspin3.5pl6/exp/stan/nmr/lists/pp/Avance.incl"
+;$Id: Avance3aqs.incl,v 1.1.8.3 2015/03/05 16:46:54 ber Exp $
+# 71 "/opt/topspin3.5pl6/exp/stan/nmr/lists/pp/user/WaterLogsy.bm" 2
+
+# 1 "/opt/topspin3.5pl6/exp/stan/nmr/lists/pp/Grad.incl" 1
+;Grad2.incl  -  include file for Gradient Spectroscopy
+;   for TCU3
+;
+;avance-version (07/01/17)
+;
+;$CLASS=HighRes Incl
+;$COMMENT=
+
+# 27 "/opt/topspin3.5pl6/exp/stan/nmr/lists/pp/Grad.incl"
+define list<gradient> EA=<EA>
+
+
+# 31 "/opt/topspin3.5pl6/exp/stan/nmr/lists/pp/Grad.incl"
+;$Id: Grad2.incl,v 1.14 2012/01/31 17:49:21 ber Exp $
+# 72 "/opt/topspin3.5pl6/exp/stan/nmr/lists/pp/user/WaterLogsy.bm" 2
+
+# 1 "/opt/topspin3.5pl6/exp/stan/nmr/lists/pp/Delay.incl" 1
+;Delay.incl  -  include file for commonly used delays
+;
+;version (13/08/07)
+;
+;$CLASS=HighRes Incl
+;$COMMENT=
+
+# 9 "/opt/topspin3.5pl6/exp/stan/nmr/lists/pp/Delay.incl"
+;general delays
+
+define delay DELTA
+define delay DELTA1
+define delay DELTA2
+define delay DELTA3
+define delay DELTA4
+define delay DELTA5
+define delay DELTA6
+define delay DELTA7
+define delay DELTA8
+define delay DELTA9
+define delay DELTA10
+define delay DELTA11
+define delay DELTA12
+define delay DELTA13
+define delay DELTA14
+define delay DELTA15
+define delay DELTA16
+
+define delay TAU
+define delay TAU1
+define delay TAU2
+define delay TAU3
+define delay TAU4
+define delay TAU5
+define delay TAU6
+define delay TAU7
+define delay TAU8
+define delay TAU9
+# 40 "/opt/topspin3.5pl6/exp/stan/nmr/lists/pp/Delay.incl"
+define delay INCR1
+define delay INCR2
+define delay INCR3
+define delay INCR4
+define delay INCR5
+define delay INCR6
+
+
+;delays for centering pulses
+# 50 "/opt/topspin3.5pl6/exp/stan/nmr/lists/pp/Delay.incl"
+define delay CEN_HN1
+define delay CEN_HN2
+define delay CEN_HN3
+define delay CEN_HC1
+define delay CEN_HC2
+define delay CEN_HC3
+define delay CEN_HC4
+define delay CEN_HP1
+define delay CEN_HP2
+define delay CEN_CN1
+define delay CEN_CN2
+define delay CEN_CN3
+define delay CEN_CN4
+define delay CEN_CP1
+define delay CEN_CP2
+
+
+;loop counters
+# 69 "/opt/topspin3.5pl6/exp/stan/nmr/lists/pp/Delay.incl"
+define loopcounter COUNTER
+define loopcounter SCALEF
+define loopcounter FACTOR1
+define loopcounter FACTOR2
+define loopcounter FACTOR3
+define loopcounter FACTOR4
+define loopcounter FACTOR5
+define loopcounter FACTOR6
+
+
+# 80 "/opt/topspin3.5pl6/exp/stan/nmr/lists/pp/Delay.incl"
+;$Id: Delay.incl,v 1.14.2.1 2013/08/30 09:43:33 ber Exp $
+# 73 "/opt/topspin3.5pl6/exp/stan/nmr/lists/pp/user/WaterLogsy.bm" 2
+
+
+# 76 "/opt/topspin3.5pl6/exp/stan/nmr/lists/pp/user/WaterLogsy.bm"
+define pulse P_SL
+
+
+"p2=p1*2"
+"d12=20u"
+# 86 "/opt/topspin3.5pl6/exp/stan/nmr/lists/pp/user/WaterLogsy.bm"
+"DELTA1=d8-8u"
+
+
+"TAU=de+p1*2/PI"
+# 91 "/opt/topspin3.5pl6/exp/stan/nmr/lists/pp/user/WaterLogsy.bm"
+"P_SL=d29"
+
+"l2 = 1"
+
+# 96 "/opt/topspin3.5pl6/exp/stan/nmr/lists/pp/user/WaterLogsy.bm"
+"acqt0=0"
+baseopt_echo
+
+
+# 1 "mc_line 100 file /opt/topspin3.5pl6/exp/stan/nmr/lists/pp/user/WaterLogsy.bm exp. def. part of mc cmd. before ze"
+; dimension 1D; AQ_mode 
+define delay MCWRK
+define delay MCREST
+"MCREST = 30m - 30m"
+"MCWRK = 0.333333*30m"
+
+    dccorr
+# 100 "/opt/topspin3.5pl6/exp/stan/nmr/lists/pp/user/WaterLogsy.bm"
+1 ze
+# 1 "mc_line 100 file /opt/topspin3.5pl6/exp/stan/nmr/lists/pp/user/WaterLogsy.bm exp. def. of mc cmd. after ze"
+# 101 "/opt/topspin3.5pl6/exp/stan/nmr/lists/pp/user/WaterLogsy.bm"
+# 1 "mc_line 101 file /opt/topspin3.5pl6/exp/stan/nmr/lists/pp/user/WaterLogsy.bm exp. start label for mc cmd."
+2 MCWRK  * 2
+LBLF0, MCWRK
+  MCREST
+# 102 "/opt/topspin3.5pl6/exp/stan/nmr/lists/pp/user/WaterLogsy.bm"
+  d12 pl1:f1 setnmr3^0 setnmr0^34^32^33 ctrlgrad 7
+# 108 "/opt/topspin3.5pl6/exp/stan/nmr/lists/pp/user/WaterLogsy.bm"
+3 10u
+  d1
+
+4 10u
+  50u setnmr3|0 setnmr0|34|32|33 ctrlgrad 0
+  "l2 = l2+1"
+;-------------------------------------- selective echo for water selection
+  (p1 ph1)
+  4u
+  p16:gp1
+  d16
+  (p7:sp21 ph2:r):f1
+  4u
+  p16:gp1
+  d16 pl1:f1
+  (p1 ph1)
+;-------------------------------------- NOE mixing time
+  p16:gp2
+  d16
+  4u gron3
+  DELTA1
+  4u groff
+;-------------------------------------- optional water flip-back pulse
+
+# 136 "/opt/topspin3.5pl6/exp/stan/nmr/lists/pp/user/WaterLogsy.bm"
+;-------------------------------------- read out pulse
+  (p1 ph1)
+
+  4u pl33:f1
+  (P_SL ph7)
+
+;-------------------------------------- water handling: first excitation sculpting echo
+  p16:gp4
+  d16
+  (p12:sp1 ph3:r):f1
+  4u
+  4u pl1:f1
+  p2 ph4
+  4u
+  p16:gp4
+  d16 
+  TAU
+;-------------------------------------- second excitation sculpting echo
+  p16:gp5
+  d16
+  (p12:sp1 ph5:r):f1
+  4u
+  4u pl1:f1
+  p2 ph6
+  4u
+  p16:gp5
+  d16
+;-------------------------------------- acquisition
+  go=2 ph31
+# 1 "mc_line 165 file /opt/topspin3.5pl6/exp/stan/nmr/lists/pp/user/WaterLogsy.bm exp. mc cmd. in line"
+  MCWRK wr #0
+  MCWRK zd
+  lo to LBLF0 times td0
+
+# 166 "/opt/topspin3.5pl6/exp/stan/nmr/lists/pp/user/WaterLogsy.bm"
+  4u setnmr3^0 setnmr0^34^32^33 ctrlgrad 7
+exit
+# 170 "/opt/topspin3.5pl6/exp/stan/nmr/lists/pp/user/WaterLogsy.bm"
+ph1=0
+ph2=0 1
+ph3=0 0 1 1
+ph4=2 2 3 3
+ph5=2 2 2 2 1 1 1 1
+ph6=0 0 0 0 3 3 3 3
+ph7=1
+ph11=2 0
+ph13=1
+ph31=0 2 2 0 2 0 0 2
+
+
