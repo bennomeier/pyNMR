@@ -4,8 +4,8 @@ with open('README.org') as f:
     long_description = f.read()
 
 setup(name='pynmr',
-      version='0.21',
-      description='Parse and Prosess NMR data.',
+      version='0.22',
+      description='Parse and Process NMR data.',
       long_description=long_description,
       long_description_content_type='text/markdown',
       classifiers=['License :: OSI Approved :: MIT License',
@@ -25,7 +25,6 @@ setup(name='pynmr',
                 'paramiko',
                 'pyqtgraph',
                 'PyQt5',
-                'struct',
                 'BeautifulSoup',
                 'spindata',
           ],
