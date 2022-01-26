@@ -23,11 +23,11 @@ from PyQt5 import QtGui as qtg
 from PyQt5 import QtCore as qtc
 import datetime
 
-from pyNMR.viewer.nmrView import NmrViewWidget
-from pyNMR.viewer.processorView import ProcessorViewWidget
+from pynmr.viewer.nmrView import NmrViewWidget
+from pynmr.viewer.processorView import ProcessorViewWidget
 
-from pyNMR.model.parser import topSpin
-from pyNMR.model.model import pyNmrDataSet, pyNmrDataModel
+from pynmr.model.parser import topSpin
+from pynmr.model.model import pyNmrDataSet, pyNmrDataModel
 
 # the modules below are used only for processing of examples.
 # Make sure not to violate the Model View pattern.

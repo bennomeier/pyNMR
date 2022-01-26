@@ -33,9 +33,9 @@ To import a Bruker dataset instantiate an nmr Data  object:
 import pynmr
 path = "pathToTopSpin/"
 
-import pyNMR.model.parser.topSpin as T
-import pyNMR.model.processor as P
-import pyNMR.model.operations as O
+import pynmr.model.parser.topSpin as T
+import pynmr.model.processor as P
+import pynmr.model.operations as O
 
 import matplotlib.pyplot as plt
 import numpy as np

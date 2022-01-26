@@ -4,6 +4,5 @@ scipy
 paramiko
 pyqtgraph
 PyQt5
-struct
-BeautifulSoup
+BeautifulSoup4
 spindata

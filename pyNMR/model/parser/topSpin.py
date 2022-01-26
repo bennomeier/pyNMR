@@ -1,4 +1,4 @@
-from pyNMR.model.parser.nmrData import nmrData
+from pynmr.model.parser.nmrData import nmrData
 import pysftp
 import numpy as np
 import scipy as sp

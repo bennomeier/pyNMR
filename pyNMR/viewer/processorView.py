@@ -4,7 +4,7 @@ from PyQt5 import QtWidgets as qtw
 from PyQt5 import QtGui as qtg
 from PyQt5 import QtCore as qtc
 
-import pyNMR.viewer.operationWidgets as ow
+import pynmr.viewer.operationWidgets as ow
 from functools import partial
 
 operationWidgets = {"Left Shift": ow.LeftShiftWidget,

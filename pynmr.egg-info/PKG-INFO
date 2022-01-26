@@ -1,7 +1,7 @@
 Metadata-Version: 2.1
 Name: pynmr
-Version: 0.21
-Summary: Parse and Prosess NMR data.
+Version: 0.24
+Summary: Parse and Process NMR data.
 Home-page: http://github.com/bennomeier/pyNMR
 Author: Benno Meier
 Author-email: meier.benno@gmail.com
