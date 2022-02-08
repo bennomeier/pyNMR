@@ -1,53 +1,52 @@
-#+TITLE: pyNMR
+pynmr
+=====
 
-* Module Description
 pyNMR is a set of python modules to parse, process, and analyze NMR data.
 
 There are some fragments of a graphical user interface but at this point pyNMR is best used together with Jupyter Lab.
 
 Currently supported NMR formats are Bruker TopSpin and RS2D.
 
-There is some code for parsing files from Tecmag NTNMR, Magritek, and Varian under pyNMR/model/parser, but at htis point these formats are not
+There is some code for parsing files from Tecmag NTNMR, Magritek, and Varian under pynmr/model/parser, but at this point these formats are not
 officially supported.
 
 
-* Installation 
-pyNMR is available at pip. It may be installed
+Installation
+------------
+
+pynmr is available at pip. It may be installed
 with
 
-#+BEGIN_SRC
-pip install pynmr
-#+END_SRC
+::
 
-or with
+	pip install pynmr
 
-#+BEGIN_SRC
-easy_install pynmr
-#+END_SRC
+
 
 Usage
 ------------
 To import a Bruker dataset instantiate an nmr Data  object:
 
-#+BEGIN_SRC python
-import pynmr
-path = "pathToTopSpin/"
+..code:: python
 
-import pynmr.model.parser.topSpin as T
-import pynmr.model.processor as P
-import pynmr.model.operations as O
-
-import matplotlib.pyplot as plt
-import numpy as np
-
-data = T.TopSpin("./data/bruker/dnp_210316_1_solids/1/")
-
-Processor = P.Processor([O.LeftShift(21),
+	 import pynmr
+	 path = "pathToTopSpin/"
+	 
+	 import pynmr.model.parser.topSpin as T
+	 import pynmr.model.processor as P
+	 import pynmr.model.operations as O
+	 
+	 import matplotlib.pyplot as plt
+	 import numpy as np
+	 
+	 data = T.TopSpin("./data/bruker/dnp_210316_1_solids/1/")
+	 
+	 Processor = P.Processor([O.LeftShift(21),
                          O.LineBroadening(0.2),
                          O.FourierTransform(),
                          O.Phase0D(190)])
-Processor.runStack(data)
-#+END_SRC
+	 Processor.runStack(data)
+	 
 
 
 Internal Notes

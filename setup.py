@@ -1,10 +1,10 @@
-from setuptools import setup
+from setuptools import setup, find_packages
 
-with open('README.org') as f:
+with open('README.txt') as f:
     long_description = f.read()
 
 setup(name='pynmr',
-      version='0.25',
+      version='0.29',
       description='Parse and Process NMR data.',
       long_description=long_description,
       long_description_content_type='text/markdown',
@@ -16,7 +16,7 @@ setup(name='pynmr',
       author='Benno Meier',
       author_email='meier.benno@gmail.com',
       license='MIT',
-      packages=['pyNMR'],
+      packages=find_packages(),
       include_package_data=True,
             install_requires = [
           'numpy',
@@ -27,6 +27,7 @@ setup(name='pynmr',
                 'PyQt5',
                 'BeautifulSoup4',
                 'spindata',
+                'pysftp',
           ],
       zip_safe=False)
 

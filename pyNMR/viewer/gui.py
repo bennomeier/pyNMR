@@ -32,8 +32,8 @@ from pynmr.model.model import pyNmrDataSet, pyNmrDataModel
 # the modules below are used only for processing of examples.
 # Make sure not to violate the Model View pattern.
 
-import pyNMR.model.processor as PROC
-import pyNMR.model.operations as OPS
+import pynmr.model.processor as PROC
+import pynmr.model.operations as OPS
 
 class MainWindow(qtw.QMainWindow):
 

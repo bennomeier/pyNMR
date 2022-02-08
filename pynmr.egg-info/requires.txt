@@ -6,3 +6,4 @@ pyqtgraph
 PyQt5
 BeautifulSoup4
 spindata
+pysftp
