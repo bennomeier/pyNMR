@@ -4,7 +4,7 @@ with open('README.txt') as f:
     long_description = f.read()
 
 setup(name='pynmr',
-      version='0.29',
+      version='0.30',
       description='Parse and Process NMR data.',
       long_description=long_description,
       long_description_content_type='text/markdown',
