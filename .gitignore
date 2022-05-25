@@ -3,3 +3,5 @@
 *.org~
 *~ 
 .DS_Store
+/dist/
+/build/

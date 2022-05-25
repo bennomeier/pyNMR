@@ -119,10 +119,10 @@ to an NMR experiment, an optional argument for endianess"""
                     self.parDictionary["l"] = [float(l) for l in loopCounters.strip().split(" ")]
                 elif line[0] == "##$O1":
                     self.parDictionary["O1"] = float(line[1])
-		elif line[0] == "##$PLW":
-		     powers1 = acqusFile.readline().strip()
-		     powers2 = acqusFile.readline().strip()
-		     self.parDictionary["powers"] = [float(p) for p in powers1.strip.split(" ")] + [float(p) for p in powers2.strip.split(" ")] 
+                elif line[0] == "##$PLW":
+                    powers1 = acqusFile.readline().strip().split(" ")
+                    powers2 = acqusFile.readline().strip().split(" ")
+                    self.parDictionary["powers"] = [float(p) for p in powers1] + [float(p) for p in powers2]
                 else:
                     if self.debug: print("the catch all else")
                     if len(line) > 1:
