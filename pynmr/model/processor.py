@@ -24,7 +24,7 @@ class Processor(object):
             opList = self.operationStack
 
         for op in opList:
-            print(op.name)
+            #print(op.name)
             op.run(nmrData)
         
     def __getitem__(self, index):
