@@ -332,7 +332,7 @@ class GetAllPhases(Operation):
 
 
 class SetPPMScale(Operation):
-    def __init__(self, offset=-1, ppmValue=-1, scale="offset"):
+    def __init__(self, offset=-1, shift=0, ppmValue=-1, scale="offset"):
         """
         SetPPMScale(self, offset, ppmValue, scale = 'offset')
         this function constructs a chemical shift axis
@@ -340,6 +340,7 @@ class SetPPMScale(Operation):
 
         scale can be 'offset' or 'absolute'
         - offset is used for signal frequency measured from the carrier,
+        - shift will be applied to shift the ppm scale after its creation
         - absolute is used of absolute signal frequency (in Hz).
         The 'absolute' is useful when creating a ppm scale based on data from
         different experiment with different SFO1
@@ -350,6 +351,7 @@ class SetPPMScale(Operation):
         self.offset = offset
         self.ppmValue = ppmValue
         self.scale = scale
+        self.shift = shift
         self.name = "Set PPM Scale"
 
     def run(self, nmrData):
@@ -368,7 +370,7 @@ class SetPPMScale(Operation):
             freqRef = self.offset
 
         f0 = freqRef/(1 + self.ppmValue*1e-6)
-        nmrData.ppmScale = (nmrData.frequency + nmrData.carrier - f0)/f0*1e6
+        nmrData.ppmScale = (nmrData.frequency + nmrData.carrier - f0)/f0*1e6 + self.shift
 
 
 class BaseLineCorrection(Operation):

@@ -4,7 +4,7 @@ with open('README.txt') as f:
     long_description = f.read()
 
 setup(name='pynmr',
-      version='0.32',
+      version='0.34',
       description='Parse and Process NMR data.',
       long_description=long_description,
       long_description_content_type='text/markdown',
@@ -28,6 +28,7 @@ setup(name='pynmr',
                 'BeautifulSoup4',
                 'spindata',
                 'pysftp',
+                'dill',
           ],
       zip_safe=False)
 

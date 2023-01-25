@@ -3,7 +3,7 @@ import pysftp
 import numpy as np
 import scipy as sp
 import os
-
+#from itertools import islice
 
 def TopSpinSSH(self, path, exp, localPath, server, username, password,
                endianess="<", debug=False):
@@ -37,6 +37,7 @@ class TopSpin(nmrData):
 to an NMR experiment, an optional argument for endianess"""
         super().__init__(debug = debug)
 
+        self.path = path
         self.files = []
         
         if self.debug:
@@ -113,16 +114,21 @@ to an NMR experiment, an optional argument for endianess"""
                 elif line[0] == "##$D":
                     delays1 = acqusFile.readline().strip()
                     delays2 = acqusFile.readline().strip()
-                    self.parDictionary["d"] = [float(d) for d in delays1.strip().split(" ")] + [float(d) for d in delays2.strip().split(" ")]
+                    self.parDictionary["D"] = [float(d) for d in delays1.strip().split(" ")] + [float(d) for d in delays2.strip().split(" ")]
+                elif line[0] == "##$P":
+                    pulseDurations = acqusFile.readline().strip() + " " + acqusFile.readline().strip()
+                    if len(pulseDurations.split(" ")) < 50:
+                        pulseDurations += " " + acqusFile.readline().strip()
+                    self.parDictionary["P"] = [float(p) for p in pulseDurations.strip().split(" ")] 
                 elif line[0] == "##$L":
                     loopCounters = acqusFile.readline().strip()
-                    self.parDictionary["l"] = [float(l) for l in loopCounters.strip().split(" ")]
+                    self.parDictionary["L"] = [float(l) for l in loopCounters.strip().split(" ")]
                 elif line[0] == "##$O1":
                     self.parDictionary["O1"] = float(line[1])
                 elif line[0] == "##$PLW":
                     powers1 = acqusFile.readline().strip().split(" ")
                     powers2 = acqusFile.readline().strip().split(" ")
-                    self.parDictionary["powers"] = [float(p) for p in powers1] + [float(p) for p in powers2]
+                    self.parDictionary["PLW"] = [float(p) for p in powers1] + [float(p) for p in powers2]
                 else:
                     if self.debug: print("the catch all else")
                     if len(line) > 1:
@@ -231,3 +237,14 @@ to an NMR experiment, an optional argument for endianess"""
             print("Left Shift by {:d} points.".format(self.shiftPoints))
             print("Points Remaining: {:.3f} points.".format(pointsRemaining))
             print("Time Shift: {:.3e} s.".format(self.timeShift))
+
+        # store number of scans, receiver gain, pulse durations and power levels for easy acess
+        self.NS = int(self.parDictionary["$NS"])
+        self.RG = float(self.parDictionary["$RG"])
+        self.P = self.parDictionary["P"]
+        self.PLW = self.parDictionary["PLW"]
+        self.D = self.parDictionary["D"]
+        self.L = self.parDictionary["L"]
+
+
+
