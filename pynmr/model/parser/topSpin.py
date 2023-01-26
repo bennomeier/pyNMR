@@ -39,6 +39,9 @@ to an NMR experiment, an optional argument for endianess"""
 
         self.path = path
         self.files = []
+
+        parseDict = {3 : "i4", 4 : "f8"}
+        self.version = 3
         
         if self.debug:
             print("hi, this is self.debug for the TopSpin datatype")
@@ -129,6 +132,10 @@ to an NMR experiment, an optional argument for endianess"""
                     powers1 = acqusFile.readline().strip().split(" ")
                     powers2 = acqusFile.readline().strip().split(" ")
                     self.parDictionary["PLW"] = [float(p) for p in powers1] + [float(p) for p in powers2]
+                elif line[0] == "##TITLE":
+                    self.version = int(line[1].split(" ")[-1].split(".")[0])
+                    print("TopSpin Version: {}".format(self.version))
+                    
                 else:
                     if self.debug: print("the catch all else")
                     if len(line) > 1:
@@ -180,7 +187,9 @@ to an NMR experiment, an optional argument for endianess"""
 
         self.files.append(self.f)
 
-        dataString = np.frombuffer(self.f.read(), dtype = endianess + "i4")
+        print("Hello")
+        self.dataBuffer = self.f.read()
+        dataString = np.frombuffer(self.dataBuffer, dtype = endianess + parseDict[self.version])
         if self.debug: print("len(dataString) new: ", len(dataString))
 
         self.data = dataString
