@@ -39,7 +39,7 @@ class LineBroadening(Operation):
         self.lineBroadening = lineBroadening
 
     def run(self, nmrData):
-        print("LB: {} Hz".format(self.lineBroadening))
+        #print("LB: {} Hz".format(self.lineBroadening))
         length = len(nmrData.allFid[-1][0])
         nmrData.allFid.append(
             sp.multiply(nmrData.allFid[-1][:],
@@ -127,7 +127,7 @@ class Phase1D(Operation):
         elif self.unit == "time":
             self.phase = 2*np.pi*nmrData.frequency[-1]*self.value
 
-        print("Phase: ", self.phase)
+        #print("Phase: ", self.phase)
 
         phaseValues = np.linspace(-self.phase/2, self.phase/2,
                                   num=len(nmrData.frequency))
@@ -332,10 +332,13 @@ class GetAllPhases(Operation):
 
 
 class SetPPMScale(Operation):
-    def __init__(self, offset=-1, shift=0, ppmValue=-1, scale="offset"):
+    def __init__(self, offset=-1, shift=0, ppmValue=-1, scale="offset", automatic=True):
         """
         SetPPMScale(self, offset, ppmValue, scale = 'offset')
         this function constructs a chemical shift axis
+
+        the function will parse information from the bruker files, unless 
+        the option automatic is set to False
         for a given offset and corresponding ppmValue.
 
         scale can be 'offset' or 'absolute'
@@ -346,32 +349,110 @@ class SetPPMScale(Operation):
         different experiment with different SFO1
 
         - if no options are passed, the routine will parse the O1 value from the acqus file,
+        the bf1 value, also from the acqus file, and calculate o1p as o1 / bf1.
+        Then the chemical shift range is o1/bf1 - sw
         assuming that it corresponds to 0 ppm
         """
         self.offset = offset
         self.ppmValue = ppmValue
         self.scale = scale
         self.shift = shift
+        self.automatic = automatic
         self.name = "Set PPM Scale"
 
     def run(self, nmrData):
-        if self.offset == self.ppmValue == -1:
+        if self.automatic:
             # print("Setting PPM Scale automatically")
 
-            print("Setting PPM Scale automatically with offset from acqus: ",
-                  nmrData.parDictionary["O1"])
+            #print("Setting PPM Scale automatically with offset from acqus: ",
+            #      nmrData.parDictionary["O1"])
 
             self.offset = - nmrData.parDictionary["O1"]
+            self.bf1 = nmrData.parDictionary["BF1"]
+            self.o1p = self.offset / self.bf1
             self.ppmValue = 0
+            #print(self.o1p)
+            self.sw = nmrData.sweepWidthTD2/(nmrData.carrier/1e6)
+            #print(self.sw)
 
-        if self.scale == "offset":
-            freqRef = nmrData.carrier + self.offset
-        elif self.scale == "absolute":
-            freqRef = self.offset
+            nmrData.ppmScale = np.arange(-self.o1p - self.sw/2, -self.o1p + self.sw/2,
+                                     step = self.sw/len(nmrData.frequency))
+        else:
+            if self.scale == "offset":
+                freqRef = nmrData.carrier + self.offset
+            elif self.scale == "absolute":
+                freqRef = self.offset
 
-        f0 = freqRef/(1 + self.ppmValue*1e-6)
-        nmrData.ppmScale = (nmrData.frequency + nmrData.carrier - f0)/f0*1e6 + self.shift
+            f0 = freqRef/(1 + self.ppmValue*1e-6)
+            nmrData.ppmScale = (nmrData.frequency + nmrData.carrier - f0)/f0*1e6 + self.shift
 
+
+        
+        
+class SINO(Operation):
+    def __init__(self, peakRange, noiseRange, specSet = -1, specIndex = 0, scale="ppm"):
+        """
+        determine the signal to noise in bruker style.
+
+        """
+        self.peakRange = peakRange
+        self.noiseRange = noiseRange
+        self.specSet = specSet
+        self.specIndex = specIndex
+        self.scale = scale
+
+    def run(self, nmrData, talk = False):
+        """
+        - nmrData: nmrData Object.
+
+        returns a tuple comprising snr, peak, noise,
+        where snr = peak / 2*noise
+        """
+        
+        realSpec = np.real(nmrData.allSpectra[self.specSet][self.specIndex])
+
+        oPeak = GetIndices(self.peakRange, scale=self.scale)
+        indices = oPeak.run(nmrData)
+        
+        peak = np.max(realSpec[indices[0]:indices[1]])
+
+        # maybe determin fwhm
+
+        oNoise = GetIndices(self.noiseRange, scale=self.scale)
+        noiseIndices = oNoise.run(nmrData)
+        #print(noiseIndices)
+        
+        noiseSimple = np.std(realSpec[noiseIndices[0]:noiseIndices[1]])
+
+        indices = np.arange(noiseIndices[0], noiseIndices[1])
+        #print("Indices: ", indices)
+        
+        # in the bruker program, a linear baseline is fitted to the noise region and subtracted.
+        # the base line has the functional dependence a + i*b, where i is the index.
+        # we do the same, but for a and b use the formulas as presented in Janert's "Data Analysis with Open Source Tools"
+        
+        n = len(indices)
+        sum_xy = np.sum([i*realSpec[i] for i in indices])
+        sum_x = np.sum([i for i in indices])
+        sum_y = np.sum([realSpec[i] for i in indices])
+        sum_xx = np.sum([realSpec[i]**2 for i in indices])
+
+        b = (n*sum_xy - sum_x*sum_y)/(n*sum_xx - sum_x**2)
+        a = 1/n*(sum_y - b*sum_x)
+
+        noise = np.sqrt(np.sum((realSpec[noiseIndices[0]:noiseIndices[1]]-(a + indices*b))**2)/(n-1))
+        
+        snr = peak/(2*noise)
+        
+        if talk:
+            print("Peak: {:.1f}".format(peak))
+            print("Noise: {:.1f}".format(noise))
+            print("SINO: {:.1f}".format(snr))
+
+        nmrData.parDictionary["SINO"] = snr
+
+        return snr, peak, noise
+        
 
 class BaseLineCorrection(Operation):
     def __init__(self, regionSet, degree, scale="Hz", applyLocally=False):

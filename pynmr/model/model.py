@@ -8,6 +8,7 @@ to one (possibly multi-dimensional) NMR data set.
 
 The nmrDataModel is passed to the gui for visualization and modification."""
 
+from pynmr.model import region
 
 class pyNmrDataModel(object):
     def __init__(self, dataSet=None):
@@ -18,10 +19,10 @@ class pyNmrDataModel(object):
 
 
 class pyNmrDataSet(object):
-    def __init__(self, data=None, processor=None):
+    def __init__(self, data=None, processor=None, regionStack = region.RegionStack()):
         self.data = data
         self.processorStack = []
-        self.regionStack = []
+        self.regionStack = regionStack
 
         if processor:
             self.processorStack.append(processor)

@@ -9,9 +9,10 @@ class LeftShiftWidget(qtw.QWidget):
         self.operation = operation
 
         layout = qtw.QVBoxLayout()
+        layout.setContentsMargins(0, 0, 0, 0)
         self.setLayout(layout)
         
-        box = qtw.QGroupBox(self.operation.name)
+        box = qtw.QGroupBox()
         layout.addWidget(box)
 
         groupBoxLayout = qtw.QHBoxLayout()
@@ -19,9 +20,10 @@ class LeftShiftWidget(qtw.QWidget):
 
         shiftEntry = qtw.QLineEdit(str(self.operation.shiftPoints))
         shiftEntry.setValidator(qtg.QIntValidator())
-        
+
+        groupBoxLayout.addWidget(qtw.QLabel("Left Shift"))
         groupBoxLayout.addWidget(shiftEntry)
-        groupBoxLayout.addWidget(qtw.QLabel("Shift Points"))
+        groupBoxLayout.addWidget(qtw.QLabel("Points"))
 
 
 class ExponentialLineBroadening(qtw.QWidget):
@@ -30,20 +32,23 @@ class ExponentialLineBroadening(qtw.QWidget):
         self.operation = operation
 
         layout = qtw.QVBoxLayout()
+        layout.setContentsMargins(0, 0, 0, 0)
+
         self.setLayout(layout)
         
-        box = qtw.QGroupBox(self.operation.name)
+        box = qtw.QGroupBox()
         layout.addWidget(box)
 
         groupBoxLayout = qtw.QHBoxLayout()
         box.setLayout(groupBoxLayout)
 
         entry = qtw.QLineEdit(str(self.operation.lineBroadening))
-        entry.setValidator(qtg.QIntValidator())
+        entry.setValidator(qtg.QDoubleValidator())
         entry.textChanged.connect(self.handleChange)
 
+        groupBoxLayout.addWidget(qtw.QLabel("Exponential Broadening "))
         groupBoxLayout.addWidget(entry)
-        groupBoxLayout.addWidget(qtw.QLabel("Broadening (Hz)"))
+        groupBoxLayout.addWidget(qtw.QLabel("(Hz)"))
 
     def handleChange(self, value):
         self.operation.lineBroadening = float(value)
@@ -55,9 +60,13 @@ class FourierTransform(qtw.QWidget):
         self.operation = operation
 
         layout = qtw.QVBoxLayout()
+        layout.setContentsMargins(0, 0, 0, 0)
+
+        layout.setContentsMargins(0, 0, 0, 0)
+
         self.setLayout(layout)
         
-        box = qtw.QGroupBox(self.operation.name)
+        box = qtw.QGroupBox()
         layout.addWidget(box)
 
         groupBoxLayout = qtw.QHBoxLayout()
@@ -72,11 +81,13 @@ class SetPPMScale(qtw.QWidget):
         self.operation = operation
 
         layout = qtw.QVBoxLayout()
+        layout.setContentsMargins(0, 0, 0, 0)
+
         self.setLayout(layout)
         self.parent = parent
         self.refVal = 0
         
-        box = qtw.QGroupBox(self.operation.name)
+        box = qtw.QGroupBox()
         layout.addWidget(box)
 
         groupBoxLayout = qtw.QHBoxLayout()
@@ -123,9 +134,11 @@ class PhaseZeroOrder(qtw.QWidget):
         self.operation = operation
 
         layout = qtw.QVBoxLayout()
+        layout.setContentsMargins(0, 0, 0, 0)
+
         self.setLayout(layout)
 
-        box = qtw.QGroupBox(self.operation.name)
+        box = qtw.QGroupBox()
         layout.addWidget(box)
 
         self.runFunc = runFunc
@@ -137,7 +150,7 @@ class PhaseZeroOrder(qtw.QWidget):
         self.sl = qtw.QSlider(qtc.Qt.Horizontal)
         self.sl.setMinimum(-180)
         self.sl.setMaximum(180)
-        self.sl.setValue(self.operation.phase)
+        self.sl.setValue(int(self.operation.phase))
         self.sl.valueChanged.connect(self.handleChange)
 
         self.reprocessSignal = 1
@@ -188,9 +201,11 @@ class PhaseFirstOrder(qtw.QWidget):
         self.runFunc = runFunc
 
         layout = qtw.QVBoxLayout()
+        layout.setContentsMargins(0, 0, 0, 0)
+
         self.setLayout(layout)
         
-        box = qtw.QGroupBox(self.operation.name)
+        box = qtw.QGroupBox()
         layout.addWidget(box)
 
         self.parent = parent
@@ -201,7 +216,7 @@ class PhaseFirstOrder(qtw.QWidget):
         self.sl = qtw.QSlider(qtc.Qt.Horizontal)
         self.sl.setMinimum(-540)
         self.sl.setMaximum(540)
-        self.sl.setValue(self.operation.phase)
+        self.sl.setValue(int(self.operation.phase))
         self.sl.valueChanged.connect(self.handleChange)
 
 
