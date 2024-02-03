@@ -1,3 +1,4 @@
+LICENSE
 README.txt
 setup.py
 pynmr/__init__.py
@@ -11,6 +12,7 @@ pynmr/model/__init__.py
 pynmr/model/model.py
 pynmr/model/operations.py
 pynmr/model/processor.py
+pynmr/model/region.py
 pynmr/model/parser/__init__.py
 pynmr/model/parser/nmrData.py
 pynmr/model/parser/old_nmrDataMod.py
@@ -21,3 +23,5 @@ pynmr/viewer/gui.py
 pynmr/viewer/nmrView.py
 pynmr/viewer/operationWidgets.py
 pynmr/viewer/processorView.py
+pynmr/viewer/regionView.py
+pynmr/viewer/titleView.py

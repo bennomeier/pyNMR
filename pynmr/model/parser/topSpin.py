@@ -20,7 +20,7 @@ def TopSpinSSH(self, path, exp, localPath, server, username, password,
     with pysftp.Connection(server, username=username, password=password) as sftp:
         with sftp.cd(path):             # temporarily chdir to public
             sftp.get_r(exp, localPath)         # get a remote file
-            
+
     return TopSpin(localPath + exp, endianness=endianess, debug=debug)
 
 
@@ -42,7 +42,7 @@ to an NMR experiment, an optional argument for endianess"""
 
         parseDict = {3 : "i4", 4 : "f8"}
         self.version = 3
-        
+
         if self.debug:
             print("hi, this is self.debug for the TopSpin datatype")
 
@@ -114,15 +114,22 @@ to an NMR experiment, an optional argument for endianess"""
                         self.parDictionary["time"] = line[2].strip()
                     except:
                         pass
-                elif line[0] == "##$D":
-                    delays1 = acqusFile.readline().strip()
-                    delays2 = acqusFile.readline().strip()
-                    self.parDictionary["D"] = [float(d) for d in delays1.strip().split(" ")] + [float(d) for d in delays2.strip().split(" ")]
+		elif line[0] == "##$D":
+		    # first find out how many values to expect.
+		    numberOfEntries = int(line[1].split("..")[-1][:-1]) + 1
+		    #print("Number of Entries: ", numberOfEntries)
+					
+		    delayList = []
+		    while (len(delayList) < numberOfEntries):
+			delays = acqusFile.readline().strip().split(" ")
+			delayList.extend([float(d) for d in delays])
+				
+		    self.parDictionary["D"] = delayList
                 elif line[0] == "##$P":
                     pulseDurations = acqusFile.readline().strip() + " " + acqusFile.readline().strip()
                     if len(pulseDurations.split(" ")) < 50:
                         pulseDurations += " " + acqusFile.readline().strip()
-                    self.parDictionary["P"] = [float(p) for p in pulseDurations.strip().split(" ")] 
+                    self.parDictionary["P"] = [float(p) for p in pulseDurations.strip().split(" ")]
                 elif line[0] == "##$L":
                     loopCounters = acqusFile.readline().strip()
                     self.parDictionary["L"] = [float(l) for l in loopCounters.strip().split(" ")]
@@ -138,7 +145,7 @@ to an NMR experiment, an optional argument for endianess"""
                     line[1] = line[1].split("pl")[0].strip()
                     self.version = int(line[1].split(" ")[-1].split(".")[0])
                     if self.debug: print("TopSpin Version: {}".format(self.version))
-                    
+
                 else:
                     if self.debug: print("the catch all else")
                     if len(line) > 1:
@@ -201,6 +208,16 @@ to an NMR experiment, an optional argument for endianess"""
             self.sizeTD2 = int(len(self.data) / self.sizeTD1 / 2)
 
         self.dwellTime = 1./self.sweepWidthTD2
+
+        # adjust TD2 to so it is multiple of 64
+        if self.sizeTD2%64 > 0:
+            if self.debug:
+                print("Adjusting TD2 to be multiple of 64")
+            self.sizeTD2 = self.sizeTD2 + 64 - self.sizeTD2%64
+            if self.debug:
+                print("TD2: ", self.sizeTD2)
+
+
         self.fidTime = np.linspace(0, (self.sizeTD2-1)*self.dwellTime,
                                    num=self.sizeTD2)
 
@@ -257,6 +274,3 @@ to an NMR experiment, an optional argument for endianess"""
         self.PLW = self.parDictionary["PLW"]
         self.D = self.parDictionary["D"]
         self.L = self.parDictionary["L"]
-
-
-
