@@ -114,17 +114,18 @@ to an NMR experiment, an optional argument for endianess"""
                         self.parDictionary["time"] = line[2].strip()
                     except:
                         pass
-		elif line[0] == "##$D":
-		    # first find out how many values to expect.
-		    numberOfEntries = int(line[1].split("..")[-1][:-1]) + 1
-		    #print("Number of Entries: ", numberOfEntries)
-					
-		    delayList = []
-		    while (len(delayList) < numberOfEntries):
-			delays = acqusFile.readline().strip().split(" ")
-			delayList.extend([float(d) for d in delays])
-				
-		    self.parDictionary["D"] = delayList
+                elif line[0] == "##$D":
+                    # first find out how many values to expect.
+                    numberOfEntries = int(line[1].split("..")[-1][:-1]) + 1
+                    
+                    # print("Number of Entries: ", numberOfEntries)
+                    
+                    delayList = []
+                    while (len(delayList) < numberOfEntries):
+                        delays = acqusFile.readline().strip().split(" ")
+                        delayList.extend([float(d) for d in delays])
+                    self.parDictionary["D"] = delayList
+
                 elif line[0] == "##$P":
                     pulseDurations = acqusFile.readline().strip() + " " + acqusFile.readline().strip()
                     if len(pulseDurations.split(" ")) < 50:
