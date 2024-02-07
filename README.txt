@@ -49,13 +49,26 @@ To import a Bruker dataset instantiate an nmr Data  object:
 	 
 
 
-Internal Notes
+Notes
 -------------
 To install this package locally and install for development, use this command
 
 >>> pip install -e ./
 
 More info available here: https://packaging.python.org/tutorials/installing-packages/
+
+To make the pynmr GUI available via the command line on Mac OS or Linux systems, create a file
+
+pynmr in /usr/local/bin
+
+with the content
+
+python /your/path/to/pynmr/pynmr/viewer/gui.py $1
+
+save it, and
+>>> sudo chmod +x /usr/local/bin/pynmr
+
+Open the last dataset via the terminal using the command pynmr -1
 
 
 MIT License

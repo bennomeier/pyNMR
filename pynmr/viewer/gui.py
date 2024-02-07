@@ -43,7 +43,8 @@ import pynmr.model.region as REGION
 import pynmr.model.operations as OPS
 
 class MainWindow(qtw.QMainWindow):
-
+    viewParametersChanged = qtc.pyqtSignal(int)
+    
     def __init__(self, model=None, arg = None):
         super().__init__()
 
@@ -55,7 +56,9 @@ class MainWindow(qtw.QMainWindow):
 
         self.settings = qtc.QSettings('Karlsruhe Institute of Technology', 'pyNMR') # name of company and name of app 
 
-        
+        self.TD1_index = 0
+        self.procIndex = -1
+        self.domain = "Time.Points"
 
         
         menubar = self.menuBar()        
@@ -101,8 +104,36 @@ class MainWindow(qtw.QMainWindow):
         )
 
         TBviewerNavigation = self.addToolBar("Viewer Navigation")
-        TBviewerNavigation.addAction("<")
-        TBviewerNavigation.addAction(">")
+
+        # first have a combo box to set Time Domain, Frequency Domain or Chemical Shift Domain
+        self.domainBox = qtw.QComboBox()
+        self.domainBox.addItems(["Time.Points", "Time.Time", "Frequency.Hz", "Frequency.ppm"])
+        self.domainBox.currentTextChanged.connect(self.setDomain)
+        TBviewerNavigation.addWidget(self.domainBox)
+        
+        # then have a box to set the processing index
+        self.procEntry = qtw.QLineEdit(str(self.procIndex), textChanged = self.setProcIndex)
+        self.procEntry.setSizePolicy(qtw.QSizePolicy.Maximum, qtw.QSizePolicy.Maximum)
+
+        TBviewerNavigation.addWidget(qtw.QLabel("Proc Index: "))
+        TBviewerNavigation.addWidget(self.procEntry)
+
+        self.procIndexValidator = qtg.QIntValidator(-1, 10)
+        self.procEntry.setValidator(self.procIndexValidator)
+
+        
+        # this is for flipping through the fids or spectra
+        TBviewerNavigation.addAction("<", self.decrTD1_index)
+
+        # now add one that shows the current FID
+        self.td1Entry = qtw.QLineEdit("0", textChanged = self.setTD1_index)
+        self.td1Entry.setSizePolicy(qtw.QSizePolicy.Maximum, qtw.QSizePolicy.Maximum)
+        TBviewerNavigation.addWidget(self.td1Entry)
+
+        self.td1Validator = qtg.QIntValidator(0, 10)
+        self.td1Entry.setValidator(self.td1Validator)
+        
+        TBviewerNavigation.addAction(">", self.incrTD1_index)
 
         # find out some toolbar actions here. A switch would be nice.
 
@@ -150,7 +181,7 @@ class MainWindow(qtw.QMainWindow):
 
         regionAndAnalysisLayout = qtw.QVBoxLayout()
         
-        self.dataWidget = NmrViewWidget(model=self.model)
+        self.dataWidget = NmrViewWidget(self, model=self.model)
         
         self.processorWidget = ProcessorViewWidget(model=self.model, parent=self)
 
@@ -187,7 +218,7 @@ class MainWindow(qtw.QMainWindow):
         self.setCentralWidget(widgetAll)
 
         # signals
-        self.processorWidget.changeAxis.connect(self.dataWidget.changeAxis)
+        self.processorWidget.changeAxis.connect(self.dataWidget.changeDomain)
         self.processorWidget.reprocessed.connect(self.dataWidget.reprocessed)
         self.processorWidget.pivotPositionSignal.connect(self.dataWidget.pivotPositionSignal)
         self.processorWidget.showPivotSignal.connect(self.dataWidget.showPivotSignal)
@@ -271,7 +302,7 @@ class MainWindow(qtw.QMainWindow):
             filenames = []
 
         for filename in filenames[::-1]:
-            action = qtg.QAction(filename, self)
+            action = qtw.QAction(filename, self)
             action.triggered.connect(partial(self.openByPath, filename))
             actions.append(action)
         # Step 3. Add the actions to the menu
@@ -279,6 +310,7 @@ class MainWindow(qtw.QMainWindow):
 
         if len(openString) > 0:
             try:
+                print("Opening by Path")
                 self.openByPath(filenames[int(openString)])
             except:
                 print("Could not open file specified by ", openString)
@@ -287,9 +319,37 @@ class MainWindow(qtw.QMainWindow):
         # Write window size and position to config file
         self.settings.setValue("size", self.size())
         self.settings.setValue("pos", self.pos())
+
+
+    def incrTD1_index(self):
+        if self.TD1_index < 1000:
+            self.TD1_index = self.TD1_index + 1
+
+        self.td1Entry.setText(str(self.TD1_index))
+
+
         
+    def decrTD1_index(self):
+        if self.TD1_index > 0:
+            self.TD1_index = self.TD1_index - 1
+        self.td1Entry.setText(str(self.TD1_index))
+
+    def setTD1_index(self, value):
+        self.TD1_index = int(value)
+        self.viewParametersChanged.emit(1)
+        #print("Setting, ", value)
+
+    def setProcIndex(self, value):
+        self.procIndex = int(value)
+        self.viewParametersChanged.emit(1)
 
 
+    def setDomain(self):
+        self.domain = self.domainBox.currentText()
+        self.viewParametersChanged.emit(1)
+
+        
+        
 if __name__ == "__main__":
     app = qtw.QApplication(sys.argv)
     mw = MainWindow(arg = sys.argv)

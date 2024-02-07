@@ -24,12 +24,19 @@ class NmrViewWidget(qtw.QFrame):
     """A wdiget to display NMR data"""
     pivotChanged = qtc.pyqtSignal()
     
-    def __init__(self, model=None, dataSetIndex=0):
+    def __init__(self, parent, model=None, dataSetIndex=0):
 
         super().__init__()
         self.pw = pg.PlotWidget(name="plot1")
-        
 
+        self.dataSetIndex = dataSetIndex
+        self.procIndex = -1
+        self.representation = "Time.Points"
+
+        self.parent = parent
+
+        self.parent.viewParametersChanged.connect(self.update)
+        
         self.domain = None
         self.pivotPosition = 0
         self.showPivot = False
@@ -82,14 +89,18 @@ class NmrViewWidget(qtw.QFrame):
         self.updatePW()
             
 
-    def changeAxis(self, axis):
+    def changeDomain(self, domain):
         print("Change Axis called in nmrView.")
-        self.update(domain=axis)
+        self.parent.domainBox.setCurrentText(domain)
 
     def reprocessed(self):
         self.update()
 
-    def update(self, domain=None, position=-1, index=0, dataSetIndex=0):
+    def update(self):
+        self.dataSetIndex = 0
+        self.TD1_index = self.parent.TD1_index
+        self.procIndex = self.parent.procIndex
+        self.domain = self.parent.domain
         """Update plot.
         Optional keyword arguments:
         domain=None | "TIME" | "FREQUENCY" | "PPM"
@@ -100,38 +111,41 @@ class NmrViewWidget(qtw.QFrame):
         If no domain is specified the plot will show
         FREQUENCY domain data at the last position and at index 0.
         """
-        print("Datsetindex: ", dataSetIndex)
-        print("Position: ", position)
+        print("Datsetindex: ", self.dataSetIndex)
+        print("Position: ", self.procIndex)
 
         replot = False
         
-        if domain is None and self.domain is None:
-            if hasattr(self.model.dataSets[dataSetIndex].data, "ppmScale"):
+        if self.domain is None:
+            if hasattr(self.model.dataSets[self.dataSetIndex].data, "ppmScale"):
                 domain = "PPM"
                 self.domain = "PPM"
                 replot  = True
-            if len(self.model.dataSets[dataSetIndex].data.allSpectra) > 0:
+            if len(self.model.dataSets[self.dataSetIndex].data.allSpectra) > 0:
                 domain = "FREQUENCY"
             else:
                 domain = "TIME"
-        elif domain:
-            self.domain = domain
             
-        print("Domain: ", domain)
+        print("Domain: ", self.domain)
 
-        if domain == "TIME":
-            self.y = np.real(self.model.dataSets[dataSetIndex].data.allFid[position][index])
-            self.x = self.model.dataSets[dataSetIndex].data.fidTime
+        if self.domain == "Time.Points":
+            self.y = np.real(self.model.dataSets[self.dataSetIndex].data.allFid[self.procIndex][self.TD1_index])
+            self.x = np.arange(len(self.y))
+            self.xLabel = "Points"
+            self.xUnit = ""
+        elif self.domain == "Time.Time":
+            self.y = np.real(self.model.dataSets[self.dataSetIndex].data.allFid[self.procIndex][self.TD1_index])
+            self.x = self.model.dataSets[self.dataSetIndex].data.fidTime[:len(self.y)]
             self.xLabel = "Time"
             self.xUnit = "s"
-        elif domain == "FREQUENCY":
-            self.y = np.real(self.model.dataSets[dataSetIndex].data.allSpectra[position][index])
-            self.x = self.model.dataSets[dataSetIndex].data.frequency
+        elif self.domain == "Frequency.Hz":
+            self.y = np.real(self.model.dataSets[self.dataSetIndex].data.allSpectra[self.procIndex][self.TD1_index])
+            self.x = self.model.dataSets[self.dataSetIndex].data.frequency
             self.xLabel = "Frequency"
             self.xUnit = "Hz"
-        elif domain == "PPM":
-            self.y = np.real(self.model.dataSets[dataSetIndex].data.allSpectra[position][index])
-            self.x = self.model.dataSets[dataSetIndex].data.ppmScale
+        elif self.domain == "Frequency.ppm":
+            self.y = np.real(self.model.dataSets[self.dataSetIndex].data.allSpectra[self.procIndex][self.TD1_index])
+            self.x = self.model.dataSets[self.dataSetIndex].data.ppmScale
             self.xLabel = "Chemical Shift"
             self.xUnit = "PPM"
 

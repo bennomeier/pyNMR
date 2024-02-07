@@ -21,9 +21,16 @@ class LeftShiftWidget(qtw.QWidget):
         shiftEntry = qtw.QLineEdit(str(self.operation.shiftPoints))
         shiftEntry.setValidator(qtg.QIntValidator())
 
+        shiftEntry.setValidator(qtg.QDoubleValidator())
+        shiftEntry.textChanged.connect(self.handleChange)
+
         groupBoxLayout.addWidget(qtw.QLabel("Left Shift"))
         groupBoxLayout.addWidget(shiftEntry)
         groupBoxLayout.addWidget(qtw.QLabel("Points"))
+
+    def handleChange(self, value):
+        self.operation.shiftPoints = int(value)
+
 
 
 class ExponentialLineBroadening(qtw.QWidget):

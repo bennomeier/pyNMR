@@ -41,7 +41,9 @@ to an NMR experiment, an optional argument for endianess"""
         self.files = []
 
         parseDict = {3 : "i4", 4 : "f8"}
+        self.fillDict = {3 : 128, 4 : 64}
         self.version = 3
+        
 
         if self.debug:
             print("hi, this is self.debug for the TopSpin datatype")
@@ -210,11 +212,21 @@ to an NMR experiment, an optional argument for endianess"""
 
         self.dwellTime = 1./self.sweepWidthTD2
 
+        # check pack size
+        # Bruker manual: Each FID in a ser file start at a 1024 byte block boundary, even if its size is not a multiple of 1024 bytes.
+        
+        self.packSize = self.fillDict[self.version]
         # adjust TD2 to so it is multiple of 64
-        if self.sizeTD2%64 > 0:
+        if self.sizeTD2 % self.packSize > 0:
+
+            print("Adjusting TD2")
+            print("Len data: ", len(self.data))
+            print("sizeTD2: ", self.sizeTD2)
+            print("sizeTD1: ", self.sizeTD1)
+            
             if self.debug:
                 print("Adjusting TD2 to be multiple of 64")
-            self.sizeTD2 = self.sizeTD2 + 64 - self.sizeTD2%64
+            self.sizeTD2 = self.sizeTD2 + self.packSize - self.sizeTD2 % self.packSize
             if self.debug:
                 print("TD2: ", self.sizeTD2)
 
