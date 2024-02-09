@@ -28,6 +28,7 @@ import time
 from functools import partial
 
 from pynmr.viewer.nmrView import NmrViewWidget
+from pynmr.viewer.settingsDialog import SettingsDialog
 from pynmr.viewer.processorView import ProcessorViewWidget
 from pynmr.viewer.titleView import TitleViewWidget
 from pynmr.viewer.regionView import RegionViewWidget
@@ -55,10 +56,13 @@ class MainWindow(qtw.QMainWindow):
         self.setWindowTitle("pynmr")
 
         self.settings = qtc.QSettings('Karlsruhe Institute of Technology', 'pyNMR') # name of company and name of app 
-
+        #self.settings.clear()
+        
         self.TD1_index = 0
         self.procIndex = -1
         self.domain = "Time.Points"
+
+        #self.settings = qtc.QSettings('apps', 'settings')
 
         
         menubar = self.menuBar()        
@@ -75,16 +79,21 @@ class MainWindow(qtw.QMainWindow):
         
 
         open_action = file_menu.addAction("Open", self.openAskPath)
+        open_action.setShortcut('CTRL+O')
+
+
         open_action_example = file_menu.addAction("Open Example", self.openExample)
 
         self.openRecentMenu = file_menu.addMenu("Open Recent")
         
         save_action = file_menu.addAction("Save")
         openSSH_action = file_menu.addAction("Open via SSH")
+
+        settings_action = file_menu.addAction("Settings", self.settingsDialog)
+
         quit_action = file_menu.addAction("Quit", self.endProgram)
         quit_action.setShortcut('CTRL+Q')
 
-        self.settings = qtc.QSettings('apps', 'settings')
 
         server = {"cohn" : "ibg-4-cohn.ibg.kit.edu"}
         self.settings.setValue("server", server)
@@ -163,14 +172,17 @@ class MainWindow(qtw.QMainWindow):
         else:
             self.populateOpenRecent()
 
-        
-        self.statusBar().showMessage("Welcome to pynmr")
-
+        # self.statusBar().showMessage("Welcome to pynmr")
         
         self.show()
 
     def endProgram(self):
         sys.exit()
+
+    def settingsDialog(self):
+        dlg = SettingsDialog(self)
+        dlg.exec()
+        
 
     def updateView(self):
         widgetAll = qtw.QWidget()
@@ -235,8 +247,15 @@ class MainWindow(qtw.QMainWindow):
         self.openByPath(path)
 
     def openAskPath(self):
-        path = qtw.QFileDialog.getExistingDirectory(self, "Open Experiment", os.path.expanduser('~')) + "/"
+        path = qtw.QFileDialog.getExistingDirectory(self, "Open Experiment", self.settings.value("openPath", os.path.expanduser('~'))) + "/"
 
+        if path:
+
+            if "/" in path:
+                self.settings.setValue("openPath", "/".join(path.split("/")[:-1]))
+            elif "\\" in path:
+                self.settings.setValue("openPath", "\\".join(path.split("\\")[:-1]))
+                                                
         print(path)
         self.openByPath(path)
         

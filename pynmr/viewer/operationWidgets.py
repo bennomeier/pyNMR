@@ -118,7 +118,7 @@ class SetPPMScale(qtw.QWidget):
 
         #  https://stackoverflow.com/questions/42534378/c-qt-creator-how-to-have-dot-and-comma-as-decimal-separator-on-a-qdoubles
 
-        shiftValue, ok = qtg.QInputDialog.getDouble(self, "Chemical Shift", "Enter Chemical Shift", decimals=3)
+        shiftValue, ok = qtw.QInputDialog.getDouble(self, "Chemical Shift", "Enter Chemical Shift", decimals=3)
 
         if ok:
             pivotPosition = self.parent.parent.dataWidget.pPivot.value()
@@ -127,7 +127,7 @@ class SetPPMScale(qtw.QWidget):
             delta = shiftValue - pivotPosition
             self.operation.shift += delta
             self.entry.setText(str(delta))  
-            print(position)
+
         
     def handleChange(self):
         self.operation.shift = float(self.entry.text())

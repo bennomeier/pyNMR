@@ -45,6 +45,12 @@ class NmrViewWidget(qtw.QFrame):
         self.p1 = self.pw.plot()
         self.p1.setPen((20, 20, 200))
 
+        self.p2 = self.pw.plot()
+        self.p2.setPen((200, 20, 200))
+
+        self.p3 = self.pw.plot()
+        self.p3.setPen((20, 200, 20))
+
 
         self.xLabel = "Time"
         self.xUnit = "s"
@@ -97,10 +103,14 @@ class NmrViewWidget(qtw.QFrame):
         self.update()
 
     def update(self):
+        autoScale = False
+        
         self.dataSetIndex = 0
         self.TD1_index = self.parent.TD1_index
         self.procIndex = self.parent.procIndex
-        self.domain = self.parent.domain
+        if  self.parent.domain != self.domain:
+            self.domain = self.parent.domain
+            autoScale = True
         """Update plot.
         Optional keyword arguments:
         domain=None | "TIME" | "FREQUENCY" | "PPM"
@@ -113,8 +123,6 @@ class NmrViewWidget(qtw.QFrame):
         """
         print("Datsetindex: ", self.dataSetIndex)
         print("Position: ", self.procIndex)
-
-        replot = False
         
         if self.domain is None:
             if hasattr(self.model.dataSets[self.dataSetIndex].data, "ppmScale"):
@@ -129,33 +137,33 @@ class NmrViewWidget(qtw.QFrame):
         print("Domain: ", self.domain)
 
         if self.domain == "Time.Points":
-            self.y = np.real(self.model.dataSets[self.dataSetIndex].data.allFid[self.procIndex][self.TD1_index])
+            self.y = self.model.dataSets[self.dataSetIndex].data.allFid[self.procIndex][self.TD1_index]
             self.x = np.arange(len(self.y))
             self.xLabel = "Points"
             self.xUnit = ""
         elif self.domain == "Time.Time":
-            self.y = np.real(self.model.dataSets[self.dataSetIndex].data.allFid[self.procIndex][self.TD1_index])
+            self.y = self.model.dataSets[self.dataSetIndex].data.allFid[self.procIndex][self.TD1_index]
             self.x = self.model.dataSets[self.dataSetIndex].data.fidTime[:len(self.y)]
             self.xLabel = "Time"
             self.xUnit = "s"
         elif self.domain == "Frequency.Hz":
-            self.y = np.real(self.model.dataSets[self.dataSetIndex].data.allSpectra[self.procIndex][self.TD1_index])
+            self.y = self.model.dataSets[self.dataSetIndex].data.allSpectra[self.procIndex][self.TD1_index]
             self.x = self.model.dataSets[self.dataSetIndex].data.frequency
             self.xLabel = "Frequency"
             self.xUnit = "Hz"
         elif self.domain == "Frequency.ppm":
-            self.y = np.real(self.model.dataSets[self.dataSetIndex].data.allSpectra[self.procIndex][self.TD1_index])
+            self.y = self.model.dataSets[self.dataSetIndex].data.allSpectra[self.procIndex][self.TD1_index]
             self.x = self.model.dataSets[self.dataSetIndex].data.ppmScale
             self.xLabel = "Chemical Shift"
             self.xUnit = "PPM"
 
-        self.updatePW(replot = replot)
+        self.updatePW(replot = autoScale)
 
         # update the plots viewbox to show all data.
         self.pw.setMouseEnabled(x=True, y=True)
 
-        if replot:
-            print("Replotting")
+        if autoScale:
+            print("Rescaling")
             self.pw.autoRange()
 
         #self.pw.manualRange()
@@ -185,9 +193,22 @@ class NmrViewWidget(qtw.QFrame):
 
         # self.pw.setXRange(0, 2)
         # pw.setYRange(0, 1e-10)
-        self.p1.setData(y=self.y, x=self.x)
+        if self.parent.settings.value("showReal", True, type=bool):
+            self.p1.setData(y=np.real(self.y), x=self.x)
+        else:
+            self.p1.setData(y=[], x=[])
+            #        self.p1.setData(y=np.real(self.y), x=self.x)
 
+        if self.parent.settings.value("showImag", False, type=bool):
+            self.p2.setData(y=np.imag(self.y), x=self.x)
+        else:
+            self.p2.setData(y=[], x=[])
 
+        if self.parent.settings.value("showMagn", False, type=bool):
+            self.p3.setData(y=np.abs(self.y), x=self.x)
+        else:
+            self.p3.setData(y=[], x=[])
+               
         # change this code to draw a proper line, and
         # change it to be shown or not.
 
