@@ -1,23 +1,23 @@
 # -*- coding: utf-8 -*-
 import numpy as np
 import scipy as sp
-import matplotlib as mpl
-import matplotlib.pyplot as plt
+#import matplotlib as mpl
+#import matplotlib.pyplot as plt
 
 from scipy import fft
 from scipy.fftpack import fftshift
 
 
 import struct
-import string
-from scipy import io, constants
-from xml.dom import minidom
+#import string
+#from scipy import io, constants
+#from xml.dom import minidom
 import os
 import os.path
 import fwhm
-import types
-from scipy import stats
-from scipy import optimize
+#import types
+#from scipy import stats
+#from scipy import optimize
 import imp
 imp.reload(fwhm)
 

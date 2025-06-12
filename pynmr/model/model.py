@@ -23,9 +23,15 @@ class pyNmrDataSet(object):
         self.data = data
         self.processorStack = []
         self.regionStack = regionStack
+        self.processor = processor
+
+
 
         if processor:
             self.processorStack.append(processor)
-
             processor.runStack(self.data)
 
+    # def addProcessor(self, processor):
+    #     """Add a processor to the data set."""
+    #     self.processorStack.append(processor)
+    #     processor.runStack(self.data)

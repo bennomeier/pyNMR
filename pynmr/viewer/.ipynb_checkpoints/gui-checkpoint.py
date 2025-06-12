@@ -19,9 +19,9 @@
 import sys
 import os
 from PyQt5 import QtWidgets as qtw
-from PyQt5 import QtGui as qtg
+#from PyQt5 import QtGui as qtg
 from PyQt5 import QtCore as qtc
-import datetime
+#import datetime
 
 from pynmr.viewer.nmrView import NmrViewWidget
 from pynmr.viewer.processorView import ProcessorViewWidget

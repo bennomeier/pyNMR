@@ -1,4 +1,4 @@
-import os
+#import os
 import dill
 
 class RegionStack(object):
@@ -27,5 +27,6 @@ class RegionSet(object):
         self.name = name
         self.scale = scale
         self.regions = regions
+
 
     

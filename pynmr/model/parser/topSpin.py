@@ -1,7 +1,7 @@
 from pynmr.model.parser.nmrData import nmrData
 import pysftp
 import numpy as np
-import scipy as sp
+#import scipy as sp
 import os
 #from itertools import islice
 
@@ -51,8 +51,10 @@ to an NMR experiment, an optional argument for endianess"""
         #The acqus file containts the spectral width SW_h and 2*SizeTD2 as ##$TD
         #The acqu2s file contains TD1 as ##$TD
         directory = os.path.dirname(path)
+        print("Directory: ", directory)
         acqusFile = open(directory + "/acqus", mode='r')
         self.files.append(acqusFile)
+        print("Reading acqus file: ", acqusFile)
 
         if self.debug:
             print("Importing TopSpin data")
@@ -63,9 +65,9 @@ to an NMR experiment, an optional argument for endianess"""
             self.files.append(acqu2sFile)
             acqu2File = open(directory + "/acqu2", mode='r')
             self.files.append(acqu2File)
-
             self.is2D = True
         else:
+            print("No acqu2s file found, assuming 1D experiment.")
             self.is2D = False
             self.sizeTD1 = 1
 
@@ -195,8 +197,12 @@ to an NMR experiment, an optional argument for endianess"""
 
         if self.is2D:
             self.f = open(path + "/ser", mode='rb')
+            if self.debug:
+                print("Reading 2D data")
         else:
-            self.f = open(path + "fid", mode='rb')
+            self.f = open(path + "/fid", mode='rb')
+            if self.debug:
+                print("Reading 1D data")
 
         self.files.append(self.f)
 
@@ -244,8 +250,8 @@ to an NMR experiment, an optional argument for endianess"""
             #print "sizeTD2: ", self.sizeTD2
             #print i
             realPart = self.data[i*self.sizeTD2*2:(i+1)*self.sizeTD2*2:2]
-            imagPart = sp.multiply(self.data[i*self.sizeTD2*2+1:(i+1)*self.sizeTD2*2+1:2], 1j)
-            self.allFid[0].append(sp.add(realPart, imagPart))
+            imagPart = np.multiply(self.data[i*self.sizeTD2*2+1:(i+1)*self.sizeTD2*2+1:2], 1j)
+            self.allFid[0].append(np.add(realPart, imagPart))
 
         # here we read the experiment title (only the one stored in pdata/1):
         # could be made to read titles from all pdata folders (if needed)
