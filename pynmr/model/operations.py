@@ -607,7 +607,7 @@ class BaseLineCorrection(Operation):
 
                 indices.extend([i1, i2])
 
-                assert i1 != i2, """Empty Frequency Range -
+                assert i1 != i2, """Empty Frequency Range """
 
                 xVals.extend(nmrData.frequency[i1:i2])
                 yVals.extend(np.real(nmrData.allSpectra[-1][k][i1:i2]))

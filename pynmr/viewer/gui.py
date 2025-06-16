@@ -275,47 +275,52 @@ class MainWindow(qtw.QMainWindow):
         self.path = path
         self.openByPath(path)
 
-    def openinDoc(self,docdata,Processorpath,TD1_index = 0):
+    def openinDoc(self, docdata, Processorpath, TD1_index=0):
         data = docdata
         matches = [f for f in os.listdir(Processorpath) if f.startswith("pynmrProcessor")]
         if len(matches) > 0:
-            pathToProcessor = os.path.join(Processorpath, f"pynmrProcessor.pickle")
+            pathToProcessor = os.path.join(Processorpath, "pynmrProcessor.pickle")
             if os.path.isfile(pathToProcessor):
                 print("Parsing Processor from " + pathToProcessor)
-                Processor = dill.load(open(pathToProcessor, "rb"))
+                Processor = [dill.load(open(pathToProcessor, "rb"))]
             else:
-                pathToProcessor = matches[0]
-                print("Parsing Processor from "+ Processorpath + pathToProcessor)
-                Processor = dill.load(open(Processorpath+pathToProcessor, "rb"))
+                pathToProcessor = os.path.join(Processorpath, matches[0])
+                print("Parsing Processor from " + pathToProcessor)
+                Processor = [dill.load(open(pathToProcessor, "rb"))]
         else:
             print("No Processor found. Using default.")
-            Processor = PROC.Processor([OPS.LeftShift(data.shiftPoints),
-                                        OPS.LineBroadening(0.0),
-                                        OPS.FourierTransform(),
-                                        OPS.SetPPMScale(),
-                                        OPS.Phase0D(0),
-                                        OPS.Phase1D(data.timeShift,
-                                                    unit="time")])
+            Processor = [PROC.Processor([
+                OPS.LeftShift(data.shiftPoints),
+                OPS.LineBroadening(0.0),
+                OPS.FourierTransform(),
+                OPS.SetPPMScale(),
+                OPS.Phase0D(0),
+                OPS.Phase1D(data.timeShift, unit="time")
+            ])]
 
-        pathToRegionStack = Processorpath + "pynmrRegionStack.dill"
+        pathToRegionStack = os.path.join(Processorpath, "pynmrRegionStack.dill")
 
         if os.path.isfile(pathToRegionStack):
             print("Parsing RegionStack from " + pathToRegionStack)
-            regionStack = dill.load(open(pathToRegionStack, "rb")) 
+            regionStack = dill.load(open(pathToRegionStack, "rb"))
             print("RegionStack loaded with ", len(regionStack), " regions.")
         else:
             print("No RegionStack found. Using default.")
             regionStack = REGION.RegionStack()
-        self.regionWidget.rStack = regionStack
-        self.regionWidget.activeRegion = regionStack[-1]
-        self.regionWidget.updateRegionSets()
 
-        self.model = pyNmrDataModel(dataSet=pyNmrDataSet(data=data,
-                                                         processor=Processor,
-                                                         regionStack=regionStack))
-            
+        self.model = pyNmrDataModel(dataSet=pyNmrDataSet(
+            data=data,
+            processor=None,
+            regionStack=regionStack
+        ))
+
+        for i in range(len(Processor)):
+            self.model.dataSets[0].processorStack.append(Processor[i])
+        
+        self.model.dataSets[0].processorStack[0].runStack(data)
+
+
         self.setWindowTitle("pyNMR - " + Processorpath)
-        self.populateOpenRecent()
         self.updateView()
 
         

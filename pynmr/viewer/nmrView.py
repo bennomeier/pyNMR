@@ -172,7 +172,8 @@ class NmrViewWidget(qtw.QFrame):
         """
         print("Datsetindex: ", self.dataSetIndex)
         print("Position: ", self.procIndex)
-        
+        print("TD1_index: ", TD1_index)
+
         if self.domain is None:
             if hasattr(self.model.dataSets[self.dataSetIndex].data, "ppmScale"):
                 domain = "PPM"
@@ -184,7 +185,6 @@ class NmrViewWidget(qtw.QFrame):
                 domain = "TIME"
             
         print("Domain: ", self.domain)
-
         if self.domain == "Time.Points":
             self.y = self.model.dataSets[self.dataSetIndex].data.allFid[self.procIndex][TD1_index]
             self.x = np.arange(len(self.y))
