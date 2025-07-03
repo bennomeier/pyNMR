@@ -1,10 +1,16 @@
-import sys
+# import sys
 import numpy as np
 from PyQt5 import QtWidgets as qtw
 from PyQt5 import QtGui as qtg
 from PyQt5 import QtCore as qtc
-
+# from PyQt5.QtCore import Qt
+# from PyQt5.QtWidgets import QAction, QApplication, QLabel, QMainWindow, QMenu
+# import os
+# import dill
+#from pynmr.viewer import regionView
+# from pynmr.model.region import RegionStack
 import pyqtgraph as pg
+
 
 pg.setConfigOption('background', 'w')
 pg.setConfigOption('foreground', 'k')
@@ -23,6 +29,7 @@ def rand(n):
 class NmrViewWidget(qtw.QFrame):
     """A wdiget to display NMR data"""
     pivotChanged = qtc.pyqtSignal()
+    regionChanged = qtc.pyqtSignal()
     
     def __init__(self, parent, model=None, dataSetIndex=0):
 
@@ -32,10 +39,10 @@ class NmrViewWidget(qtw.QFrame):
         self.dataSetIndex = dataSetIndex
         self.procIndex = -1
         self.representation = "Time.Points"
-
         self.parent = parent
 
         self.parent.viewParametersChanged.connect(self.update)
+
         
         self.domain = None
         self.pivotPosition = 0
@@ -55,9 +62,6 @@ class NmrViewWidget(qtw.QFrame):
         self.xLabel = "Time"
         self.xUnit = "s"
         self.pw.setXRange(0, 2)
-        # pw.setYRange(0, 1e-10)
-
-        #self.pivotLine =
         
         self.pPivot = pg.InfiniteLine(angle=90, movable=True)
         self.pPivot.setPen((200, 20, 20))
@@ -78,11 +82,15 @@ class NmrViewWidget(qtw.QFrame):
         self.model = model
 
         self.regionPlotItems = []
+
         
         if model is not None and len(model.dataSets) > 0:
             self.update()
             self.pw.autoRange()
+        
 
+    
+    
     def showPivotSignal(self, show):
         print("Setting Pivot to " + str(show))
         self.showPivot = show
@@ -93,8 +101,47 @@ class NmrViewWidget(qtw.QFrame):
         
         self.pivotPosition = float(val)
         self.updatePW()
-            
 
+    def regionPositionrewriteobject(self,RegionSet,Region,newval):
+        r = []
+        r.append(newval[0])
+        r.append(newval[1])
+        RegionSet.regions[Region] = r
+        print (str(RegionSet.regions))
+
+        # regionWindow = regionView.RegionViewWidget()
+        # regionWindow.redraw()
+
+
+
+    def updateRegions(self, regionView):
+        if regionView.showRegionCheckBox.isChecked():
+            regionSet = regionView.rStack[regionView.activeRegion]
+            regions = regionSet.regions
+
+            for item in self.regionPlotItems:
+                self.pw.removeItem(item)
+            self.regionPlotItems = []
+
+            for index, r in enumerate(regions):
+                item = pg.LinearRegionItem(values=(r[0], r[1]))
+                item.sigRegionChangeFinished.connect(
+                    lambda _, idx=index, itm=item: self.regionPositionrewriteobject(regionSet, idx, itm.getRegion())
+                )
+                item.sigRegionChangeFinished.connect(self.regionChanged)
+                self.regionPlotItems.append(item)
+                self.pw.addItem(item)
+        else:
+            for item in self.regionPlotItems:
+                self.pw.removeItem(item)
+
+
+    def clearRegions(self):
+        for item in self.regionPlotItems:
+            self.pw.removeItem(item)
+        
+        self.regionPlotItems = []
+        
     def changeDomain(self, domain):
         print("Change Axis called in nmrView.")
         self.parent.domainBox.setCurrentText(domain)
@@ -103,14 +150,16 @@ class NmrViewWidget(qtw.QFrame):
         self.update()
 
     def update(self):
+        print("NMRView Updating")
         autoScale = False
-        
         self.dataSetIndex = 0
-        self.TD1_index = self.parent.TD1_index
-        self.procIndex = self.parent.procIndex
+        TD1_index = self.parent.TD1_index
+
         if  self.parent.domain != self.domain:
             self.domain = self.parent.domain
             autoScale = True
+
+
         """Update plot.
         Optional keyword arguments:
         domain=None | "TIME" | "FREQUENCY" | "PPM"
@@ -123,7 +172,8 @@ class NmrViewWidget(qtw.QFrame):
         """
         print("Datsetindex: ", self.dataSetIndex)
         print("Position: ", self.procIndex)
-        
+        print("TD1_index: ", TD1_index)
+
         if self.domain is None:
             if hasattr(self.model.dataSets[self.dataSetIndex].data, "ppmScale"):
                 domain = "PPM"
@@ -135,27 +185,27 @@ class NmrViewWidget(qtw.QFrame):
                 domain = "TIME"
             
         print("Domain: ", self.domain)
-
         if self.domain == "Time.Points":
-            self.y = self.model.dataSets[self.dataSetIndex].data.allFid[self.procIndex][self.TD1_index]
+            self.y = self.model.dataSets[self.dataSetIndex].data.allFid[self.procIndex][TD1_index]
             self.x = np.arange(len(self.y))
             self.xLabel = "Points"
             self.xUnit = ""
         elif self.domain == "Time.Time":
-            self.y = self.model.dataSets[self.dataSetIndex].data.allFid[self.procIndex][self.TD1_index]
+            self.y = self.model.dataSets[self.dataSetIndex].data.allFid[self.procIndex][TD1_index]
             self.x = self.model.dataSets[self.dataSetIndex].data.fidTime[:len(self.y)]
             self.xLabel = "Time"
             self.xUnit = "s"
         elif self.domain == "Frequency.Hz":
-            self.y = self.model.dataSets[self.dataSetIndex].data.allSpectra[self.procIndex][self.TD1_index]
+            self.y = self.model.dataSets[self.dataSetIndex].data.allSpectra[self.procIndex][TD1_index]
             self.x = self.model.dataSets[self.dataSetIndex].data.frequency
             self.xLabel = "Frequency"
             self.xUnit = "Hz"
         elif self.domain == "Frequency.ppm":
-            self.y = self.model.dataSets[self.dataSetIndex].data.allSpectra[self.procIndex][self.TD1_index]
+            self.y = self.model.dataSets[self.dataSetIndex].data.allSpectra[self.procIndex][TD1_index]
             self.x = self.model.dataSets[self.dataSetIndex].data.ppmScale
             self.xLabel = "Chemical Shift"
             self.xUnit = "PPM"
+
 
         self.updatePW(replot = autoScale)
 
@@ -166,8 +216,7 @@ class NmrViewWidget(qtw.QFrame):
             print("Rescaling")
             self.pw.autoRange()
 
-        #self.pw.manualRange()
-        
+        #self.pw.manualRange()r
 
     # when Shift key is pressed, zoom y range as well.
     # for now you have to press shift as well.
@@ -178,6 +227,22 @@ class NmrViewWidget(qtw.QFrame):
             self.pw.setMouseEnabled(x=False)
         if event.key() == qtc.Qt.Key_A:
             self.pw.autoRange()
+        if event.key() == qtc.Qt.Key_R:
+            span = 0.1
+            mousePos = self.pw.plotItem.vb.mapSceneToView(self.mapFromGlobal(qtg.QCursor.pos()))
+            x_pos = mousePos.x()
+            region = [x_pos - span, x_pos + span]
+            region_view_instance = self.parent.regionWidget
+            self.active = region_view_instance.GetactiveRegion()
+            addregion = self.parent.regionWidget.addRegion(self, region)
+            if self.active is not None:
+                addregion(region)
+            else:
+                qtw.QMessageBox.warning(self, "Error", "No Region selected.")
+                return
+           
+             # Define a small span around the x position
+            
         # super(qtw.QDialog, self).keyPressEvent(event)
 
     def keyReleaseEvent(self, event):
@@ -186,18 +251,20 @@ class NmrViewWidget(qtw.QFrame):
         if event.key() == qtc.Qt.Key_Y or event.key() == qtc.Qt.Key_Z:
             self.pw.setMouseEnabled(x=True)
         # super(qtw.QDialog, self).keyReleaseEvent(event)
-
+    
+    def mouseDoubleClickEvent(self, event):
+        if event.button() == qtc.Qt.LeftButton: 
+            print("Double clicked")
+            self.pw.autoRange()
+        super().mouseDoubleClickEvent(event) 
         
     def updatePW(self, replot = False):
         self.pw.setLabel('bottom', self.xLabel, units=self.xUnit)
 
-        # self.pw.setXRange(0, 2)
-        # pw.setYRange(0, 1e-10)
         if self.parent.settings.value("showReal", True, type=bool):
             self.p1.setData(y=np.real(self.y), x=self.x)
         else:
             self.p1.setData(y=[], x=[])
-            #        self.p1.setData(y=np.real(self.y), x=self.x)
 
         if self.parent.settings.value("showImag", False, type=bool):
             self.p2.setData(y=np.imag(self.y), x=self.x)
@@ -208,37 +275,27 @@ class NmrViewWidget(qtw.QFrame):
             self.p3.setData(y=np.abs(self.y), x=self.x)
         else:
             self.p3.setData(y=[], x=[])
-               
-        # change this code to draw a proper line, and
-        # change it to be shown or not.
 
-        self.pPivot.setValue(self.pivotPosition)
-
-        #if self.showPivot:
-        #    self.pPivot.
-        #self.pPivot.setData(y=[-1e9,1e10], x=[self.pivotPosition, self.pivotPosition])
+        # Show or hide the pivot line based on self.showPivot
+        if not self.showPivot:
+            self.pw.removeItem(self.pPivot)
+        else:
+            if self.pPivot not in self.pw.items():
+                self.pw.addItem(self.pPivot)
+            self.pPivot.setValue(self.pivotPosition)
 
         if self.domain == "PPM":
             self.p1.getViewBox().invertX(True)
-            
 
         if replot:
             print("Replotting in PW")
             self.pw.autoRange()
-        
-    def updateRegions(self, regionView):
-        regionSet = regionView.rStack[regionView.activeRegion]
-        
-        regions = regionSet.regions
 
-        for item in self.regionPlotItems:
-            self.pw.removeItem(item)
-            
-        
-        for index, r in enumerate(regions):
-            item = pg.LinearRegionItem(values=(r[0], r[1]))
-            #item.sigRegionChangeFinished.connect
-            self.regionPlotItems.append(item)
-            self.pw.addItem(item)
+
+    
+    
+
+
+
 
     

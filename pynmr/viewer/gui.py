@@ -21,9 +21,9 @@ import os
 from PyQt5 import QtWidgets as qtw
 from PyQt5 import QtGui as qtg
 from PyQt5 import QtCore as qtc
-import datetime
+# import datetime
 import dill
-import time
+# import time
 
 from functools import partial
 
@@ -45,11 +45,12 @@ import pynmr.model.operations as OPS
 
 class MainWindow(qtw.QMainWindow):
     viewParametersChanged = qtc.pyqtSignal(int)
-    
+
     def __init__(self, model=None, arg = None):
         super().__init__()
 
         self.model = model
+        self.TD1Change = False
 
         self.width=400
         self.height = 400
@@ -57,8 +58,9 @@ class MainWindow(qtw.QMainWindow):
 
         self.settings = qtc.QSettings('Karlsruhe Institute of Technology', 'pyNMR') # name of company and name of app 
         #self.settings.clear()
-        
+        self.path = None
         self.TD1_index = 0
+        self.previeous_TD1 = 0
         self.procIndex = -1
         self.domain = "Time.Points"
 
@@ -137,6 +139,7 @@ class MainWindow(qtw.QMainWindow):
         # now add one that shows the current FID
         self.td1Entry = qtw.QLineEdit("0", textChanged = self.setTD1_index)
         self.td1Entry.setSizePolicy(qtw.QSizePolicy.Maximum, qtw.QSizePolicy.Maximum)
+    
         TBviewerNavigation.addWidget(self.td1Entry)
 
         self.td1Validator = qtg.QIntValidator(0, 10)
@@ -185,6 +188,10 @@ class MainWindow(qtw.QMainWindow):
         
 
     def updateView(self):
+        oldWidget = self.centralWidget()
+        if oldWidget is not None:
+            oldWidget.deleteLater()
+
         widgetAll = qtw.QWidget()
         widgetAllLayout = qtw.QHBoxLayout()
         widgetAll.setLayout(widgetAllLayout)
@@ -195,19 +202,22 @@ class MainWindow(qtw.QMainWindow):
         
         self.dataWidget = NmrViewWidget(self, model=self.model)
         
-        self.processorWidget = ProcessorViewWidget(model=self.model, parent=self)
+        self.processorWidget = ProcessorViewWidget(model=self.model, parent=self,TD1_index=self.TD1_index)
 
         self.regionWidget = RegionViewWidget(model = self.model, parent = self)
         regionAndAnalysisLayout.addWidget(self.regionWidget)
 
         self.titleWidget = TitleViewWidget(model=self.model)
-
-        titleAndProcessorLayout.addWidget(self.titleWidget)
-        titleAndProcessorLayout.addWidget(self.processorWidget)
+    
+        titleAndProcessorLayout.addWidget(self.titleWidget,0)
+        titleAndProcessorLayout.addWidget(self.processorWidget,2)
         
         widgetAllLayout.addWidget(self.dataWidget)
         widgetAllLayout.addLayout(titleAndProcessorLayout)
         widgetAllLayout.addLayout(regionAndAnalysisLayout)
+
+        self.setCentralWidget(widgetAll)
+
 
         self.regionWidget.setMinimumSize(150,300)
         self.regionWidget.setMaximumSize(410,2600)
@@ -235,12 +245,17 @@ class MainWindow(qtw.QMainWindow):
         self.processorWidget.pivotPositionSignal.connect(self.dataWidget.pivotPositionSignal)
         self.processorWidget.showPivotSignal.connect(self.dataWidget.showPivotSignal)
 
-        self.dataWidget.pivotChanged.connect(self.processorWidget.pivotPositionChange)
+        
+
+        self.dataWidget.regionChanged.connect(self.regionWidget.reprocessed)
+        self.dataWidget.regionChanged.connect(self.regionWidget.reloadRegions)
         
         self.show()
 
+
     def report(self, arg):
         print("Report in :", arg)
+
 
     def openExample(self):
         path = "/Users/benno/Dropbox/Software/pyNMR/examples/data/bruker/INADEQUATE/2/"
@@ -257,38 +272,105 @@ class MainWindow(qtw.QMainWindow):
                 self.settings.setValue("openPath", "\\".join(path.split("\\")[:-1]))
                                                 
         print(path)
+        self.path = path
         self.openByPath(path)
-        
-    def openByPath(self, path):
-        data = topSpin.TopSpin(path)
 
-        pathToProcessor = path + "pynmrProcessor1.pickle"
-
-        if os.path.isfile(pathToProcessor):
-            print("Parsing Processor from " + pathToProcessor)
-            Processor = dill.load(open(pathToProcessor, "rb")) 
+    def openinDoc(self, docdata, Processorpath, TD1_index=0):
+        data = docdata
+        matches = [f for f in os.listdir(Processorpath) if f.startswith("pynmrProcessor")]
+        if len(matches) > 0:
+            pathToProcessor = os.path.join(Processorpath, "pynmrProcessor.pickle")
+            if os.path.isfile(pathToProcessor):
+                print("Parsing Processor from " + pathToProcessor)
+                Processor = [dill.load(open(pathToProcessor, "rb"))]
+            else:
+                pathToProcessor = os.path.join(Processorpath, matches[0])
+                print("Parsing Processor from " + pathToProcessor)
+                Processor = [dill.load(open(pathToProcessor, "rb"))]
         else:
-            Processor = PROC.Processor([OPS.LeftShift(data.shiftPoints),
+            print("No Processor found. Using default.")
+            Processor = [PROC.Processor([
+                OPS.LeftShift(data.shiftPoints),
+                OPS.LineBroadening(0.0),
+                OPS.FourierTransform(),
+                OPS.SetPPMScale(),
+                OPS.Phase0D(0),
+                OPS.Phase1D(data.timeShift, unit="time")
+            ])]
+
+        pathToRegionStack = os.path.join(Processorpath, "pynmrRegionStack.dill")
+
+        if os.path.isfile(pathToRegionStack):
+            print("Parsing RegionStack from " + pathToRegionStack)
+            regionStack = dill.load(open(pathToRegionStack, "rb"))
+            print("RegionStack loaded with ", len(regionStack), " regions.")
+        else:
+            print("No RegionStack found. Using default.")
+            regionStack = REGION.RegionStack()
+
+        self.model = pyNmrDataModel(dataSet=pyNmrDataSet(
+            data=data,
+            processor=None,
+            regionStack=regionStack
+        ))
+
+        for i in range(len(Processor)):
+            self.model.dataSets[0].processorStack.append(Processor[i])
+        
+        self.model.dataSets[0].processorStack[0].runStack(data)
+
+
+        self.setWindowTitle("pyNMR - " + Processorpath)
+        self.updateView()
+
+        
+    def openByPath(self, path,TD1_index = 0):
+        data = topSpin.TopSpin(path)
+        print("Opening file: ", path)
+        matches = [f for f in os.listdir(path) if f.startswith("pynmrProcessor")]
+        if len(matches) > 0:
+            pathToProcessor = os.path.join(path, f"pynmrProcessor.pickle")
+            if os.path.isfile(pathToProcessor):
+                print("Parsing Processor from " + pathToProcessor)
+                Processor = dill.load(open(pathToProcessor, "rb"))
+            else:
+                pathToProcessor = matches[0]
+                print("Parsing Processor from "+ path + pathToProcessor)
+                Processor = dill.load(open(pathToProcessor, "rb"))
+        else:
+            print("No Processor found. Using default.")
+            Processor = [PROC.Processor([OPS.LeftShift(data.shiftPoints),
                                         OPS.LineBroadening(0.0),
                                         OPS.FourierTransform(),
                                         OPS.SetPPMScale(),
                                         OPS.Phase0D(0),
                                         OPS.Phase1D(data.timeShift,
-                                                    unit="time")])
+                                                    unit="time")])]
 
-        pathToRegionStack = path + "pynmrRegionStack1.dill"
+        pathToRegionStack = path + "pynmrRegionStack.dill"
 
         if os.path.isfile(pathToRegionStack):
             print("Parsing RegionStack from " + pathToRegionStack)
             regionStack = dill.load(open(pathToRegionStack, "rb")) 
         else:
+            print("No RegionStack found. Using default.")
             regionStack = REGION.RegionStack()
-        
-            
+
+       
+        print("Processor loaded with ", str(Processor))
+
 
         self.model = pyNmrDataModel(dataSet=pyNmrDataSet(data=data,
-                                                         processor=Processor,
-                                                         regionStack=regionStack))
+                                                             processor=None,
+                                                             regionStack=regionStack))
+
+        for i in range(0,len(Processor)):  
+            self.model.dataSets[0].processorStack.append(Processor[i])
+
+
+
+        
+        
 
         if self.settings.contains("recentFilesList"):
             files = self.settings.value("recentFilesList")
@@ -307,13 +389,14 @@ class MainWindow(qtw.QMainWindow):
             
         self.setWindowTitle("pyNMR - " + path)
         self.populateOpenRecent()
-        
+
         self.updateView()
+        self.ProcessortoTD1()
 
     def populateOpenRecent(self, openString = ""):
-        # Step 1. Remove the old options from the menu
+
         self.openRecentMenu.clear()
-        # Step 2. Dynamically create the actions
+
         actions = []
         if self.settings.contains("recentFilesList"):
             filenames = self.settings.value("recentFilesList")
@@ -324,7 +407,7 @@ class MainWindow(qtw.QMainWindow):
             action = qtw.QAction(filename, self)
             action.triggered.connect(partial(self.openByPath, filename))
             actions.append(action)
-        # Step 3. Add the actions to the menu
+
         self.openRecentMenu.addActions(actions)
 
         if len(openString) > 0:
@@ -335,28 +418,67 @@ class MainWindow(qtw.QMainWindow):
                 print("Could not open file specified by ", openString)
 
     def closeEvent(self, e):
-        # Write window size and position to config file
         self.settings.setValue("size", self.size())
         self.settings.setValue("pos", self.pos())
 
 
     def incrTD1_index(self):
-        if self.TD1_index < 1000:
-            self.TD1_index = self.TD1_index + 1
-
+        self.TD1Change=True
+        td1_max = len(self.model.dataSets[0].data.allFid[self.procIndex])-1
+        print("TD1 ist maximal "+ str(td1_max))
+        if self.TD1_index < td1_max:
+            self.previeous_TD1 = self.TD1_index
+            self.TD1_index += 1
+            self.setProcIndex(self.TD1_index)
+            self.ProcessortoTD1()
+        else:
+            print("keine Aenderung in TD1")
         self.td1Entry.setText(str(self.TD1_index))
+        self.TD1Change=False
 
 
         
     def decrTD1_index(self):
+        self.TD1Change=True
         if self.TD1_index > 0:
-            self.TD1_index = self.TD1_index - 1
+            self.previeous_TD1 = self.TD1_index
+            self.TD1_index -= 1
+            self.setProcIndex(self.TD1_index)
+            self.ProcessortoTD1()
         self.td1Entry.setText(str(self.TD1_index))
+        #self.setTD1_index(self.TD1_index)
+        self.TD1Change=False
 
-    def setTD1_index(self, value):
-        self.TD1_index = int(value)
-        self.viewParametersChanged.emit(1)
-        #print("Setting, ", value)
+
+    def setTD1_index(self, value1):
+
+        if self.TD1Change:
+            return
+        value = str(value1)
+        td1_max = len(self.model.dataSets[0].data.allFid[self.procIndex])-1
+        try:
+            path = self.model.dataSets[0].data.path
+        except:
+            self.TD1_index = 0
+            self.viewParametersChanged.emit(0)
+            return
+        print("Path in set TD1_index: ", path)
+        if value.isnumeric():
+            if int(value)< td1_max:
+                self.previeous_TD1 = self.TD1_index
+                self.TD1_index = int(value)
+                self.td1Entry.setText(str(self.TD1_index))
+                self.setProcIndex(self.TD1_index)
+                self.ProcessortoTD1()
+                self.viewParametersChanged.emit(1)
+            else:
+                print("Wert gleich oder zu hoch")
+        else:
+            print("Error: TD1 index is not numeric.")
+            self.td1Entry.setText(str(self.TD1_index))
+            self.viewParametersChanged.emit(1)
+
+
 
     def setProcIndex(self, value):
         self.procIndex = int(value)
@@ -366,6 +488,36 @@ class MainWindow(qtw.QMainWindow):
     def setDomain(self):
         self.domain = self.domainBox.currentText()
         self.viewParametersChanged.emit(1)
+    
+    def ProcessortoTD1(self):
+        """Update the Processor to the current TD1 index."""
+        if len(self.model.dataSets[0].processorStack) < self.TD1_index + 1:
+            print("No Processor defined for TD1 index ", self.TD1_index)
+            for i in range(self.TD1_index + 1 - len(self.model.dataSets[0].processorStack)):
+                data = self.model.dataSets[0].data
+                self.model.dataSets[0].processorStack.append(
+                    PROC.Processor([
+                        OPS.LeftShift(data.shiftPoints),
+                        OPS.LineBroadening(0.0),
+                        OPS.FourierTransform(),
+                        OPS.SetPPMScale(),
+                        OPS.Phase0D(0),
+                        OPS.Phase1D(data.timeShift, unit="time")
+                    ])
+                
+                )
+
+        print("Running Processor for TD1 index ", self.TD1_index)
+        Region = self.regionWidget.GetactiveRegion()
+        self.processorWidget = ProcessorViewWidget(model=self.model, parent=self,TD1_index=self.TD1_index)
+        self.dataWidget = NmrViewWidget(self, model=self.model)
+        self.updateView()
+        self.processorWidget.runProcessor(self.model.dataSets[self.processorWidget.dataSetIndex].processorStack[self.TD1_index])
+        self.processorWidget.reprocessed.emit()
+        self.processorWidget.changeAxis.emit("PPM")
+        if Region is not None:
+            self.regionWidget.setActiveRegion(Region)
+
 
         
         

@@ -1,9 +1,9 @@
 import numpy as np
-import scipy as sp
+#from pybaselines import Baseline, utils
+import os
 
 from scipy.fft import fft
 from scipy.fftpack import fftshift
-
 
 
 class Operation(object):
@@ -20,6 +20,17 @@ class LeftShift(Operation):
         nmrData.allFid.append([nmrData.allFid[-1][k][self.shiftPoints:] for
                                k in range(len(nmrData.allFid[-1]))])
         nmrData.fidTimeForLB = nmrData.fidTime[self.shiftPoints:]
+
+class FixZeFU(Operation):
+	def __init__(self):
+		self.name = "Fix missing 'ze' between 2D measurements"
+
+	def run(self, nmrData):
+		shape = np.array(nmrData.allFid[-1]).shape
+		correctedFids = nmrData.allFid[-1][0]
+		correctedFids=np.append(correctedFids,[nmrData.allFid[-1][k]-nmrData.allFid[-1][k-1] for
+							   k in range(1,len(nmrData.allFid[-1]))])
+		nmrData.allFid.append(np.array(correctedFids).reshape(shape))
 
 
 class ZeroFill(Operation):
@@ -42,8 +53,8 @@ class LineBroadening(Operation):
         #print("LB: {} Hz".format(self.lineBroadening))
         length = len(nmrData.allFid[-1][0])
         nmrData.allFid.append(
-            sp.multiply(nmrData.allFid[-1][:],
-                        sp.exp(-nmrData.fidTimeForLB[:length]
+            np.multiply(nmrData.allFid[-1][:],
+                        np.exp(-nmrData.fidTimeForLB[:length]
                                * self.lineBroadening * np.pi)))
 
 
@@ -58,7 +69,7 @@ class FourierTransform(Operation):
         nmrData.frequency = np.linspace(-nmrData.sweepWidthTD2/2,
                                         nmrData.sweepWidthTD2/2,
                                         len(nmrData.allFid[-1][0]))
-
+    
 
 class FourierTransform2D(Operation):
     def __init__(self):
@@ -141,6 +152,22 @@ class Phase1D(Operation):
                    for spec in nmrData.allSpectra[-1]]
         nmrData.allSpectra.append(spectra)
 
+class GetTitle(Operation):
+    def __init__(self, path):
+        """Get Title"""
+        self.path = path
+        self.name = "Get Title"
+        self.ptitle = None
+        self.title = None
+
+    def run(self,input):
+        try:
+            ptitle = os.path.join(input, "pdata", "1", "title")
+            with open(ptitle, "r", encoding="utf-8") as f:
+                self.title = f.read()
+            return self.title
+        except AttributeError:
+            return "Title not available for this dataset."
 
 class GetIndex(Operation):
     def __init__(self, value, scale = "Hz"):
@@ -281,6 +308,44 @@ class GetAllIntegrals(Operation):
 
         return returnList
 
+class SumT1IntegrateT2(Operation):
+    def __init__(self, start, stop, scale="Hz", part="real"):
+        """
+        This function sums over the T1-axis (rows) and integrates along the T2-axis (columns)
+        for the given range in the 2D spectrum.
+        
+        Arguments:
+        - `start`: lower limit of integration
+        - `stop`: upper limit of integration
+        - `scale`: Hz or ppm
+        - `part`: real or magnitude
+        """
+        self.start = start
+        self.stop = stop
+        self.scale = scale
+        self.part = part
+        self.name = "Sum T1 and Integrate T2"
+
+    def run(self, nmrData):
+        # Get the indices for the integration range
+        o = GetIndices([self.start, self.stop], scale=self.scale)
+        indices = o.run(nmrData)
+        i1 = indices[0]
+        i2 = indices[1]
+
+        # Convert the 2D spectrum to a NumPy array for easier manipulation
+        spectra = np.array(nmrData.allSpectra[-1])
+
+        # Sum over the T1-axis (rows)
+        summed_spectrum = np.sum(spectra[:, i1:i2], axis=0)
+
+        # Integrate along the T2-axis (columns)
+        if self.part == "real":
+            integral = np.sum(np.real(summed_spectrum))
+        elif self.part == "magnitude":
+            integral = np.sum(np.abs(summed_spectrum))
+
+        return integral
 
 class GetPhase(Operation):
     def __init__(self, index, start, stop, scale="Hz"):
@@ -330,6 +395,60 @@ class GetAllPhases(Operation):
         else:
             return pList
 
+class GetMaximum(Operation):
+	def __init__(self, index, scale="Hz"):
+		"""This function returns the frequency of amplitude maximumm."""
+
+		self.index = index
+		self.scale = scale
+		self.name = "Get frequency of amplitude maximum"
+
+	def run(self, nmrData):
+		peak = nmrData.frequency[np.argmax(np.abs(nmrData.allSpectra[-1][self.index]))]
+		return peak
+
+class GetMaxima(Operation):
+	def __init__(self, scale="Hz"):
+		"""This function returns the list frequencies of the amplitude maximum for each spectrum ."""
+
+		self.scale = scale
+		self.name = "Get list of frequencies for amplitude maxima"
+
+	def run(self, nmrData):
+		fList = np.array([])
+		o = GetMaximum(0, scale=self.scale)
+		for i in range(nmrData.sizeTD1):
+			o.index = i
+			fList = np.append(fList, o.run(nmrData))
+		return fList
+
+class GetMaxPhase(Operation):
+	def __init__(self, index, width, scale="Hz"):
+		"""This function returns the 0 order phase in degrees
+		that maximizes the integral of width around maximum."""
+
+		self.index = index
+		self.width = width
+		self.scale = scale
+		self.name = "Get Single Phase around max"
+
+	def run(self, nmrData):
+		peak = (GetMaximum(self.index).run(nmrData))
+		o = GetIndices([peak - self.width, peak + self.width], scale=self.scale)
+		indices = o.run(nmrData)
+		i1 = indices[0]
+		i2 = indices[1]
+
+		phiTest = np.linspace(-180, 179, num=360)
+
+		integrals = np.zeros(np.size(phiTest))
+
+		for k in range(len(integrals)):
+			integrals[k] = np.sum(np.real(
+				nmrData.allSpectra[-1][self.index][i1:i2]
+				* np.exp(-1j*float(phiTest[k])/180.*np.pi)))
+
+		return phiTest[np.argmax(integrals)]
 
 class SetPPMScale(Operation):
     def __init__(self, offset=-1, shift=0, ppmValue=-1, scale="offset", automatic=True):
@@ -455,22 +574,22 @@ class SINO(Operation):
         
 
 class BaseLineCorrection(Operation):
-    def __init__(self, regionSet, degree, scale="Hz", applyLocally=False):
+    def __init__(self, regionSet, degree, scale="Hz", applyLocally=False, fitFunction=None):
         """
-        Polynomial baseline correction.
         region: list of intervals where the baseline is to be determined
-        degree: degree of the polynomial to be used.
         scale: scale as used in the region specification, default is "Hz",
                other option is "ppm"
         applyLocally: if set to true, apply baseline correction only
                       within the outer limits of the region list.
+        fitFunction: custom function to fit the baseline. Should accept xVals and yVals as input
+                     and return fitted y-values.
         """
 
         self.regionSet = regionSet
         self.degree = degree
         self.scale = scale
-        self.applyLocally = False
-        self.name = "Baseline Correction"
+        self.applyLocally = applyLocally
+        self.fitFunction = fitFunction
 
     def run(self, nmrData):
         fidList = []
@@ -481,7 +600,6 @@ class BaseLineCorrection(Operation):
             thisFid = []
 
             for pair in self.regionSet:
-
                 o = GetIndices(pair, scale=self.scale)
                 indices = o.run(nmrData)
                 i1 = indices[0]
@@ -489,27 +607,30 @@ class BaseLineCorrection(Operation):
 
                 indices.extend([i1, i2])
 
-                assert i1 != i2, """Empty Frequency Range -
-                Frequency for Baseline Corrrection outside spectral range?"""
+                assert i1 != i2, """Empty Frequency Range """
 
                 xVals.extend(nmrData.frequency[i1:i2])
                 yVals.extend(np.real(nmrData.allSpectra[-1][k][i1:i2]))
 
-            z = np.polyfit(xVals, yVals, self.degree)
-
-            p = np.poly1d(z)
-            self.p = p
+            if self.fitFunction:
+                # Use the custom fit function
+                fittedBaseline = self.fitFunction(nmrData.frequency, xVals, yVals)
+            else:
+                # Use polynomial fitting
+                z = np.polyfit(xVals, yVals, self.degree)
+                p = np.poly1d(z)
+                fittedBaseline = p(nmrData.frequency)
 
             if self.applyLocally:
                 thisFid = nmrData.allSpectra[-1][k]
-                thisFid[min(indices):max(indices)] -= (
-                    p(nmrData.frequency[min(indices):max(indices)]))
+                thisFid[min(indices):max(indices)] -= fittedBaseline[min(indices):max(indices)]
             else:
-                thisFid = nmrData.allSpectra[-1][k] - p(nmrData.frequency)
+                thisFid = nmrData.allSpectra[-1][k] - fittedBaseline
 
-                fidList.append(thisFid)
+            fidList.append(thisFid)
 
-        print("BaselineCorrection done. Polynomial: " + p.__repr__())
-        print("Length of nmrData.allSpectra before: ", len(nmrData.allSpectra))
+        print("BaselineCorrection done.")
         nmrData.allSpectra.append(fidList)
-        print("Length of nmrData.allSpectra after: ", len(nmrData.allSpectra))
+
+
+ 

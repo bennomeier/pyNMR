@@ -7,7 +7,6 @@ class LeftShiftWidget(qtw.QWidget):
     def __init__(self, operation):
         super().__init__()
         self.operation = operation
-
         layout = qtw.QVBoxLayout()
         layout.setContentsMargins(0, 0, 0, 0)
         self.setLayout(layout)
@@ -18,18 +17,21 @@ class LeftShiftWidget(qtw.QWidget):
         groupBoxLayout = qtw.QHBoxLayout()
         box.setLayout(groupBoxLayout)
 
-        shiftEntry = qtw.QLineEdit(str(self.operation.shiftPoints))
-        shiftEntry.setValidator(qtg.QIntValidator())
-
-        shiftEntry.setValidator(qtg.QDoubleValidator())
-        shiftEntry.textChanged.connect(self.handleChange)
+        self.shiftEntry = qtw.QLineEdit(str(self.operation.shiftPoints))
+        self.shiftEntry.setValidator(qtg.QIntValidator())
+        self.shiftEntry.textChanged.connect(self.handleChange)
 
         groupBoxLayout.addWidget(qtw.QLabel("Left Shift"))
-        groupBoxLayout.addWidget(shiftEntry)
+        groupBoxLayout.addWidget(self.shiftEntry)
         groupBoxLayout.addWidget(qtw.QLabel("Points"))
 
     def handleChange(self, value):
         self.operation.shiftPoints = int(value)
+
+    def updateValues(self, operation):
+        """Update the widget's text field with the new operation values."""
+        self.operation = operation
+        self.shiftEntry.setText(str(self.operation.shiftPoints))
 
 
 
@@ -40,7 +42,6 @@ class ExponentialLineBroadening(qtw.QWidget):
 
         layout = qtw.QVBoxLayout()
         layout.setContentsMargins(0, 0, 0, 0)
-
         self.setLayout(layout)
         
         box = qtw.QGroupBox()
@@ -49,16 +50,22 @@ class ExponentialLineBroadening(qtw.QWidget):
         groupBoxLayout = qtw.QHBoxLayout()
         box.setLayout(groupBoxLayout)
 
-        entry = qtw.QLineEdit(str(self.operation.lineBroadening))
-        entry.setValidator(qtg.QDoubleValidator())
-        entry.textChanged.connect(self.handleChange)
+        self.entry = qtw.QLineEdit(str(self.operation.lineBroadening))
+        self.entry.setValidator(qtg.QDoubleValidator())
+        self.entry.textChanged.connect(self.handleChange)
 
         groupBoxLayout.addWidget(qtw.QLabel("Exponential Broadening "))
-        groupBoxLayout.addWidget(entry)
+        groupBoxLayout.addWidget(self.entry)
         groupBoxLayout.addWidget(qtw.QLabel("(Hz)"))
 
     def handleChange(self, value):
         self.operation.lineBroadening = float(value)
+
+    def updateValues(self, operation):
+        """Update the widget's text field with the new operation values."""
+        self.operation = operation
+        self.entry.setText(str(self.operation.lineBroadening))
+
 
 
 class FourierTransform(qtw.QWidget):
@@ -68,9 +75,6 @@ class FourierTransform(qtw.QWidget):
 
         layout = qtw.QVBoxLayout()
         layout.setContentsMargins(0, 0, 0, 0)
-
-        layout.setContentsMargins(0, 0, 0, 0)
-
         self.setLayout(layout)
         
         box = qtw.QGroupBox()
@@ -81,18 +85,20 @@ class FourierTransform(qtw.QWidget):
 
         groupBoxLayout.addWidget(qtw.QLabel("Fourier Transform"))
 
+    def updateValues(self, operation):
+        """No values to update for Fourier Transform."""
+        self.operation = operation
 
 class SetPPMScale(qtw.QWidget):
     def __init__(self, operation, parent=None, runFunc=None):
         super().__init__()
         self.operation = operation
+        self.parent = parent
+        self.refVal = 0
 
         layout = qtw.QVBoxLayout()
         layout.setContentsMargins(0, 0, 0, 0)
-
         self.setLayout(layout)
-        self.parent = parent
-        self.refVal = 0
         
         box = qtw.QGroupBox()
         layout.addWidget(box)
@@ -105,7 +111,7 @@ class SetPPMScale(qtw.QWidget):
         self.entry.textChanged.connect(self.handleChange)
 
         self.button = qtw.QPushButton("Calib Axis (C)", self,
-                                      shortcut = qtg.QKeySequence("C"),
+                                      shortcut=qtg.QKeySequence("C"),
                                       clicked=self.calibAxis)
         
         groupBoxLayout.addWidget(self.entry)
@@ -113,44 +119,36 @@ class SetPPMScale(qtw.QWidget):
         groupBoxLayout.addWidget(self.button)
 
     def calibAxis(self):
-        # this should open a popup where you enter the ppm value of the reference
-        # then the position of the pivot is set to this reference value.
-
-        #  https://stackoverflow.com/questions/42534378/c-qt-creator-how-to-have-dot-and-comma-as-decimal-separator-on-a-qdoubles
-
         shiftValue, ok = qtw.QInputDialog.getDouble(self, "Chemical Shift", "Enter Chemical Shift", decimals=3)
-
         if ok:
             pivotPosition = self.parent.parent.dataWidget.pPivot.value()
-            print("pivotPosition: ", pivotPosition)
-            print("shiftValue: ", shiftValue)
             delta = shiftValue - pivotPosition
             self.operation.shift += delta
-            self.entry.setText(str(delta))  
-
-        
+            self.entry.setText(str(delta)) 
+    
     def handleChange(self):
         self.operation.shift = float(self.entry.text())
         
+    def updateValues(self, operation):
+        """Update the widget's text field with the new operation values."""
+        self.operation = operation
+        self.entry.setText(str(self.operation.shift))
+
 class PhaseZeroOrder(qtw.QWidget):
     reprocessWidget = qtc.pyqtSignal()
-    reprocessSignal = 1
 
-    def __init__(self, operation, runFunc = None):
+    def __init__(self, operation, runFunc=None):
         super().__init__()
         self.operation = operation
+        self.runFunc = runFunc
 
         layout = qtw.QVBoxLayout()
         layout.setContentsMargins(0, 0, 0, 0)
-
         self.setLayout(layout)
 
         box = qtw.QGroupBox()
         layout.addWidget(box)
 
-        self.runFunc = runFunc
-
-        # the box is a VBoxLayout with a slider and an entry
         groupBoxLayout = qtw.QVBoxLayout()
         box.setLayout(groupBoxLayout)
 
@@ -160,40 +158,36 @@ class PhaseZeroOrder(qtw.QWidget):
         self.sl.setValue(int(self.operation.phase))
         self.sl.valueChanged.connect(self.handleChange)
 
-        self.reprocessSignal = 1
-
-        groupBoxLayout.addWidget(self.sl)
-       
-        phaseEntryLayout = qtw.QHBoxLayout()
-
-        self.entry = qtw.QLineEdit(str(self.operation.phase))
+        self.entry = qtw.QLineEdit(str(self.operation.phase)) 
         self.entry.setValidator(qtg.QDoubleValidator())
         self.entry.textChanged.connect(self.handleChange)
 
-        phaseEntryLayout.addWidget(self.entry)
-        phaseEntryLayout.addWidget(qtw.QLabel("Phase Zero Order"))
-
-        reprocessLayout = qtw.QHBoxLayout()
-
-        self.reproBox = qtw.QCheckBox("Reprocess")
-
-        reprocessLayout.addWidget(self.reproBox)
-        
-        groupBoxLayout.addLayout(phaseEntryLayout)
-        groupBoxLayout.addLayout(reprocessLayout)
+        groupBoxLayout.addWidget(qtw.QLabel("Phase 0D"))
+        groupBoxLayout.addWidget(self.sl)
+        groupBoxLayout.addWidget(self.entry)
 
     def handleChange(self, value):
+        while float(value)<-180 or float(value)>180:
+            if float(value)<0:
+                value = int(value)+ 360
+            else:
+                value = int(value)- 360
         self.operation.phase = float(value)
         self.entry.setText(str(value))
-        self.sl.setValue(float(value))
+        if float(value)<0:
+            val = int(abs(float(value)))
+            self.sl.setValue(-val)
+        else:
+            self.sl.setValue(int(float(value)))
+        if self.runFunc:
+            self.runFunc()
+        self.reprocessWidget.emit()
 
-        if self.reproBox.isChecked:
-            print("Emitting Reprocessed Signal.")
 
-            if self.runFunc:
-                self.runFunc()
-            
-            self.reprocessWidget.emit()
+    def updateValues(self, operation):
+        """Update the widget's text field and slider with the new operation values."""
+        self.operation = operation
+        self.entry.setText(str(self.operation.phase))
 
 
 class PhaseFirstOrder(qtw.QWidget):
@@ -205,6 +199,8 @@ class PhaseFirstOrder(qtw.QWidget):
     def __init__(self, operation, parent=None, runFunc = None):
         super().__init__()
         self.operation = operation
+        if not hasattr(self.operation, "phase"):
+            self.operation.phase = 0
         self.runFunc = runFunc
 
         layout = qtw.QVBoxLayout()
@@ -267,17 +263,31 @@ class PhaseFirstOrder(qtw.QWidget):
         self.operation.unit = "degree"
         self.operation.scale = "ppm"
         self.entry.setText(str(value))
-        self.sl.setValue(float(value))
+        while float(value)<-540 or float(value)>540:
+            if float(value)<0:
+                value = int(value)+ 1080
+            else:
+                value = int(value)- 1080
+        self.operation.phase = float(value)
+        self.entry.setText(str(value))
+        if float(value)<0:
+            val = int(abs(float(value)))
+            self.sl.setValue(-val)
+        else:
+            self.sl.setValue(int(float(value)))
 
-        if self.reproBox.isChecked:
-            print("Emitting Reprocessed Signal.")
-            self.reprocessWidget.emit()
-
-            if self.runFunc:
-                self.runFunc()
-            #self.parent().parent().reprocessed.emit()
+        if self.runFunc:
+            self.runFunc()
+        self.reprocessWidget.emit()
 
     def updatePivotPosition(self):
         # update pivot position text after pivot has been changed.
         self.operation.pivot = self.parent.parent.dataWidget.pPivot.value()
+        self.pivot.setText(str(self.operation.pivot))
+
+    def updateValues(self, operation):
+        """Update the widget's text field and slider with the new operation values."""
+        self.operation = operation
+        self.entry.setText(str(self.operation.phase))
+        self.sl.setValue(int(self.operation.phase))
         self.pivot.setText(str(self.operation.pivot))
