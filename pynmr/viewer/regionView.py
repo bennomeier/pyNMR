@@ -27,6 +27,8 @@ class RegionViewWidget(qtw.QFrame):
 
         self.initUI()
 
+        self.parent.processorWidget.BaselineWidget.updateRegioStack()
+
         self.activeRegion = None
         if len(self.rStack.regionSets.keys()) > 0:
             self.activeRegion = list(self.rStack.regionSets.keys())[0]
@@ -87,6 +89,7 @@ class RegionViewWidget(qtw.QFrame):
                 self.updateRegionSet()
                 self.scaleSelBox.setCurrentText(self.rStack[name].scale)
                 self.redraw()
+                self.parent.processorWidget.BaselineWidget.updateRegioStack()
                 self.reload = False
             except Exception as e:
                 qtw.QMessageBox.warning(self, "Error", str(e))
@@ -127,7 +130,8 @@ class RegionViewWidget(qtw.QFrame):
             except (ValueError, AttributeError):
                 break
 
-        self.rStack[self.activeRegion].regions = regions  
+        self.rStack[self.activeRegion].regions = regions
+        self.parent.processorWidget.BaselineWidget.update
         if self.showRegionCheckBox.isChecked():
             self.parent.dataWidget.updateRegions(self)
         else:

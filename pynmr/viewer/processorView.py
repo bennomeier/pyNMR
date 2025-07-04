@@ -82,8 +82,11 @@ class ProcessorViewWidget(qtw.QFrame):
                 self.pWidgets[-1].showPivotSignal.connect(self.showPivotSignal)
                 self.pWidgets[-1].pivotPositionSignal.connect(self.pivotPositionSignal)
                 self.parent.dataWidget.pivotChanged.connect(self.pWidgets[-1].updatePivotPosition)
-
+            
             thisProcessorLayout.addWidget(self.pWidgets[-1])
+        
+        self.BaselineWidget = ow.BaselineCorrectionWidget(op,model,dataSetIndex,parent=self.parent)
+        thisProcessorLayout.addWidget(self.BaselineWidget)
 
         runButton = qtw.QPushButton("Process (P)", self,
                                     shortcut=qtg.QKeySequence("P"),

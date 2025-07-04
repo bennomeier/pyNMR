@@ -7,7 +7,7 @@ from scipy.fftpack import fftshift
 
 
 class Operation(object):
-    def __init__():
+    def __init__(self):
         self.name = "Empty Operation"
 
 
@@ -584,7 +584,7 @@ class BaseLineCorrection(Operation):
         fitFunction: custom function to fit the baseline. Should accept xVals and yVals as input
                      and return fitted y-values.
         """
-
+        # make a boolean to only fit one FID
         self.regionSet = regionSet
         self.degree = degree
         self.scale = scale
@@ -593,6 +593,7 @@ class BaseLineCorrection(Operation):
 
     def run(self, nmrData):
         fidList = []
+        graph = []
         for k in range(len(nmrData.allSpectra[-1])):
             xVals = []
             yVals = []
@@ -619,6 +620,7 @@ class BaseLineCorrection(Operation):
                 # Use polynomial fitting
                 z = np.polyfit(xVals, yVals, self.degree)
                 p = np.poly1d(z)
+                graph.append(p)
                 fittedBaseline = p(nmrData.frequency)
 
             if self.applyLocally:
@@ -631,6 +633,16 @@ class BaseLineCorrection(Operation):
 
         print("BaselineCorrection done.")
         nmrData.allSpectra.append(fidList)
+        return graph
+    
+class BaselineFitFunction:
+    def __init__(self, degree):
+        self.degree = degree
+
+    def run(self, xData, yData):
+        z = np.polyfit(xData, yData, self.degree)
+        p = np.poly1d(z)
+        return p
 
 
  
