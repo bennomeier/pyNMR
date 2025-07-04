@@ -47,9 +47,16 @@ class nmrData(object):
     def RSPEC(self, pos, id):
         # short hand function to get the real part of the spectrum
         return np.real(self.allSpectra[pos][id])
-
+    
+    def ISPEC(self, pos, id):
+        # short hand function to get the real part of the spectrum
+        return np.imag(self.allSpectra[pos][id])
 
     def RFID(self, pos, id):
         # short hand function to get the real part of the FID
         return np.real(self.allFid[pos][id])
+    
+    def IFID(self, pos, id):
+        # short hand function to get the real part of the FID
+        return np.imag(self.allFid[pos][id])
 

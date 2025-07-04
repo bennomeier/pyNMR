@@ -26,6 +26,12 @@ class Processor(object):
         for op in opList:
             #print(op.name)
             op.run(nmrData)
+    
+    def addOperation(self, operation):
+        """Add an operation to the processor."""
+        if not hasattr(operation, 'run'):
+            raise ValueError("Operation must have a 'run' method.")
+        self.operationStack.append(operation)
         
     def __getitem__(self, index):
         return self.operationStack[index]

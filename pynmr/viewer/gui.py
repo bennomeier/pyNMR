@@ -241,7 +241,7 @@ class MainWindow(qtw.QMainWindow):
 
         # signals
         self.processorWidget.changeAxis.connect(self.dataWidget.changeDomain)
-        self.processorWidget.reprocessed.connect(self.dataWidget.reprocessed)
+        self.processorWidget.reprocessed.connect(self.dataWidget.update)
         self.processorWidget.pivotPositionSignal.connect(self.dataWidget.pivotPositionSignal)
         self.processorWidget.showPivotSignal.connect(self.dataWidget.showPivotSignal)
 

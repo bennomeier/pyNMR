@@ -9,6 +9,7 @@ from PyQt5 import QtCore as qtc
 # import dill
 #from pynmr.viewer import regionView
 # from pynmr.model.region import RegionStack
+import pynmr.model.operations as O
 import pyqtgraph as pg
 
 
@@ -43,7 +44,13 @@ class NmrViewWidget(qtw.QFrame):
 
         self.parent.viewParametersChanged.connect(self.update)
 
-        
+        self.baseline = False
+        self.Bslgraph = None
+        self.Graphdata = None
+        self.applybaleline = False
+        self.polynomialdegree = 0
+        self.baselineRegions = []
+
         self.domain = None
         self.pivotPosition = 0
         self.showPivot = False
@@ -146,9 +153,6 @@ class NmrViewWidget(qtw.QFrame):
         print("Change Axis called in nmrView.")
         self.parent.domainBox.setCurrentText(domain)
 
-    def reprocessed(self):
-        self.update()
-
     def update(self):
         print("NMRView Updating")
         autoScale = False
@@ -183,7 +187,11 @@ class NmrViewWidget(qtw.QFrame):
                 domain = "FREQUENCY"
             else:
                 domain = "TIME"
-            
+
+        if self.baseline:
+            self.updateBaseline()
+
+           
         print("Domain: ", self.domain)
         if self.domain == "Time.Points":
             self.y = self.model.dataSets[self.dataSetIndex].data.allFid[self.procIndex][TD1_index]
@@ -196,27 +204,79 @@ class NmrViewWidget(qtw.QFrame):
             self.xLabel = "Time"
             self.xUnit = "s"
         elif self.domain == "Frequency.Hz":
-            self.y = self.model.dataSets[self.dataSetIndex].data.allSpectra[self.procIndex][TD1_index]
+            data = self.model.dataSets[self.dataSetIndex].data.allSpectra[self.procIndex][TD1_index]
             self.x = self.model.dataSets[self.dataSetIndex].data.frequency
+            if self.applybaleline:
+                data = data - self.Graphdata(self.x)
+            self.y = data
             self.xLabel = "Frequency"
             self.xUnit = "Hz"
         elif self.domain == "Frequency.ppm":
-            self.y = self.model.dataSets[self.dataSetIndex].data.allSpectra[self.procIndex][TD1_index]
+            data = self.model.dataSets[self.dataSetIndex].data.allSpectra[self.procIndex][TD1_index]
             self.x = self.model.dataSets[self.dataSetIndex].data.ppmScale
+            if self.applybaleline:
+                print("palim palim")
+                data = data - self.Graphdata(self.x)
+            self.y = data
             self.xLabel = "Chemical Shift"
             self.xUnit = "PPM"
 
 
         self.updatePW(replot = autoScale)
 
-        # update the plots viewbox to show all data.
         self.pw.setMouseEnabled(x=True, y=True)
 
         if autoScale:
             print("Rescaling")
-            self.pw.autoRange()
+            self.pw.autoRange()   
 
-        #self.pw.manualRange()r
+    def plotBaseline(self, datax, datay):
+        if self.Bslgraph is not None:
+            self.pw.removeItem(self.Bslgraph)
+        self.Bslgraph = pg.PlotDataItem(datax,datay, pen=(100, 100, 100))
+        self.pw.addItem(self.Bslgraph)
+
+    def removeBaseline(self):
+        if self.Bslgraph is not None:
+            self.pw.removeItem(self.Bslgraph)
+
+    def updateBaseline(self):
+        """Update the baseline plot if baseline fitting is enabled."""
+        if self.baseline and self.polynomialdegree is not None:
+            Bsln = O.BaselineFitFunction(self.polynomialdegree)
+
+            if self.domain == "Frequency.Hz":
+                xdata = self.model.dataSets[self.dataSetIndex].data.frequency
+            elif self.domain == "Frequency.ppm":
+                xdata = self.model.dataSets[self.dataSetIndex].data.ppmScale
+            else:
+                xdata = np.arange(len(self.y))
+
+            xdata = xdata[:len(self.y)]
+            min_x = np.min(xdata)
+            max_x = np.max(xdata)
+            regions = self.baselineRegions
+            mask = np.zeros_like(xdata, dtype=bool)
+            for region in regions:
+                start, end = sorted(region)
+                mask |= (xdata >= max(start, min_x)) & (xdata <= min(end, max_x))
+            xdata_masked = xdata[mask]
+            y_masked = self.y[mask]
+            self.Graphdata = Bsln.run(xdata_masked, y_masked)
+            ydata = self.Graphdata(xdata)
+            ydata = np.real(ydata)
+            self.plotBaseline(xdata, ydata)
+        else:
+            self.removeBaseline()
+
+    def applyBaseline(self):
+        self.applybaleline = True
+        self.baseline = True
+        self.update()
+    
+    def unapplyBaseline(self):
+        self.applybaleline = False
+        self.update()
 
     # when Shift key is pressed, zoom y range as well.
     # for now you have to press shift as well.

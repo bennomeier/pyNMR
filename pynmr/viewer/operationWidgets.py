@@ -291,3 +291,159 @@ class PhaseFirstOrder(qtw.QWidget):
         self.entry.setText(str(self.operation.phase))
         self.sl.setValue(int(self.operation.phase))
         self.pivot.setText(str(self.operation.pivot))
+
+class BaselineCorrectionWidget(qtw.QWidget):
+    def __init__(self, operation,model,dataSetIndex,parent=None):
+        super().__init__()
+        self.operation = operation
+        self.model = model
+        self.parent = parent
+        self.dataSetIndex = dataSetIndex
+        self.activeBaselineRegion = None
+
+        layout = qtw.QVBoxLayout()
+        layout.setContentsMargins(0, 0, 0, 0)
+        self.setLayout(layout)
+
+        box = qtw.QGroupBox("Baseline Correction")
+        layout.addWidget(box)
+
+        mainLayout = qtw.QVBoxLayout()
+        box.setLayout(mainLayout)
+
+        self.typeCombo = qtw.QComboBox()
+        self.typeCombo.addItems(["Polynomial", "Spline", "Median", "Other"])
+        self.typeCombo.currentTextChanged.connect(self.updateType)
+        mainLayout.addWidget(qtw.QLabel("Correction Type"))
+        mainLayout.addWidget(self.typeCombo)
+
+        # Stacked widget for different correction types
+        self.stacked = qtw.QStackedWidget()
+        mainLayout.addWidget(self.stacked)
+
+        # Polynomial correction page
+        polyWidget = qtw.QWidget()
+        polyLayout = qtw.QVBoxLayout()
+        polyWidget.setLayout(polyLayout)
+
+        # Polynomial Degree
+        degreeLayout = qtw.QHBoxLayout()
+        degreeLabel = qtw.QLabel("Polynomial Degree")
+        self.polyDegreeEntry = qtw.QLineEdit(str(getattr(self.operation, "polyDegree", 1)))
+        self.polyDegreeEntry.setValidator(qtg.QIntValidator(1, 20))
+        self.polyDegreeEntry.textChanged.connect(self.handlePolyDegreeChange)
+        degreeLayout.addWidget(degreeLabel)
+        degreeLayout.addWidget(self.polyDegreeEntry)
+        polyLayout.addLayout(degreeLayout)
+
+        # RegioSet selection
+        regioLayout = qtw.QHBoxLayout()
+        regioLabel = qtw.QLabel("RegioSet")
+        self.regioCombo = qtw.QComboBox()
+        regiostack = self.model.dataSets[self.dataSetIndex].regionStack
+        regioset_names = list(regiostack.regionSets.keys()) if hasattr(regiostack, "regionSets") else []
+        self.regioCombo.addItems(regioset_names)
+        print("regioset_names:", regioset_names)
+        self.regioCombo.currentIndexChanged.connect(self.handleRegioSetChange)
+        regioLayout.addWidget(regioLabel)
+        regioLayout.addWidget(self.regioCombo)
+        polyLayout.addLayout(regioLayout)
+
+        # Show Baseline checkbox
+        self.showBaselineCheck = qtw.QCheckBox("Show Baseline")
+        self.showBaselineCheck.setChecked(getattr(self.operation, "showBaseline", False))
+        self.showBaselineCheck.stateChanged.connect(self.handleShowBaselineChange)
+        polyLayout.addWidget(self.showBaselineCheck)
+
+        self.stacked.addWidget(polyWidget)
+
+        # Placeholder for Spline
+        splineWidget = qtw.QWidget()
+        splineLayout = qtw.QHBoxLayout()
+        splineWidget.setLayout(splineLayout)
+        splineLayout.addWidget(qtw.QLabel("Spline options coming soon"))
+        self.stacked.addWidget(splineWidget)
+
+        # Placeholder for Rolling Ball / Rubberband
+        rollingBallWidget = qtw.QWidget()
+        rollingBallLayout = qtw.QHBoxLayout()
+        rollingBallWidget.setLayout(rollingBallLayout)
+        rollingBallLayout.addWidget(qtw.QLabel("Rolling Ball / Rubberband options coming soon"))
+        self.stacked.addWidget(rollingBallWidget)
+
+        # Placeholder for Wavelet-basiert
+        waveletWidget = qtw.QWidget()
+        waveletLayout = qtw.QHBoxLayout()
+        waveletWidget.setLayout(waveletLayout)
+        waveletLayout.addWidget(qtw.QLabel("Wavelet-based options coming soon"))
+        self.stacked.addWidget(waveletWidget)
+
+        # Placeholder for Median-/Quantil-basiert
+        medianQuantilWidget = qtw.QWidget()
+        medianQuantilLayout = qtw.QHBoxLayout()
+        medianQuantilWidget.setLayout(medianQuantilLayout)
+        medianQuantilLayout.addWidget(qtw.QLabel("Median-/Quantil-based options coming soon"))
+        self.stacked.addWidget(medianQuantilWidget)
+
+        # Placeholder for Asymmetrische Least Squares (ALS)
+        alsWidget = qtw.QWidget()
+        alsLayout = qtw.QHBoxLayout()
+        alsWidget.setLayout(alsLayout)
+        alsLayout.addWidget(qtw.QLabel("Asymmetric Least Squares (ALS) options coming soon"))
+        self.stacked.addWidget(alsWidget)
+
+        # Placeholder for Whittaker 
+        whittakerWidget = qtw.QWidget()
+        whittakerLayout = qtw.QHBoxLayout()
+        whittakerWidget.setLayout(whittakerLayout)
+        whittakerLayout.addWidget(qtw.QLabel("Whittaker options coming soon"))
+        self.stacked.addWidget(whittakerWidget)
+
+        self.applyButton = qtw.QPushButton("Apply Baseline")
+        self.applyButton.setCheckable(True)
+        self.applyButton.toggled.connect(self.toggleApply)
+        mainLayout.addWidget(self.applyButton)
+
+        self.updateType(self.typeCombo.currentText())
+
+    def updateType(self, text):
+        idx = self.typeCombo.currentIndex()
+        self.stacked.setCurrentIndex(idx)
+        self.operation.correctionType = text
+
+    ##Polynominal Baselinecorrection
+    def handleRegioSetChange(self, regioset):
+        if len(regioset) >= 2:
+            self.parent.dataWidget.baselineRegions = regioset
+        else:
+            Warning("Ausgewähltes Regioset besitzt zu wenige Regionen")
+        
+
+    def handlePolyDegreeChange(self, value):
+        if value:
+            print("New PolyDegree " +str(value))
+            self.parent.dataWidget.polynomialdegree = int(value)
+            self.parent.dataWidget.update
+
+    def handleShowBaselineChange(self, state):
+        if self.parent.dataWidget.baselineRegions is not None:
+            if state:
+                print("show Baseline")
+                self.parent.dataWidget.baseline = True
+                self.parent.dataWidget.updateBaseline()
+                self.parent.dataWidget.update()
+            else:
+                print("dont show Baseline")
+                self.parent.dataWidget.baseline = False
+                self.parent.dataWidget.update()
+    
+    def updateRegioStack(self):
+        """Update the regioCombo with the latest regionSets from the model."""
+        regiostack = self.model.dataSets[self.dataSetIndex].regionStack
+        regioset_names = list(regiostack.regionSets.keys()) if hasattr(regiostack, "regionSets") else []
+        self.regioCombo.clear()
+        self.regioCombo.addItems(regioset_names)
+    
+
+    def toggleApply(self, checked):
+        print("apply")
