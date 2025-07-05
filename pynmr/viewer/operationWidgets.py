@@ -340,11 +340,16 @@ class BaselineCorrectionWidget(qtw.QWidget):
         regioLayout = qtw.QHBoxLayout()
         regioLabel = qtw.QLabel("RegioSet")
         self.regioCombo = qtw.QComboBox()
-        regiostack = self.model.dataSets[self.dataSetIndex].regionStack
+        regiostack = self.model.dataSets[self.dataSetIndex].regionStack.regionSets
         regioset_names = list(regiostack.regionSets.keys()) if hasattr(regiostack, "regionSets") else []
         self.regioCombo.addItems(regioset_names)
         print("regioset_names:", regioset_names)
-        self.regioCombo.currentIndexChanged.connect(self.handleRegioSetChange)
+        if self.parent.dataWidget.baselineRegions == [] and len(regioset_names) > 0:
+            self.parent.dataWidget.baselineRegions = regiostack.regionSets[regioset_names[0]].regions
+            self.activeBaselineRegion = regiostack.regionSets[regioset_names[0]].name
+        self.regioCombo.currentIndexChanged.connect(
+            lambda idx: self.handleRegioSetChange(self.regioCombo.itemText(idx))
+        )
         regioLayout.addWidget(regioLabel)
         regioLayout.addWidget(self.regioCombo)
         polyLayout.addLayout(regioLayout)
@@ -413,8 +418,11 @@ class BaselineCorrectionWidget(qtw.QWidget):
 
     ##Polynominal Baselinecorrection
     def handleRegioSetChange(self, regioset):
-        if len(regioset) >= 2:
-            self.parent.dataWidget.baselineRegions = regioset
+        print("regioset wurde zu"+str(regioset)+" geaendert")
+        if len(self.parent.model.dataSets[self.dataSetIndex].regionStack[regioset].regions ) >= 2:
+            self.parent.dataWidget.baselineRegions =  self.model.dataSets[self.dataSetIndex].regionStack[regioset].regions
+            self.activeBaselineRegion = regioset
+            self.parent.dataWidget.update()
         else:
             Warning("Ausgewähltes Regioset besitzt zu wenige Regionen")
         
@@ -423,7 +431,7 @@ class BaselineCorrectionWidget(qtw.QWidget):
         if value:
             print("New PolyDegree " +str(value))
             self.parent.dataWidget.polynomialdegree = int(value)
-            self.parent.dataWidget.update
+            self.parent.dataWidget.update()
 
     def handleShowBaselineChange(self, state):
         if self.parent.dataWidget.baselineRegions is not None:
@@ -435,6 +443,7 @@ class BaselineCorrectionWidget(qtw.QWidget):
             else:
                 print("dont show Baseline")
                 self.parent.dataWidget.baseline = False
+                self.parent.dataWidget.removeBaseline()
                 self.parent.dataWidget.update()
     
     def updateRegioStack(self):
@@ -444,6 +453,21 @@ class BaselineCorrectionWidget(qtw.QWidget):
         self.regioCombo.clear()
         self.regioCombo.addItems(regioset_names)
     
+    def RegiochangeBaseline(self):
+        if self.activeBaselineRegion is not None:
+            self.parent.dataWidget.baselineRegions = self.model.dataSets[self.dataSetIndex].regionStack[self.activeBaselineRegion].regions
+            self.parent.dataWidget.update()
 
     def toggleApply(self, checked):
-        print("apply")
+        if self.parent.dataWidget.baseline:
+            if checked:
+                self.parent.dataWidget.applybaleline = True
+                self.parent.dataWidget.update()
+
+                print("apply Baseline")
+            else:
+                self.parent.dataWidget.applybaleline = False
+                self.parent.dataWidget.update()
+                print("Do not apply Baseline")
+        else:
+            Warning("No Baseline to apply")

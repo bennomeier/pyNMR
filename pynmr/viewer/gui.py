@@ -249,6 +249,7 @@ class MainWindow(qtw.QMainWindow):
 
         self.dataWidget.regionChanged.connect(self.regionWidget.reprocessed)
         self.dataWidget.regionChanged.connect(self.regionWidget.reloadRegions)
+        self.dataWidget.regionChanged.connect(self.processorWidget.BaselineWidget.RegiochangeBaseline)
         
         self.show()
 

@@ -201,6 +201,7 @@ class RegionViewWidget(qtw.QFrame):
             self.tableWidget.clearContents()
             self.reload = False
             self.reloadRegions()
+            self.parent.dataWidget.updateRegions(self)
 
     def redraw(self):
         """Redraw the UI to reflect the current state of the RegionStack."""
