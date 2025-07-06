@@ -18,7 +18,7 @@ class ProcessorViewWidget(qtw.QFrame):
     pivotPositionChange = qtc.pyqtSignal()
     showPivotSignal = qtc.pyqtSignal(int)
 
-    def __init__(self, model=None, dataSetIndex=0, parent=None, TD1_index=0):
+    def __init__(self, model=None, dataSetIndex=0, parent=None):
         '''
         Initialize the ProcessorViewWidget.
         '''
@@ -26,8 +26,9 @@ class ProcessorViewWidget(qtw.QFrame):
         super().__init__()
         self.model = model
         self.parent = parent
-        print("TD1_index in Prozessor: ", TD1_index)
-
+        print("TD1_index in Prozessor: ", self.parent.TD1_index)
+        print("Processor Index: ", self.parent.processorIndex)
+        
         mainLayout = qtw.QVBoxLayout()
         self.setLayout(mainLayout)
 
@@ -42,21 +43,19 @@ class ProcessorViewWidget(qtw.QFrame):
         scrollLayout = qtw.QVBoxLayout()
         scrollWidget.setLayout(scrollLayout)
 
-
-
         self.dataSetIndex = dataSetIndex
         pStack = self.model.dataSets[dataSetIndex].processorStack
 
         self.pWidgets = []
-        
-
 
         #for number, p in enumerate(pStack):
-        pnumber = TD1_index
-        p = pStack[pnumber]
+        #pnumber = TD1_index
+        #print("PNUMBER: ", pnumber)
+        
+        p = pStack[self.parent.processorIndex]
         runFunc = partial(self.runProcessor, p)
         
-        pBox = qtw.QGroupBox(f"Processor {pnumber}")
+        pBox = qtw.QGroupBox(f"Processor {self.parent.processorIndex}")
         scrollLayout.addWidget(pBox, 1)
 
         thisProcessorLayout = qtw.QVBoxLayout()
@@ -69,6 +68,8 @@ class ProcessorViewWidget(qtw.QFrame):
                 self.pWidgets.append(ow.LeftShiftWidget(op))
             elif op.name == "Exponential Linebroadening":
                 self.pWidgets.append(ow.ExponentialLineBroadening(op))
+            elif op.name == "Zero Filling":
+                self.pWidgets.append(ow.ZeroFilling(op))
             elif op.name == "Fourier Transform":
                 self.pWidgets.append(ow.FourierTransform(op))
             elif op.name == "Set PPM Scale":
@@ -88,25 +89,29 @@ class ProcessorViewWidget(qtw.QFrame):
         self.BaselineWidget = ow.BaselineCorrectionWidget(op,model,dataSetIndex,parent=self.parent)
         thisProcessorLayout.addWidget(self.BaselineWidget)
 
-        runButton = qtw.QPushButton("Process (P)", self,
-                                    shortcut=qtg.QKeySequence("P"),
-                                    clicked=partial(self.runProcessor, p))
+        runButton = qtw.QPushButton("Process (Enter)", self, clicked=partial(self.runProcessor, p))
 
         saveParametersButton = qtw.QPushButton("Save Processor", self,
                                                 clicked=self.saveProcessor)
 
         saveSpectrumButton = qtw.QPushButton("Save Data", self, clicked=self.saveData)
 
+
+        
+
         thisProcessorLayout.addWidget(runButton)
         thisProcessorLayout.addWidget(saveParametersButton)
-        thisProcessorLayout.addWidget(saveSpectrumButton) 
+        thisProcessorLayout.addWidget(saveSpectrumButton)
+
+        thisProcessorLayout.addSpacerItem(qtw.QSpacerItem(0, 0, qtw.QSizePolicy.Minimum, qtw.QSizePolicy.Expanding))
+
     
     
     
     
     
     def saveProcessor(self):
-        self.runProcessor(self.model.dataSets[self.dataSetIndex].processorStack[self.parent.TD1_index])
+        self.runProcessor(self.model.dataSets[self.dataSetIndex].processorStack[self.parent.processorIndex])
         self.reprocessed.emit()
         self.changeAxis.emit("PPM")
         pathToProcessorFile = self.model.dataSets[self.dataSetIndex].data.path + "pynmrProcessor.pickle"
@@ -126,8 +131,8 @@ class ProcessorViewWidget(qtw.QFrame):
         self.changeAxis.emit("PPM")
 
     def keyPressEvent(self, event):
-        if event.key() == qtc.Qt.Key_P:
-            print("P pressed. Run processor.")
+        if event.key() == qtc.Qt.Key_Enter:
+            print("Enter pressed. Run processor.")
             self.model.dataSets[self.dataSetIndex].processorStack[self.parent.TD1_index].runStack(
                 self.model.dataSets[self.dataSetIndex])
 

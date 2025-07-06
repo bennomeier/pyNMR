@@ -33,7 +33,7 @@ class FixZeFU(Operation):
 		nmrData.allFid.append(np.array(correctedFids).reshape(shape))
 
 
-class ZeroFill(Operation):
+class ZeroFilling(Operation):
     def __init__(self, totalPoints):
         self.name = "Zero Filling"
         self.totalPoints = totalPoints

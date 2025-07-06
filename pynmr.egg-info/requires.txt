@@ -1,10 +1,10 @@
-BeautifulSoup4
-PyQt5
-dill
 numpy
+spindata
+scipy
 paramiko
 pyqtgraph
+PyQt5
+BeautifulSoup4
+spindata
 pysftp
-scipy
-spindata
-spindata
+dill

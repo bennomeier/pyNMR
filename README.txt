@@ -3,11 +3,11 @@ pynmr
 
 pyNMR is a set of python modules to parse, process, and analyze NMR data.
 
-There are some fragments of a graphical user interface but at this point pyNMR is best used together with Jupyter Lab.
+There is a basic graphical user interface for phasing and baseline correctino, but after that pyNMR is best used together with Jupyter Lab.
 
-Currently supported NMR formats are Bruker TopSpin and RS2D.
+Currently supported NMR formats are Bruker TopSpin (with GUI support) and Tecmag NTNMR and RS2D.
 
-There is some code for parsing files from Tecmag NTNMR, Magritek, and Varian under pynmr/model/parser, but at this point these formats are not
+There is some code for parsing files from Magritek, and Varian under pynmr/model/parser, but at this point these formats are not
 officially supported.
 
 
@@ -21,6 +21,7 @@ with
 
 	pip install pynmr
 
+For the most recent version, download the version from GitHub.
 
 
 Usage
@@ -74,7 +75,7 @@ Open the last dataset via the terminal using the command pynmr -1
 MIT License
 -----------
 
-Copyright (c) 2022 Benno Meier
+Copyright (c) 2025 Benno Meier
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

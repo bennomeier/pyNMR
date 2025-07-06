@@ -15,6 +15,7 @@ pynmr/model/processor.py
 pynmr/model/region.py
 pynmr/model/parser/__init__.py
 pynmr/model/parser/nmrData.py
+pynmr/model/parser/ntnmr.py
 pynmr/model/parser/old_nmrDataMod.py
 pynmr/model/parser/rs2d.py
 pynmr/model/parser/topSpin.py
@@ -24,4 +25,5 @@ pynmr/viewer/nmrView.py
 pynmr/viewer/operationWidgets.py
 pynmr/viewer/processorView.py
 pynmr/viewer/regionView.py
+pynmr/viewer/settingsDialog.py
 pynmr/viewer/titleView.py

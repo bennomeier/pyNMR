@@ -54,14 +54,14 @@ class MainWindow(qtw.QMainWindow):
 
         self.width=400
         self.height = 400
-        self.setWindowTitle("pynmr")
+        self.setWindowTitle("pyNMR")
 
         self.settings = qtc.QSettings('Karlsruhe Institute of Technology', 'pyNMR') # name of company and name of app 
         #self.settings.clear()
         self.path = None
         self.TD1_index = 0
-        self.previeous_TD1 = 0
-        self.procIndex = -1
+        self.processorIndex = 0 # which processor is in use
+        self.procIndex = -1 # how far to we progress in applying the processor (-1 equals to all the way to the last operation).
         self.domain = "Time.Points"
 
         #self.settings = qtc.QSettings('apps', 'settings')
@@ -134,7 +134,8 @@ class MainWindow(qtw.QMainWindow):
 
         
         # this is for flipping through the fids or spectra
-        TBviewerNavigation.addAction("<", self.decrTD1_index)
+        decrAction = TBviewerNavigation.addAction("<", self.decrTD1_index)
+        decrAction.setShortcut('p')
 
         # now add one that shows the current FID
         self.td1Entry = qtw.QLineEdit("0", textChanged = self.setTD1_index)
@@ -142,11 +143,12 @@ class MainWindow(qtw.QMainWindow):
     
         TBviewerNavigation.addWidget(self.td1Entry)
 
-        self.td1Validator = qtg.QIntValidator(0, 10)
+        self.td1Validator = qtg.QIntValidator(0, 1000)
         self.td1Entry.setValidator(self.td1Validator)
         
-        TBviewerNavigation.addAction(">", self.incrTD1_index)
-
+        incrAction = TBviewerNavigation.addAction(">", self.incrTD1_index)
+        incrAction.setShortcut('n')
+        
         # find out some toolbar actions here. A switch would be nice.
 
         TBviewerNavigation.setAllowedAreas(
@@ -196,24 +198,24 @@ class MainWindow(qtw.QMainWindow):
         widgetAllLayout = qtw.QHBoxLayout()
         widgetAll.setLayout(widgetAllLayout)
 
-        titleAndProcessorLayout = qtw.QVBoxLayout()
+        titleAndProcessorLayout = qtw.QSplitter(qtc.Qt.Vertical)
 
         regionAndAnalysisLayout = qtw.QVBoxLayout()
         
         self.dataWidget = NmrViewWidget(self, model=self.model)
         
-        self.processorWidget = ProcessorViewWidget(model=self.model, parent=self,TD1_index=self.TD1_index)
+        self.processorWidget = ProcessorViewWidget(model=self.model, parent=self)
 
         self.regionWidget = RegionViewWidget(model = self.model, parent = self)
         regionAndAnalysisLayout.addWidget(self.regionWidget)
 
         self.titleWidget = TitleViewWidget(model=self.model)
     
-        titleAndProcessorLayout.addWidget(self.titleWidget,0)
-        titleAndProcessorLayout.addWidget(self.processorWidget,2)
+        titleAndProcessorLayout.addWidget(self.titleWidget)
+        titleAndProcessorLayout.addWidget(self.processorWidget)
         
         widgetAllLayout.addWidget(self.dataWidget)
-        widgetAllLayout.addLayout(titleAndProcessorLayout)
+        widgetAllLayout.addWidget(titleAndProcessorLayout)
         widgetAllLayout.addLayout(regionAndAnalysisLayout)
 
         self.setCentralWidget(widgetAll)
@@ -292,6 +294,8 @@ class MainWindow(qtw.QMainWindow):
             Processor = [PROC.Processor([
                 OPS.LeftShift(data.shiftPoints),
                 OPS.LineBroadening(0.0),
+                OPS.ZeroFilling(0),
+                OPS.LeftShift(0),
                 OPS.FourierTransform(),
                 OPS.SetPPMScale(),
                 OPS.Phase0D(0),
@@ -325,6 +329,10 @@ class MainWindow(qtw.QMainWindow):
 
         
     def openByPath(self, path,TD1_index = 0):
+        self.td1_Index = 0
+        self.procIndex = -1
+        self.domainBox.setCurrentText("Time.Points")
+        self.td1Entry.setText("0")
         data = topSpin.TopSpin(path)
         print("Opening file: ", path)
         matches = [f for f in os.listdir(path) if f.startswith("pynmrProcessor")]
@@ -336,11 +344,12 @@ class MainWindow(qtw.QMainWindow):
             else:
                 pathToProcessor = matches[0]
                 print("Parsing Processor from "+ path + pathToProcessor)
-                Processor = dill.load(open(pathToProcessor, "rb"))
+                Processor = dill.load(open(path + pathToProcessor, "rb"))
         else:
             print("No Processor found. Using default.")
             Processor = [PROC.Processor([OPS.LeftShift(data.shiftPoints),
                                         OPS.LineBroadening(0.0),
+                                         OPS.ZeroFilling(0),
                                         OPS.FourierTransform(),
                                         OPS.SetPPMScale(),
                                         OPS.Phase0D(0),
@@ -366,10 +375,6 @@ class MainWindow(qtw.QMainWindow):
 
         for i in range(0,len(Processor)):  
             self.model.dataSets[0].processorStack.append(Processor[i])
-
-
-
-        
         
 
         if self.settings.contains("recentFilesList"):
@@ -394,7 +399,6 @@ class MainWindow(qtw.QMainWindow):
         self.ProcessortoTD1()
 
     def populateOpenRecent(self, openString = ""):
-
         self.openRecentMenu.clear()
 
         actions = []
@@ -423,62 +427,23 @@ class MainWindow(qtw.QMainWindow):
 
 
     def incrTD1_index(self):
-        self.TD1Change=True
-        td1_max = len(self.model.dataSets[0].data.allFid[self.procIndex])-1
-        print("TD1 ist maximal "+ str(td1_max))
-        if self.TD1_index < td1_max:
-            self.previeous_TD1 = self.TD1_index
+        if self.TD1_index <  self.model.dataSets[0].data.sizeTD1:
             self.TD1_index += 1
-            self.setProcIndex(self.TD1_index)
-            self.ProcessortoTD1()
-        else:
-            print("keine Aenderung in TD1")
-        self.td1Entry.setText(str(self.TD1_index))
-        self.TD1Change=False
+            self.td1Entry.setText(str(self.TD1_index))
+            self.viewParametersChanged.emit(1)
 
-
-        
     def decrTD1_index(self):
-        self.TD1Change=True
         if self.TD1_index > 0:
-            self.previeous_TD1 = self.TD1_index
             self.TD1_index -= 1
-            self.setProcIndex(self.TD1_index)
-            self.ProcessortoTD1()
-        self.td1Entry.setText(str(self.TD1_index))
-        #self.setTD1_index(self.TD1_index)
-        self.TD1Change=False
-
-
-    def setTD1_index(self, value1):
-
-        if self.TD1Change:
-            return
-        value = str(value1)
-        td1_max = len(self.model.dataSets[0].data.allFid[self.procIndex])-1
-        try:
-            path = self.model.dataSets[0].data.path
-        except:
-            self.TD1_index = 0
-            self.viewParametersChanged.emit(0)
-            return
-        print("Path in set TD1_index: ", path)
-        if value.isnumeric():
-            if int(value)< td1_max:
-                self.previeous_TD1 = self.TD1_index
-                self.TD1_index = int(value)
-                self.td1Entry.setText(str(self.TD1_index))
-                self.setProcIndex(self.TD1_index)
-                self.ProcessortoTD1()
-                self.viewParametersChanged.emit(1)
-            else:
-                print("Wert gleich oder zu hoch")
-        else:
-            print("Error: TD1 index is not numeric.")
             self.td1Entry.setText(str(self.TD1_index))
             self.viewParametersChanged.emit(1)
 
 
+    def setTD1_index(self, value):
+        v = int(value)
+        assert 0 <= v <= self.model.dataSets[0].data.sizeTD1
+        self.td1Entry.setText(str(self.TD1_index))
+        self.viewParametersChanged.emit(1)
 
     def setProcIndex(self, value):
         self.procIndex = int(value)
@@ -487,36 +452,42 @@ class MainWindow(qtw.QMainWindow):
 
     def setDomain(self):
         self.domain = self.domainBox.currentText()
+
+        if len(self.model.dataSets[0].data.allSpectra) == 0:
+            P = self.model.dataSets[0].processorStack[0]
+            print(P)
+            self.processorWidget.runProcessor(self.model.dataSets[self.processorWidget.dataSetIndex].processorStack[0])
+            
         self.viewParametersChanged.emit(1)
     
-    def ProcessortoTD1(self):
-        """Update the Processor to the current TD1 index."""
-        if len(self.model.dataSets[0].processorStack) < self.TD1_index + 1:
-            print("No Processor defined for TD1 index ", self.TD1_index)
-            for i in range(self.TD1_index + 1 - len(self.model.dataSets[0].processorStack)):
-                data = self.model.dataSets[0].data
-                self.model.dataSets[0].processorStack.append(
-                    PROC.Processor([
-                        OPS.LeftShift(data.shiftPoints),
-                        OPS.LineBroadening(0.0),
-                        OPS.FourierTransform(),
-                        OPS.SetPPMScale(),
-                        OPS.Phase0D(0),
-                        OPS.Phase1D(data.timeShift, unit="time")
-                    ])
-                
-                )
-
-        print("Running Processor for TD1 index ", self.TD1_index)
-        Region = self.regionWidget.GetactiveRegion()
-        self.processorWidget = ProcessorViewWidget(model=self.model, parent=self,TD1_index=self.TD1_index)
-        self.dataWidget = NmrViewWidget(self, model=self.model)
-        self.updateView()
-        self.processorWidget.runProcessor(self.model.dataSets[self.processorWidget.dataSetIndex].processorStack[self.TD1_index])
-        self.processorWidget.reprocessed.emit()
-        self.processorWidget.changeAxis.emit("PPM")
-        if Region is not None:
-            self.regionWidget.setActiveRegion(Region)
+ #   def ProcessortoTD1(self):
+ #       """Update the Processor to the current TD1 index."""
+ #       if len(self.model.dataSets[0].processorStack) < self.TD1_index + 1:
+ #           print("No Processor defined for TD1 index ", self.TD1_index)
+ #           for i in range(self.TD1_index + 1 - len(self.model.dataSets[0].processorStack)):
+ #               data = self.model.dataSets[0].data
+ #               self.model.dataSets[0].processorStack.append(
+ #                   PROC.Processor([
+ #                       OPS.LeftShift(data.shiftPoints),
+ #                       OPS.LineBroadening(0.0),
+ #                       OPS.FourierTransform(),
+ #                       OPS.SetPPMScale(),
+ #                       OPS.Phase0D(0),
+ #                       OPS.Phase1D(data.timeShift, unit="time")
+ #                   ])
+ #               
+ #               )
+#
+ #       print("Running Processor for TD1 index ", self.TD1_index)
+ #       Region = self.regionWidget.GetactiveRegion()
+  ##      self.processorWidget = ProcessorViewWidget(model=self.model, parent=self,TD1_index=self.TD1_index)
+  #      self.dataWidget = NmrViewWidget(self, model=self.model)
+  #      self.updateView()
+  #      self.processorWidget.runProcessor(self.model.dataSets[self.processorWidget.dataSetIndex].processorStack[self.TD1_index])
+  #      self.processorWidget.reprocessed.emit()
+  #      self.processorWidget.changeAxis.emit("PPM")
+  #      if Region is not None:
+  #         self.regionWidget.setActiveRegion(Region)
 
 
         

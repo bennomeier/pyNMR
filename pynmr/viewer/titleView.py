@@ -31,15 +31,18 @@ class TitleViewWidget(qtw.QFrame):
 
         layout = qtw.QVBoxLayout()
         self.setLayout(layout)
-
+        self.setSizePolicy(qtw.QSizePolicy.Expanding, qtw.QSizePolicy.Expanding)
         pBox = qtw.QGroupBox("Title")
+        pBox.setSizePolicy(qtw.QSizePolicy.Expanding, qtw.QSizePolicy.Expanding)
         layout.addWidget(pBox, 1)
 
-        
         thisProcessorLayout = qtw.QVBoxLayout()
         pBox.setLayout(thisProcessorLayout)
 
         textField = qtw.QTextEdit()
+        textField.setSizePolicy(qtw.QSizePolicy.Expanding, qtw.QSizePolicy.Expanding)
+        textField.setMinimumHeight(100)
+        
         thisProcessorLayout.addWidget(textField)
 
         textField.setText("\n".join(self.model.dataSets[dataSetIndex].data.title))

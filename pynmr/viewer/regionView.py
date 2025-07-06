@@ -56,11 +56,12 @@ class RegionViewWidget(qtw.QFrame):
         groupBoxLayout.addWidget(self.scaleSelBox)
 
         self.tableWidget = qtw.QTableWidget(itemChanged=self.updateRegionSet)
-        self.tableWidget.setRowCount(30)
+        self.tableWidget.setRowCount(20)
         self.tableWidget.setColumnCount(2)
         self.tableWidget.setColumnWidth(0, 100)
         self.tableWidget.setColumnWidth(1, 100)
         self.tableWidget.setDisabled(True)
+        self.tableWidget.setSizePolicy(qtw.QSizePolicy.MinimumExpanding, qtw.QSizePolicy.MinimumExpanding)
         groupBoxLayout.addWidget(self.tableWidget)
 
         self.showRegionCheckBox = qtw.QCheckBox("Show RegionSet", self, stateChanged=self.updateRegionSet)
@@ -76,6 +77,9 @@ class RegionViewWidget(qtw.QFrame):
 
         saveStackButton = qtw.QPushButton("Save Stack", self, clicked=self.saveStack)
         groupBoxLayout.addWidget(saveStackButton)
+
+        groupBoxLayout.addSpacerItem(qtw.QSpacerItem(0, 0, qtw.QSizePolicy.Minimum, qtw.QSizePolicy.Expanding))
+
 
     def newRegionSet(self):
         """Erstelle eine neue Region."""

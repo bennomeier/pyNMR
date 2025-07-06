@@ -3,27 +3,84 @@ from PyQt5 import QtGui as qtg
 from PyQt5 import QtCore as qtc
 
 
-class LeftShiftWidget(qtw.QWidget):
-    def __init__(self, operation):
-        super().__init__()
-        self.operation = operation
-        layout = qtw.QVBoxLayout()
-        layout.setContentsMargins(0, 0, 0, 0)
-        self.setLayout(layout)
+
+class CollapsibleWidget(qtw.QWidget):
+    def __init__(self, title="", parent=None):
+        super(CollapsibleWidget, self).__init__(parent)
+
+        self.toggle_button = qtw.QToolButton(text=title, checkable=True, checked=False)
+        self.toggle_button.setStyleSheet("""
+        QToolButton {
+        border: none;
+        font-size: 14pt;
+        padding: 2px 6px;
+        }
+        """)
+        self.toggle_button.setToolButtonStyle(qtc.Qt.ToolButtonTextBesideIcon)
+        self.toggle_button.setArrowType(qtc.Qt.RightArrow)
+        self.toggle_button.setIconSize(qtc.QSize(12, 12))
+        self.toggle_button.setSizePolicy(qtw.QSizePolicy.Minimum, qtw.QSizePolicy.Minimum)
+        self.toggle_button.setMinimumHeight(20)
+        self.toggle_button.setMaximumHeight(26)
+        self.toggle_button.clicked.connect(self.toggle)
+
         
-        box = qtw.QGroupBox()
-        layout.addWidget(box)
+        #self.toggle_button = qtw.QToolButton(text=title, checkable=True, checked=False)
+        #self.toggle_button.setStyleSheet("QToolButton { border: none; }")
+        #self.toggle_button.setToolButtonStyle(qtc.Qt.ToolButtonTextBesideIcon)
+        #self.toggle_button.setArrowType(qtc.Qt.RightArrow)
+        #self.toggle_button.setIconSize(qtc.Qt.QSize(12, 12))  # Smaller arrow icon
+        #self.toggle_button.clicked.connect(self.toggle)
 
-        groupBoxLayout = qtw.QHBoxLayout()
-        box.setLayout(groupBoxLayout)
+        self.content_area = qtw.QScrollArea()
+        self.content_area.setStyleSheet("QScrollArea { background-color: white; }")
+        self.content_area.setSizePolicy(qtw.QSizePolicy.Expanding, qtw.QSizePolicy.Fixed)
+        self.content_area.setFrameShape(qtw.QFrame.NoFrame)
 
+        self.content_area.setMaximumHeight(0)
+        self.content_area.setMinimumHeight(0)
+
+        # Layout setup
+        main_layout = qtw.QVBoxLayout(self)
+        main_layout.setContentsMargins(0, 0, 0, 0)
+        main_layout.addWidget(self.toggle_button)
+        main_layout.addWidget(self.content_area)
+
+        self.toggle_animation_duration = 150  # Optional: you can add animation later
+
+        # Widget inside the scroll area
+        self.content_widget = qtw.QWidget()
+        self.content_layout = qtw.QVBoxLayout(self.content_widget)
+        self.content_area.setWidget(self.content_widget)
+        self.content_area.setWidgetResizable(True)
+
+    def toggle(self):
+        checked = self.toggle_button.isChecked()
+        self.toggle_button.setArrowType(qtc.Qt.DownArrow if checked else qtc.Qt.RightArrow)
+
+        if checked:
+            self.content_area.setMaximumHeight(self.content_widget.sizeHint().height())
+        else:
+            self.content_area.setMaximumHeight(0)
+
+    def add_layout(self, layout):
+        self.content_layout.addLayout(layout)
+
+
+class LeftShiftWidget(CollapsibleWidget):
+    def __init__(self, operation):
+        super().__init__(title="Left Shift")
+        self.operation = operation
+        
         self.shiftEntry = qtw.QLineEdit(str(self.operation.shiftPoints))
         self.shiftEntry.setValidator(qtg.QIntValidator())
         self.shiftEntry.textChanged.connect(self.handleChange)
 
+        groupBoxLayout = qtw.QHBoxLayout()
         groupBoxLayout.addWidget(qtw.QLabel("Left Shift"))
         groupBoxLayout.addWidget(self.shiftEntry)
         groupBoxLayout.addWidget(qtw.QLabel("Points"))
+        self.add_layout(groupBoxLayout)
 
     def handleChange(self, value):
         self.operation.shiftPoints = int(value)
@@ -35,28 +92,20 @@ class LeftShiftWidget(qtw.QWidget):
 
 
 
-class ExponentialLineBroadening(qtw.QWidget):
+class ExponentialLineBroadening(CollapsibleWidget):
     def __init__(self, operation):
-        super().__init__()
+        super().__init__(title="Line Broadening")
         self.operation = operation
-
-        layout = qtw.QVBoxLayout()
-        layout.setContentsMargins(0, 0, 0, 0)
-        self.setLayout(layout)
-        
-        box = qtw.QGroupBox()
-        layout.addWidget(box)
-
-        groupBoxLayout = qtw.QHBoxLayout()
-        box.setLayout(groupBoxLayout)
 
         self.entry = qtw.QLineEdit(str(self.operation.lineBroadening))
         self.entry.setValidator(qtg.QDoubleValidator())
         self.entry.textChanged.connect(self.handleChange)
 
+        groupBoxLayout = qtw.QHBoxLayout()
         groupBoxLayout.addWidget(qtw.QLabel("Exponential Broadening "))
         groupBoxLayout.addWidget(self.entry)
         groupBoxLayout.addWidget(qtw.QLabel("(Hz)"))
+        self.add_layout(groupBoxLayout)
 
     def handleChange(self, value):
         self.operation.lineBroadening = float(value)
@@ -67,44 +116,46 @@ class ExponentialLineBroadening(qtw.QWidget):
         self.entry.setText(str(self.operation.lineBroadening))
 
 
-
-class FourierTransform(qtw.QWidget):
+class ZeroFilling(CollapsibleWidget):
     def __init__(self, operation):
-        super().__init__()
+        super().__init__(title="Zero Fill")
         self.operation = operation
 
-        layout = qtw.QVBoxLayout()
-        layout.setContentsMargins(0, 0, 0, 0)
-        self.setLayout(layout)
-        
-        box = qtw.QGroupBox()
-        layout.addWidget(box)
+        self.entry = qtw.QLineEdit(str(self.operation.totalPoints))
+        self.entry.setValidator(qtg.QDoubleValidator())
+        self.entry.textChanged.connect(self.handleChange)
 
         groupBoxLayout = qtw.QHBoxLayout()
-        box.setLayout(groupBoxLayout)
+        groupBoxLayout.addWidget(qtw.QLabel("Zero Fill "))
+        groupBoxLayout.addWidget(self.entry)
+        groupBoxLayout.addWidget(qtw.QLabel("(Points)"))
+        self.add_layout(groupBoxLayout)
 
-        groupBoxLayout.addWidget(qtw.QLabel("Fourier Transform"))
+    def handleChange(self, value):
+        self.operation.totalPoints = int(value)
+
+    def updateValues(self, operation):
+        """Update the widget's text field with the new operation values."""
+        self.operation = operation
+        self.entry.setText(str(self.operation.totalPoints))
+        
+
+class FourierTransform(CollapsibleWidget):
+    def __init__(self, operation):
+        super().__init__(title = "Fourier Transform")
+        self.operation = operation
 
     def updateValues(self, operation):
         """No values to update for Fourier Transform."""
         self.operation = operation
 
-class SetPPMScale(qtw.QWidget):
+class SetPPMScale(CollapsibleWidget):
     def __init__(self, operation, parent=None, runFunc=None):
-        super().__init__()
+        super().__init__(title="Set PPM Scale")
         self.operation = operation
         self.parent = parent
         self.refVal = 0
 
-        layout = qtw.QVBoxLayout()
-        layout.setContentsMargins(0, 0, 0, 0)
-        self.setLayout(layout)
-        
-        box = qtw.QGroupBox()
-        layout.addWidget(box)
-
-        groupBoxLayout = qtw.QHBoxLayout()
-        box.setLayout(groupBoxLayout)
 
         self.entry = qtw.QLineEdit(str(self.operation.shift))
         self.entry.setValidator(qtg.QDoubleValidator())
@@ -113,11 +164,13 @@ class SetPPMScale(qtw.QWidget):
         self.button = qtw.QPushButton("Calib Axis (C)", self,
                                       shortcut=qtg.QKeySequence("C"),
                                       clicked=self.calibAxis)
-        
+
+        groupBoxLayout = qtw.QHBoxLayout()        
         groupBoxLayout.addWidget(self.entry)
         groupBoxLayout.addWidget(qtw.QLabel("Set PPM Scale"))
         groupBoxLayout.addWidget(self.button)
-
+        self.add_layout(groupBoxLayout)
+        
     def calibAxis(self):
         shiftValue, ok = qtw.QInputDialog.getDouble(self, "Chemical Shift", "Enter Chemical Shift", decimals=3)
         if ok:
@@ -134,23 +187,14 @@ class SetPPMScale(qtw.QWidget):
         self.operation = operation
         self.entry.setText(str(self.operation.shift))
 
-class PhaseZeroOrder(qtw.QWidget):
+class PhaseZeroOrder(CollapsibleWidget):
     reprocessWidget = qtc.pyqtSignal()
 
     def __init__(self, operation, runFunc=None):
-        super().__init__()
+        super().__init__(title="Phase 0D")
         self.operation = operation
         self.runFunc = runFunc
 
-        layout = qtw.QVBoxLayout()
-        layout.setContentsMargins(0, 0, 0, 0)
-        self.setLayout(layout)
-
-        box = qtw.QGroupBox()
-        layout.addWidget(box)
-
-        groupBoxLayout = qtw.QVBoxLayout()
-        box.setLayout(groupBoxLayout)
 
         self.sl = qtw.QSlider(qtc.Qt.Horizontal)
         self.sl.setMinimum(-180)
@@ -158,13 +202,22 @@ class PhaseZeroOrder(qtw.QWidget):
         self.sl.setValue(int(self.operation.phase))
         self.sl.valueChanged.connect(self.handleChange)
 
+        self.sl.setSizePolicy(qtw.QSizePolicy.Expanding, qtw.QSizePolicy.Fixed)
+
+
         self.entry = qtw.QLineEdit(str(self.operation.phase)) 
+        self.entry.setSizePolicy(qtw.QSizePolicy.Minimum, qtw.QSizePolicy.Fixed)
+
         self.entry.setValidator(qtg.QDoubleValidator())
         self.entry.textChanged.connect(self.handleChange)
 
-        groupBoxLayout.addWidget(qtw.QLabel("Phase 0D"))
+        
+        groupBoxLayout = qtw.QHBoxLayout()
+        #groupBoxLayout.addWidget(qtw.QLabel("Phase 0D"))
         groupBoxLayout.addWidget(self.sl)
         groupBoxLayout.addWidget(self.entry)
+
+        self.add_layout(groupBoxLayout)
 
     def handleChange(self, value):
         while float(value)<-180 or float(value)>180:
@@ -190,14 +243,14 @@ class PhaseZeroOrder(qtw.QWidget):
         self.entry.setText(str(self.operation.phase))
 
 
-class PhaseFirstOrder(qtw.QWidget):
+class PhaseFirstOrder(CollapsibleWidget):
     reprocessWidget = qtc.pyqtSignal()
     pivotPositionSignal = qtc.pyqtSignal(str)
     showPivotSignal = qtc.pyqtSignal(int)
     
 
     def __init__(self, operation, parent=None, runFunc = None):
-        super().__init__()
+        super().__init__(title = "Phase 1D")
         self.operation = operation
         if not hasattr(self.operation, "phase"):
             self.operation.phase = 0
@@ -206,55 +259,47 @@ class PhaseFirstOrder(qtw.QWidget):
         layout = qtw.QVBoxLayout()
         layout.setContentsMargins(0, 0, 0, 0)
 
-        self.setLayout(layout)
+        #self.setLayout(layout)
         
-        box = qtw.QGroupBox()
-        layout.addWidget(box)
-
         self.parent = parent
         
-        groupBoxLayout = qtw.QVBoxLayout()
-        box.setLayout(groupBoxLayout)
+        phaseLayout = qtw.QHBoxLayout()
 
         self.sl = qtw.QSlider(qtc.Qt.Horizontal)
-        self.sl.setMinimum(-540)
-        self.sl.setMaximum(540)
+        self.sl.setMinimum(-180)
+        self.sl.setMaximum(180)
         self.sl.setValue(int(self.operation.phase))
         self.sl.valueChanged.connect(self.handleChange)
 
-
-        groupBoxLayout.addWidget(self.sl)
-       
-        phaseEntryLayout = qtw.QHBoxLayout()
-        self.entry = qtw.QLineEdit(str(self.operation.phase))
+        self.sl.setSizePolicy(qtw.QSizePolicy.Expanding, qtw.QSizePolicy.Fixed)
+        self.entry = qtw.QLineEdit(str(self.operation.phase)) 
+        self.entry.setSizePolicy(qtw.QSizePolicy.Minimum, qtw.QSizePolicy.Fixed)
         self.entry.setValidator(qtg.QDoubleValidator())
         self.entry.textChanged.connect(self.handleChange)
-        entryLabel = qtw.QLabel("Phase 1D")
 
-        phaseEntryLayout.addWidget(self.entry)
-        phaseEntryLayout.addWidget(entryLabel)
-
+        phaseLayout.addWidget(self.sl)
+        phaseLayout.addWidget(self.entry)
+        
         pivotLayout = qtw.QHBoxLayout()
+        self.pivotLabel = qtw.QLabel("Pivot Position")
         self.pivot = qtw.QLineEdit(str(self.operation.pivot))
         self.pivot.setValidator(qtg.QDoubleValidator())
         self.pivot.textChanged.connect(self.pivotPositionSignal)
         self.showPivot = qtw.QCheckBox("Show Pivot")
+        self.showPivot.stateChanged.connect(self.showPivotSignal)
 
+        pivotLayout.addWidget(self.pivotLabel)
         pivotLayout.addWidget(self.pivot)
         pivotLayout.addWidget(self.showPivot)
 
-        self.showPivot.stateChanged.connect(self.showPivotSignal)
-        
-        reprocessLayout = qtw.QHBoxLayout()
-
         self.reproBox = qtw.QCheckBox("Reprocess")
 
-        reprocessLayout.addWidget(self.reproBox)
+        mylayout = qtw.QVBoxLayout()
+        mylayout.addLayout(phaseLayout)
+        mylayout.addLayout(pivotLayout)
+        mylayout.addWidget(self.reproBox)
+        self.add_layout(mylayout)
 
-        groupBoxLayout.addWidget(qtw.QLabel("Phase 1D"))
-        groupBoxLayout.addLayout(phaseEntryLayout)
-        groupBoxLayout.addLayout(pivotLayout)
-        groupBoxLayout.addLayout(reprocessLayout)
 
         
     def handleChange(self, value):
@@ -292,24 +337,16 @@ class PhaseFirstOrder(qtw.QWidget):
         self.sl.setValue(int(self.operation.phase))
         self.pivot.setText(str(self.operation.pivot))
 
-class BaselineCorrectionWidget(qtw.QWidget):
+class BaselineCorrectionWidget(CollapsibleWidget):
     def __init__(self, operation,model,dataSetIndex,parent=None):
-        super().__init__()
+        super().__init__(title = "Baseline Correction")
         self.operation = operation
         self.model = model
         self.parent = parent
         self.dataSetIndex = dataSetIndex
         self.activeBaselineRegion = None
 
-        layout = qtw.QVBoxLayout()
-        layout.setContentsMargins(0, 0, 0, 0)
-        self.setLayout(layout)
-
-        box = qtw.QGroupBox("Baseline Correction")
-        layout.addWidget(box)
-
         mainLayout = qtw.QVBoxLayout()
-        box.setLayout(mainLayout)
 
         self.typeCombo = qtw.QComboBox()
         self.typeCombo.addItems(["Polynomial", "Spline", "Median", "Other"])
@@ -405,6 +442,8 @@ class BaselineCorrectionWidget(qtw.QWidget):
         mainLayout.addWidget(self.applyButton)
 
         self.updateType(self.typeCombo.currentText())
+        self.add_layout(mainLayout)
+        
 
     def updateType(self, text):
         idx = self.typeCombo.currentIndex()

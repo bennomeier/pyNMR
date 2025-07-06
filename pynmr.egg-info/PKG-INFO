@@ -1,4 +1,4 @@
-Metadata-Version: 2.1
+Metadata-Version: 2.4
 Name: pynmr
 Version: 0.36
 Summary: Parse and Process NMR data.
@@ -7,12 +7,32 @@ Author: Benno Meier
 Author-email: meier.benno@gmail.com
 License: MIT
 Keywords: pynmr NMR TopSpin RS2D NTNMR Magritek
-Platform: UNKNOWN
 Classifier: License :: OSI Approved :: MIT License
 Classifier: Programming Language :: Python
 Classifier: Topic :: Scientific/Engineering :: Physics
 Description-Content-Type: text/markdown
 License-File: LICENSE
+Requires-Dist: numpy
+Requires-Dist: spindata
+Requires-Dist: scipy
+Requires-Dist: paramiko
+Requires-Dist: pyqtgraph
+Requires-Dist: PyQt5
+Requires-Dist: BeautifulSoup4
+Requires-Dist: spindata
+Requires-Dist: pysftp
+Requires-Dist: dill
+Dynamic: author
+Dynamic: author-email
+Dynamic: classifier
+Dynamic: description
+Dynamic: description-content-type
+Dynamic: home-page
+Dynamic: keywords
+Dynamic: license
+Dynamic: license-file
+Dynamic: requires-dist
+Dynamic: summary
 
 pynmr
 =====
@@ -65,13 +85,26 @@ To import a Bruker dataset instantiate an nmr Data  object:
 	 
 
 
-Internal Notes
+Notes
 -------------
 To install this package locally and install for development, use this command
 
 >>> pip install -e ./
 
 More info available here: https://packaging.python.org/tutorials/installing-packages/
+
+To make the pynmr GUI available via the command line on Mac OS or Linux systems, create a file
+
+pynmr in /usr/local/bin
+
+with the content
+
+python /your/path/to/pynmr/pynmr/viewer/gui.py $1
+
+save it, and
+>>> sudo chmod +x /usr/local/bin/pynmr
+
+Open the last dataset via the terminal using the command pynmr -1
 
 
 MIT License
@@ -96,5 +129,3 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-
-
