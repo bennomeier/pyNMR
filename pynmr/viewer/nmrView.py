@@ -78,6 +78,7 @@ class NmrViewWidget(qtw.QFrame):
         self.pw.addItem(self.pPivot)
         
         self.y, self.x = rand(10000)
+        self.data = []
         self.updatePW()
 
         layout = qtw.QVBoxLayout()
@@ -204,20 +205,19 @@ class NmrViewWidget(qtw.QFrame):
             self.xLabel = "Time"
             self.xUnit = "s"
         elif self.domain == "Frequency.Hz":
-            data = self.model.dataSets[self.dataSetIndex].data.allSpectra[self.procIndex][TD1_index]
+            self.data = self.model.dataSets[self.dataSetIndex].data.allSpectra[self.procIndex][TD1_index]
             self.x = self.model.dataSets[self.dataSetIndex].data.frequency
             if self.applybaleline:
-                data = data - self.Graphdata(self.x)
-            self.y = data
+                self.data = self.data - self.Graphdata(self.x)
+            self.y = self.data
             self.xLabel = "Frequency"
             self.xUnit = "Hz"
         elif self.domain == "Frequency.ppm":
-            data = self.model.dataSets[self.dataSetIndex].data.allSpectra[self.procIndex][TD1_index]
+            self.data = self.model.dataSets[self.dataSetIndex].data.allSpectra[self.procIndex][TD1_index]
             self.x = self.model.dataSets[self.dataSetIndex].data.ppmScale
             if self.applybaleline:
-                print("palim palim")
-                data = data - self.Graphdata(self.x)
-            self.y = data
+                self.data = self.data - self.Graphdata(self.x)
+            self.y = self.data
             self.xLabel = "Chemical Shift"
             self.xUnit = "PPM"
 
@@ -250,33 +250,25 @@ class NmrViewWidget(qtw.QFrame):
             elif self.domain == "Frequency.ppm":
                 xdata = self.model.dataSets[self.dataSetIndex].data.ppmScale
             else:
-                xdata = np.arange(len(self.y))
+                xdata = np.arange(len(self.data))
 
-            xdata = xdata[:len(self.y)]
+            xdata = xdata[:len(self.data)]
             min_x = np.min(xdata)
             max_x = np.max(xdata)
             regions = self.baselineRegions
+            print("Regions: "+str(regions))
             mask = np.zeros_like(xdata, dtype=bool)
             for region in regions:
                 start, end = sorted(region)
                 mask |= (xdata >= max(start, min_x)) & (xdata <= min(end, max_x))
             xdata_masked = xdata[mask]
-            y_masked = self.y[mask]
+            y_masked = self.data[mask]
             self.Graphdata = Bsln.run(xdata_masked, y_masked)
             ydata = self.Graphdata(xdata)
             ydata = np.real(ydata)
             self.plotBaseline(xdata, ydata)
         else:
             self.removeBaseline()
-
-    def applyBaseline(self):
-        self.applybaleline = True
-        self.baseline = True
-        self.update()
-    
-    def unapplyBaseline(self):
-        self.applybaleline = False
-        self.update()
 
     # when Shift key is pressed, zoom y range as well.
     # for now you have to press shift as well.
