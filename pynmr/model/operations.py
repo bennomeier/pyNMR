@@ -43,7 +43,8 @@ class ZeroFilling(Operation):
         nmrData.allFid.append([np.concatenate((k, z[:-len(k)])) for
                                k in nmrData.allFid[-1]])
 
-
+ZeroFill = ZeroFilling
+        
 class LineBroadening(Operation):
     def __init__(self, lineBroadening):
         self.name = "Exponential Linebroadening"
@@ -125,6 +126,7 @@ class Phase1D(Operation):
         the freuency domain."""
 
         self.name = "Phase First Order"
+        self.phase = 0
         self.value = value
         self.pivot = pivot
         self.unit = unit
@@ -631,7 +633,7 @@ class BaseLineCorrection(Operation):
 
             fidList.append(thisFid)
 
-        print("BaselineCorrection done.")
+        #print("BaselineCorrection done.")
         nmrData.allSpectra.append(fidList)
         return graph
     

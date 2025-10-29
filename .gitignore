@@ -1,7 +1,9 @@
 *.pyc
 *.py~
 *.org~
+*.egg
+*.tar.gz
 *~ 
 .DS_Store
-/dist/
+./dist/*
 /build/

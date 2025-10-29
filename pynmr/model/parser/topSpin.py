@@ -51,10 +51,13 @@ to an NMR experiment, an optional argument for endianess"""
         #The acqus file containts the spectral width SW_h and 2*SizeTD2 as ##$TD
         #The acqu2s file contains TD1 as ##$TD
         directory = os.path.dirname(path)
-        print("Directory: ", directory)
+        if self.debug:
+            print("Directory: ", directory)
         acqusFile = open(directory + "/acqus", mode='r')
         self.files.append(acqusFile)
-        print("Reading acqus file: ", acqusFile)
+
+        if self.debug:
+            print("Reading acqus file: ", acqusFile)
 
         if self.debug:
             print("Importing TopSpin data")
@@ -225,12 +228,13 @@ to an NMR experiment, an optional argument for endianess"""
         # adjust TD2 to so it is multiple of 64
         if self.sizeTD2 % self.packSize > 0:
 
-            print("Adjusting TD2")
-            print("Len data: ", len(self.data))
-            print("sizeTD2: ", self.sizeTD2)
-            print("sizeTD1: ", self.sizeTD1)
             
             if self.debug:
+                print("Adjusting TD2")
+                print("Len data: ", len(self.data))
+                print("sizeTD2: ", self.sizeTD2)
+                print("sizeTD1: ", self.sizeTD1)
+
                 print("Adjusting TD2 to be multiple of 64")
             self.sizeTD2 = self.sizeTD2 + self.packSize - self.sizeTD2 % self.packSize
             if self.debug:
