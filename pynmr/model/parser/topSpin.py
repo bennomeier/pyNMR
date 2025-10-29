@@ -70,7 +70,8 @@ to an NMR experiment, an optional argument for endianess"""
             self.files.append(acqu2File)
             self.is2D = True
         else:
-            print("No acqu2s file found, assuming 1D experiment.")
+            if self.debug:
+                print("No acqu2s file found, assuming 1D experiment.")
             self.is2D = False
             self.sizeTD1 = 1
 
