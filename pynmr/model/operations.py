@@ -260,15 +260,16 @@ class GetSingleIntegral(Operation):
         self.scale = scale
         self.part = part
         self.name = "Get Single Integral"
+        self.dx = 0
+        
 
     def run(self, nmrData):
-        dx = 0
         if self.scale == "Hz":
-            dx = np.abs(nmrData.frequency[1] - nmrData.frequency[0])
+            self.dx = np.abs(nmrData.frequency[1] - nmrData.frequency[0])
         elif self.scale == "ppm":
-            dx = np.abs(nmrData.ppmScale[1] - nmrData.ppmScale[0])
+            self.dx = np.abs(nmrData.ppmScale[1] - nmrData.ppmScale[0])
         else:
-            dx = 1
+            self.dx = 1
 
         o = GetIndices([self.start, self.stop], scale=self.scale)
         indices = o.run(nmrData)
@@ -276,9 +277,9 @@ class GetSingleIntegral(Operation):
         i2 = indices[1]
 
         if self.part == "real":
-            retVal = np.sum(np.real(nmrData.allSpectra[-1][self.index][i1:i2])) * dx
+            retVal = np.sum(np.real(nmrData.allSpectra[-1][self.index][i1:i2])) * self.dx
         elif self.part == "magnitude":
-            retVal = np.sum(np.abs(nmrData.allSpectra[-1][self.index][i1:i2]))*dx
+            retVal = np.sum(np.abs(nmrData.allSpectra[-1][self.index][i1:i2]))*self.dx
 
         return retVal
 
@@ -299,6 +300,7 @@ class GetAllIntegrals(Operation):
         self.scale = scale
         self.part = part
         self.name = "Get All Integrals"
+        self.dx = 0
 
     def run(self, nmrData):
         returnList = []
@@ -307,6 +309,8 @@ class GetAllIntegrals(Operation):
         for i in range(nmrData.sizeTD1):
             o.index = i
             returnList.append(o.run(nmrData))
+
+        self.dx = o.dx
 
         return returnList
 
