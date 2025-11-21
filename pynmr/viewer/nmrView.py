@@ -28,7 +28,16 @@ def rand(n):
 
 
 class NmrViewWidget(qtw.QFrame):
-    """A wdiget to display NMR data"""
+    """A widget to display NMR data"""
+    # Outgoing signals - data changes
+    pivotPositionChanged = qtc.pyqtSignal(float)  # New pivot position
+    regionsChanged = qtc.pyqtSignal(list)  # New region list
+    regionAddRequested = qtc.pyqtSignal(list)  # Request to add a new region
+    
+    # Incoming signals - display updates needed
+    reprocessingRequested = qtc.pyqtSignal()  # Request spectrum reprocessing
+    
+    # Legacy signals (to be removed gradually)
     pivotChanged = qtc.pyqtSignal()
     regionChanged = qtc.pyqtSignal()
     
@@ -73,7 +82,7 @@ class NmrViewWidget(qtw.QFrame):
         self.pPivot = pg.InfiniteLine(angle=90, movable=True)
         self.pPivot.setPen((200, 20, 20))
 
-        self.pPivot.sigPositionChangeFinished.connect(self.pivotChanged)
+        self.pPivot.sigPositionChangeFinished.connect(self.onPivotMoved)
         
         self.pw.addItem(self.pPivot)
         
@@ -99,10 +108,44 @@ class NmrViewWidget(qtw.QFrame):
 
     
     
+    def onPivotMoved(self):
+        """Called when pivot is moved graphically - emit signal with new position"""
+        new_position = self.pPivot.value()
+        self.pivotPositionChanged.emit(new_position)
+        self.pivotChanged.emit()  # Legacy signal
+    
     def showPivotSignal(self, show):
         print("Setting Pivot to " + str(show))
         self.showPivot = show
         self.updatePW()
+        
+    def updateRegionDisplay(self, regions):
+        """Update the visual display of regions from region widget"""
+        self.clearRegions()
+        for index, region in enumerate(regions):
+            if isinstance(region, (list, tuple)) and len(region) == 2:
+                # Create visual region markers
+                region_item = pg.LinearRegionItem(values=region, brush=(0, 100, 200, 50))
+                self.regionPlotItems.append(region_item)
+                self.pw.addItem(region_item)
+    
+    def toggleBaselineDisplay(self, show):
+        """Show or hide baseline display"""
+        self.baseline = show
+        if show:
+            # Request baseline calculation from baseline widget
+            pass  # Will be handled by baseline widget
+        else:
+            self.removeBaseline()
+            
+    def toggleBaselineApplication(self, apply):
+        """Apply or remove baseline correction to spectrum"""
+        self.applybaleline = apply
+        self.update()  # Redraw spectrum
+        
+    def updateBaselinePlot(self, x_data, y_data):
+        """Update baseline plot with calculated data"""
+        self.plotBaseline(x_data, y_data)
 
     def pivotPositionSignal(self, val):
         print("Updating pivot position to {}".format(val))
@@ -123,25 +166,37 @@ class NmrViewWidget(qtw.QFrame):
 
 
     def updateRegions(self, regionView):
+        """Legacy method - use updateRegionDisplay instead"""
         if regionView.showRegionCheckBox.isChecked():
             regionSet = regionView.rStack[regionView.activeRegion]
             regions = regionSet.regions
-
-            for item in self.regionPlotItems:
-                self.pw.removeItem(item)
-            self.regionPlotItems = []
-
-            for index, r in enumerate(regions):
-                item = pg.LinearRegionItem(values=(r[0], r[1]))
+            self.updateRegionDisplay(regions)
+        else:
+            self.clearRegions()
+            
+    def updateRegionDisplay(self, regions):
+        """Update the visual display of regions from region widget"""
+        self.clearRegions()
+        for index, region in enumerate(regions):
+            if isinstance(region, (list, tuple)) and len(region) == 2:
+                item = pg.LinearRegionItem(values=(region[0], region[1]))
                 item.sigRegionChangeFinished.connect(
-                    lambda _, idx=index, itm=item: self.regionPositionrewriteobject(regionSet, idx, itm.getRegion())
+                    lambda _, idx=index, itm=item: self.onRegionMoved(idx, itm.getRegion())
                 )
-                item.sigRegionChangeFinished.connect(self.regionChanged)
                 self.regionPlotItems.append(item)
                 self.pw.addItem(item)
-        else:
-            for item in self.regionPlotItems:
-                self.pw.removeItem(item)
+                
+    def onRegionMoved(self, index, new_region):
+        """Called when a region is moved graphically - emit signal with new regions"""
+        # Get all current regions and update the changed one
+        all_regions = []
+        for i, item in enumerate(self.regionPlotItems):
+            if i == index:
+                all_regions.append(list(new_region))
+            else:
+                all_regions.append(list(item.getRegion()))
+        self.regionsChanged.emit(all_regions)
+        self.regionChanged.emit()  # Legacy signal
 
 
     def clearRegions(self):
@@ -239,6 +294,21 @@ class NmrViewWidget(qtw.QFrame):
     def removeBaseline(self):
         if self.Bslgraph is not None:
             self.pw.removeItem(self.Bslgraph)
+            
+    def toggleBaselineDisplay(self, show):
+        """Show or hide baseline display"""
+        self.baseline = show
+        if not show:
+            self.removeBaseline()
+            
+    def toggleBaselineApplication(self, apply):
+        """Apply or remove baseline correction to spectrum"""
+        self.applybaleline = apply
+        self.update()  # Redraw spectrum
+        
+    def updateBaselinePlot(self, x_data, y_data):
+        """Update baseline plot with calculated data"""
+        self.plotBaseline(x_data, y_data)
 
     def updateBaseline(self):
         """Update the baseline plot if baseline fitting is enabled."""
@@ -284,14 +354,7 @@ class NmrViewWidget(qtw.QFrame):
             mousePos = self.pw.plotItem.vb.mapSceneToView(self.mapFromGlobal(qtg.QCursor.pos()))
             x_pos = mousePos.x()
             region = [x_pos - span, x_pos + span]
-            region_view_instance = self.parent.regionWidget
-            self.active = region_view_instance.GetactiveRegion()
-            addregion = self.parent.regionWidget.addRegion(self, region)
-            if self.active is not None:
-                addregion(region)
-            else:
-                qtw.QMessageBox.warning(self, "Error", "No Region selected.")
-                return
+            self.regionAddRequested.emit(region)
            
              # Define a small span around the x position
             

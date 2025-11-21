@@ -7,3 +7,5 @@
 .DS_Store
 ./dist/*
 /build/
+run_dev.sh
+run_dev.bat

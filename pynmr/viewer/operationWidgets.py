@@ -1,6 +1,7 @@
 from PyQt5 import QtWidgets as qtw
 from PyQt5 import QtGui as qtg
 from PyQt5 import QtCore as qtc
+import numpy as np
 
 
 
@@ -338,12 +339,23 @@ class PhaseFirstOrder(CollapsibleWidget):
         self.pivot.setText(str(self.operation.pivot))
 
 class BaselineCorrectionWidget(CollapsibleWidget):
-    def __init__(self, operation,model,dataSetIndex,parent=None):
+    # Signals for baseline correction
+    baselineParametersChanged = qtc.pyqtSignal()  # Parameters changed, need recalculation
+    baselineDisplayToggled = qtc.pyqtSignal(bool)  # Show/hide baseline
+    baselineApplyToggled = qtc.pyqtSignal(bool)  # Apply/unapply baseline
+    regionsRequested = qtc.pyqtSignal()  # Request current regions from region widget
+    baselineCalculated = qtc.pyqtSignal(object, object)  # x_data, baseline_y
+    
+    def __init__(self, operation, parent=None , runFunc = None):
         super().__init__(title = "Baseline Correction")
         self.operation = operation
-        self.model = model
+        self.runFunc = runFunc
+        self.operation = operation
         self.parent = parent
-        self.dataSetIndex = dataSetIndex
+        self.model = self.parent.model
+        self.dataSetIndex = self.parent.dataSetIndex
+        self.dataWidget = self.parent.parent.dataWidget
+
         self.activeBaselineRegion = None
 
         mainLayout = qtw.QVBoxLayout()
@@ -369,6 +381,7 @@ class BaselineCorrectionWidget(CollapsibleWidget):
         self.polyDegreeEntry = qtw.QLineEdit(str(getattr(self.operation, "polyDegree", 1)))
         self.polyDegreeEntry.setValidator(qtg.QIntValidator(1, 20))
         self.polyDegreeEntry.textChanged.connect(self.handlePolyDegreeChange)
+        self.polyDegreeEntry.textChanged.connect(lambda: self.baselineParametersChanged.emit())
         degreeLayout.addWidget(degreeLabel)
         degreeLayout.addWidget(self.polyDegreeEntry)
         polyLayout.addLayout(degreeLayout)
@@ -377,16 +390,18 @@ class BaselineCorrectionWidget(CollapsibleWidget):
         regioLayout = qtw.QHBoxLayout()
         regioLabel = qtw.QLabel("RegioSet")
         self.regioCombo = qtw.QComboBox()
-        regiostack = self.model.dataSets[self.dataSetIndex].regionStack.regionSets
+        regiostack = self.model.dataSets[self.dataSetIndex].regionStack
         regioset_names = list(regiostack.regionSets.keys()) if hasattr(regiostack, "regionSets") else []
         self.regioCombo.addItems(regioset_names)
         print("regioset_names:", regioset_names)
-        if self.parent.dataWidget.baselineRegions == [] and len(regioset_names) > 0:
-            self.parent.dataWidget.baselineRegions = regiostack.regionSets[regioset_names[0]].regions
-            self.activeBaselineRegion = regiostack.regionSets[regioset_names[0]].name
+        if self.dataWidget.baselineRegions == [] and len(regioset_names) > 0:
+            self.activeBaselineRegion = regioset_names[0]
+            self.dataWidget.baselineRegions = regiostack.regionSets[regioset_names[0]].regions
+            self.regioCombo.setCurrentText(self.activeBaselineRegion)
         self.regioCombo.currentIndexChanged.connect(
             lambda idx: self.handleRegioSetChange(self.regioCombo.itemText(idx))
         )
+        self.regioCombo.currentTextChanged.connect(lambda: self.baselineParametersChanged.emit())
         regioLayout.addWidget(regioLabel)
         regioLayout.addWidget(self.regioCombo)
         polyLayout.addLayout(regioLayout)
@@ -458,55 +473,108 @@ class BaselineCorrectionWidget(CollapsibleWidget):
     ##Polynominal Baselinecorrection
     def handleRegioSetChange(self, regioset):
         print("regioset wurde zu"+str(regioset)+" geaendert")
-        if len(self.parent.model.dataSets[self.dataSetIndex].regionStack[regioset].regions ) >= 2:
-            self.parent.dataWidget.baselineRegions =  self.model.dataSets[self.dataSetIndex].regionStack[regioset].regions
+        if len(self.model.dataSets[self.dataSetIndex].regionStack[regioset].regions ) >= 2:
+            self.dataWidget.baselineRegions =  self.model.dataSets[self.dataSetIndex].regionStack[regioset].regions
             self.activeBaselineRegion = regioset
-            self.parent.dataWidget.update()
+            self.dataWidget.update()
         else:
             Warning("Ausgewähltes Regioset besitzt zu wenige Regionen")
         
 
     def handlePolyDegreeChange(self, value):
-        if value:
-            print("New PolyDegree " +str(value))
-            self.parent.dataWidget.polynomialdegree = int(value)
-            self.parent.dataWidget.update()
+        if value and value.isdigit():
+            self.dataWidget.polynomialdegree = int(value)
+            # Only recalculate if baseline is currently shown
+            if hasattr(self, 'showBaselineCheck') and self.showBaselineCheck.isChecked():
+                self.calculateAndEmitBaseline()
 
     def handleShowBaselineChange(self, state):
-        if self.parent.dataWidget.baselineRegions is not None:
-            if state:
-                print("show Baseline")
-                self.parent.dataWidget.baseline = True
-                self.parent.dataWidget.updateBaseline()
-                self.parent.dataWidget.update()
-            else:
-                print("dont show Baseline")
-                self.parent.dataWidget.baseline = False
-                self.parent.dataWidget.removeBaseline()
-                self.parent.dataWidget.update()
+        """Handle baseline display toggle"""
+        show_baseline = bool(state)
+        self.baselineDisplayToggled.emit(show_baseline)
+        if show_baseline:
+            self.calculateAndEmitBaseline()
     
     def updateRegioStack(self):
         """Update the regioCombo with the latest regionSets from the model."""
         regiostack = self.model.dataSets[self.dataSetIndex].regionStack
         regioset_names = list(regiostack.regionSets.keys()) if hasattr(regiostack, "regionSets") else []
+        current_text = self.regioCombo.currentText()
         self.regioCombo.clear()
         self.regioCombo.addItems(regioset_names)
+        # Restore previous selection if still available
+        if current_text in regioset_names:
+            self.regioCombo.setCurrentText(current_text)
     
+    def handleRegioSetChange(self, regioset_name):
+        """Handle RegioSet selection change"""
+        if regioset_name and regioset_name in self.model.dataSets[self.dataSetIndex].regionStack.regionSets:
+            self.activeBaselineRegion = regioset_name
+            regions = self.model.dataSets[self.dataSetIndex].regionStack.regionSets[regioset_name].regions
+            self.dataWidget.baselineRegions = regions
+            # Only recalculate baseline if it's currently being shown
+            if hasattr(self, 'showBaselineCheck') and self.showBaselineCheck.isChecked():
+                self.calculateAndEmitBaseline()
+                
     def RegiochangeBaseline(self):
         if self.activeBaselineRegion is not None:
-            self.parent.dataWidget.baselineRegions = self.model.dataSets[self.dataSetIndex].regionStack[self.activeBaselineRegion].regions
-            self.parent.dataWidget.update()
+            self.dataWidget.baselineRegions = self.model.dataSets[self.dataSetIndex].regionStack[self.activeBaselineRegion].regions
+            self.dataWidget.update()
 
     def toggleApply(self, checked):
-        if self.parent.dataWidget.baseline:
-            if checked:
-                self.parent.dataWidget.applybaleline = True
-                self.parent.dataWidget.update()
-
-                print("apply Baseline")
-            else:
-                self.parent.dataWidget.applybaleline = False
-                self.parent.dataWidget.update()
-                print("Do not apply Baseline")
-        else:
-            Warning("No Baseline to apply")
+        """Handle baseline application toggle"""
+        self.baselineApplyToggled.emit(bool(checked))
+        
+    def updateRegions(self, regions):
+        """Update regions from region widget - does not auto-calculate baseline"""
+        self.current_regions = regions
+        # Update RegioCombo with latest region sets
+        self.updateRegioStack()
+        # Baseline is only calculated when explicitly requested via Show Baseline checkbox
+            
+    def calculateAndEmitBaseline(self):
+        """Calculate baseline and emit the result using selected RegioSet"""
+        # Use regions from selected RegioSet, not current_regions
+        if not hasattr(self, 'activeBaselineRegion') or not self.activeBaselineRegion:
+            return
+            
+        try:
+            # Get regions from selected RegioSet
+            regiostack = self.model.dataSets[self.dataSetIndex].regionStack
+            if self.activeBaselineRegion not in regiostack.regionSets:
+                return
+            baseline_regions = regiostack.regionSets[self.activeBaselineRegion].regions
+            
+            if not baseline_regions:
+                return
+            
+            # Get current spectrum data from parent
+            data = self.parent.parent.dataWidget.data
+            x_data = self.parent.parent.dataWidget.x
+            
+            if data is None or x_data is None:
+                return
+                
+            # Calculate baseline using polynomial fitting
+            degree = int(self.polyDegreeEntry.text()) if hasattr(self, 'polyDegreeEntry') else 1
+            
+            # Create mask for baseline regions
+            mask = np.zeros_like(x_data, dtype=bool)
+            for region in baseline_regions:
+                if len(region) == 2:
+                    region_mask = (x_data >= min(region)) & (x_data <= max(region))
+                    mask |= region_mask
+            
+            if np.any(mask):
+                x_masked = x_data[mask]
+                y_masked = np.real(data)[mask]
+                
+                # Fit polynomial
+                coeffs = np.polyfit(x_masked, y_masked, degree)
+                baseline_y = np.polyval(coeffs, x_data)
+                
+                # Emit baseline data
+                self.baselineCalculated.emit(x_data, baseline_y)
+                
+        except Exception as e:
+            print(f"Error calculating baseline: {e}")

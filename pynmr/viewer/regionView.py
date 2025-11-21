@@ -9,6 +9,12 @@ from PyQt5 import QtCore as qtc
 
 class RegionViewWidget(qtw.QFrame):
     """A widget to display and manage NMR regions."""
+    # Signals for region management
+    regionsUpdated = qtc.pyqtSignal(list)  # New region list for display
+    activeRegionSetChanged = qtc.pyqtSignal(str)  # Active region set name changed
+    regionDisplayToggled = qtc.pyqtSignal(bool)  # Show/hide regions
+    
+    # Legacy signal (to be removed)
     reprocessed = qtc.pyqtSignal()
     deleteRegions = False 
 
@@ -27,9 +33,8 @@ class RegionViewWidget(qtw.QFrame):
 
         self.initUI()
 
-        self.parent.processorWidget.BaselineWidget.updateRegioStack()
-
         self.activeRegion = None
+        
         if len(self.rStack.regionSets.keys()) > 0:
             self.activeRegion = list(self.rStack.regionSets.keys())[0]
         
@@ -93,7 +98,6 @@ class RegionViewWidget(qtw.QFrame):
                 self.updateRegionSet()
                 self.scaleSelBox.setCurrentText(self.rStack[name].scale)
                 self.redraw()
-                self.parent.processorWidget.BaselineWidget.updateRegioStack()
                 self.reload = False
             except Exception as e:
                 qtw.QMessageBox.warning(self, "Error", str(e))
@@ -135,11 +139,11 @@ class RegionViewWidget(qtw.QFrame):
                 break
 
         self.rStack[self.activeRegion].regions = regions
-        self.parent.processorWidget.BaselineWidget.update
+        
+        # Emit signal with new regions
         if self.showRegionCheckBox.isChecked():
-            self.parent.dataWidget.updateRegions(self)
-        else:
-            self.parent.dataWidget.clearRegions()
+            self.regionsUpdated.emit(regions)
+
 
 
     def saveStack(self):
@@ -158,7 +162,7 @@ class RegionViewWidget(qtw.QFrame):
                 dlg.setIcon(qtw.QMessageBox.Question)
                 button = dlg.exec()
                 if button == qtw.QMessageBox.Yes:
-                    self.parent.dataWidget.clearRegions()
+                    self.regionDisplayToggled.emit(False)
                     self.reload =True
                     del self.rStack.regionSets[self.activeRegion]
                     self.activeRegion = None if not self.rStack.regionSets else list(self.rStack.regionSets.keys())[0]
@@ -205,7 +209,10 @@ class RegionViewWidget(qtw.QFrame):
             self.tableWidget.clearContents()
             self.reload = False
             self.reloadRegions()
-            self.parent.dataWidget.updateRegions(self)
+            self.activeRegionSetChanged.emit(name)
+            if self.activeRegion:
+                regions = self.rStack[self.activeRegion].regions
+                self.regionsUpdated.emit(regions)
 
     def redraw(self):
         """Redraw the UI to reflect the current state of the RegionStack."""
@@ -215,6 +222,14 @@ class RegionViewWidget(qtw.QFrame):
             self.showRegionCheckBox.setDisabled(False)
         self.scaleSelBox.setDisabled(False)
         self.tableWidget.setDisabled(False)
+        
+    def updateFromDataWidget(self, regions):
+        """Update regions from data widget changes"""
+        if self.activeRegion and not self.reload:
+            self.reload = True
+            self.rStack[self.activeRegion].regions = regions
+            self.reloadRegions()
+            self.reload = False
     
     def setActiveRegion(self, regionSet):
         """Set the active region set."""
@@ -242,6 +257,7 @@ class RegionViewWidget(qtw.QFrame):
         RSname = self.activeRegion
         self.rStack[RSname].regions.append(region)
         self.showRegionCheckBox.setChecked(True)
-        self.parent.dataWidget.updateRegions(self)
+        regions = self.rStack[RSname].regions
+        self.regionsUpdated.emit(regions)
 
         self.redraw()

@@ -12,11 +12,19 @@ from functools import partial
 
 class ProcessorViewWidget(qtw.QFrame):
     """A widget to display NMR data"""
+    # Processing signals
     reprocessed = qtc.pyqtSignal()
     changeAxis = qtc.pyqtSignal(str)
+    
+    # Phase correction signals
     pivotPositionSignal = qtc.pyqtSignal(str)
     pivotPositionChange = qtc.pyqtSignal()
     showPivotSignal = qtc.pyqtSignal(int)
+    
+    # Baseline correction signals
+    baselineDisplayRequested = qtc.pyqtSignal(bool)  # Show/hide baseline
+    baselineApplyRequested = qtc.pyqtSignal(bool)  # Apply/remove baseline correction
+    baselineCalculated = qtc.pyqtSignal(object, object)  # x_data, y_data for baseline plot
 
     def __init__(self, model=None, dataSetIndex=0, parent=None):
         '''
@@ -58,8 +66,8 @@ class ProcessorViewWidget(qtw.QFrame):
         pBox = qtw.QGroupBox(f"Processor {self.parent.processorIndex}")
         scrollLayout.addWidget(pBox, 1)
 
-        thisProcessorLayout = qtw.QVBoxLayout()
-        pBox.setLayout(thisProcessorLayout)
+        self.thisProcessorLayout = qtw.QVBoxLayout()
+        pBox.setLayout(self.thisProcessorLayout)
 
         for op in p:
             print("name: ", op.name)
@@ -82,12 +90,12 @@ class ProcessorViewWidget(qtw.QFrame):
                 self.pWidgets.append(ow.PhaseFirstOrder(op, parent=self, runFunc=runFunc))
                 self.pWidgets[-1].showPivotSignal.connect(self.showPivotSignal)
                 self.pWidgets[-1].pivotPositionSignal.connect(self.pivotPositionSignal)
-                self.parent.dataWidget.pivotChanged.connect(self.pWidgets[-1].updatePivotPosition)
-            
-            thisProcessorLayout.addWidget(self.pWidgets[-1])
+
+            elif op.name == "Baseline Correction":
+                self.BaselineCorrectionWidget = ow.BaselineCorrectionWidget(op, parent=self, runFunc=runFunc)
+                self.pWidgets.append(self.BaselineCorrectionWidget)
+            self.thisProcessorLayout.addWidget(self.pWidgets[-1])
         
-        self.BaselineWidget = ow.BaselineCorrectionWidget(op,model,dataSetIndex,parent=self.parent)
-        thisProcessorLayout.addWidget(self.BaselineWidget)
 
         runButton = qtw.QPushButton("Process (Enter)", self, clicked=partial(self.runProcessor, p))
 
@@ -96,14 +104,16 @@ class ProcessorViewWidget(qtw.QFrame):
 
         saveSpectrumButton = qtw.QPushButton("Save Data", self, clicked=self.saveData)
 
+        #openinNotbookButton = qtw.QPushButton("Open in Notebook", self,
+        #                                      clicked=self.openInNotebook)
 
         
 
-        thisProcessorLayout.addWidget(runButton)
-        thisProcessorLayout.addWidget(saveParametersButton)
-        thisProcessorLayout.addWidget(saveSpectrumButton)
+        self.thisProcessorLayout.addWidget(runButton)
+        self.thisProcessorLayout.addWidget(saveParametersButton)
+        self.thisProcessorLayout.addWidget(saveSpectrumButton)
 
-        thisProcessorLayout.addSpacerItem(qtw.QSpacerItem(0, 0, qtw.QSizePolicy.Minimum, qtw.QSizePolicy.Expanding))
+        self.thisProcessorLayout.addSpacerItem(qtw.QSpacerItem(0, 0, qtw.QSizePolicy.Minimum, qtw.QSizePolicy.Expanding))
 
     
     
@@ -153,3 +163,18 @@ class ProcessorViewWidget(qtw.QFrame):
 
      # Emit a signal to notify that the processor stack has been updated
         self.reprocessed.emit()
+        
+    def updatePivotFromData(self, pivot_position):
+        """Update pivot position in phase correction widget from data widget"""
+        for widget in self.pWidgets:
+            if hasattr(widget, 'pivot') and hasattr(widget, 'updatePivotPosition'):
+                widget.operation.pivot = pivot_position
+                widget.pivot.setText(str(pivot_position))
+
+#   def openInNotebook(self):
+#       """Open the current processor in a Jupyter notebook."""
+#       try:
+#           from pynmr.viewer.jupyterIntegration import openProcessorInNotebook
+#           openProcessorInNotebook(self.model.dataSets[self.dataSetIndex].processorStack)
+#       except ImportError:
+#           print("Jupyter integration is not available.")

@@ -1,9 +1,18 @@
 from pynmr.model.parser.nmrData import nmrData
-import pysftp
+
 import numpy as np
 #import scipy as sp
 import os
 #from itertools import islice
+
+try:
+    import pysftp
+    PYSFTP_AVAILABLE = True
+except (ImportError, Exception) as e:
+    print(f"pysftp/paramiko not available: {e}. TopSpinSSH function will not work.")
+    PYSFTP_AVAILABLE = False
+    pysftp = None
+#Newest paramikro version does not support DSSkey anymore. Install Versions paramiko==2.12.0 pysftp==0.2.9. 
 
 def TopSpinSSH(self, path, exp, localPath, server, username, password,
                endianess="<", debug=False):
@@ -16,11 +25,16 @@ def TopSpinSSH(self, path, exp, localPath, server, username, password,
     password: password
     localPath: path to store topSpin data locally
     endianess = "<" : optional Keyword for endianess"""
-
-    with pysftp.Connection(server, username=username, password=password) as sftp:
-        with sftp.cd(path):             # temporarily chdir to public
-            sftp.get_r(exp, localPath)         # get a remote file
-
+    if not PYSFTP_AVAILABLE:
+        raise ImportError("pysftp is not available. Cannot use SSH functionality.")
+        
+    try:
+        with pysftp.Connection(server, username=username, password=password) as sftp:
+            with sftp.cd(path):             # temporarily chdir to public
+                sftp.get_r(exp, localPath)         # get a remote file
+    except Exception as e:
+        print("An error occurred while trying to connect to the server:")
+        print(e)
     return TopSpin(localPath + exp, endianness=endianess, debug=debug)
 
 

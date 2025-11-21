@@ -186,6 +186,7 @@ class MainWindow(qtw.QMainWindow):
 
     def settingsDialog(self):
         dlg = SettingsDialog(self)
+        dlg.plotUpdateRequested.connect(self.dataWidget.updatePW)
         dlg.exec()
         
 
@@ -241,18 +242,35 @@ class MainWindow(qtw.QMainWindow):
 
         self.setCentralWidget(widgetAll)
 
-        # signals
+        # Core processing signals
         self.processorWidget.changeAxis.connect(self.dataWidget.changeDomain)
         self.processorWidget.reprocessed.connect(self.dataWidget.update)
+        
+        # Phase correction signals
         self.processorWidget.pivotPositionSignal.connect(self.dataWidget.pivotPositionSignal)
         self.processorWidget.showPivotSignal.connect(self.dataWidget.showPivotSignal)
-
+        self.dataWidget.pivotPositionChanged.connect(self.processorWidget.updatePivotFromData)
         
-
-        self.dataWidget.regionChanged.connect(self.regionWidget.reprocessed)
-        self.dataWidget.regionChanged.connect(self.regionWidget.reloadRegions)
-        self.dataWidget.regionChanged.connect(self.processorWidget.BaselineWidget.RegiochangeBaseline)
+        # Region management signals  
+        self.dataWidget.regionsChanged.connect(self.regionWidget.updateFromDataWidget)
+        self.regionWidget.regionsUpdated.connect(self.dataWidget.updateRegionDisplay)
+        self.dataWidget.regionAddRequested.connect(self.regionWidget.addRegion)
         
+        # Baseline correction signals
+        if hasattr(self.processorWidget, 'BaselineCorrectionWidget'):
+            baseline_widget = self.processorWidget.BaselineCorrectionWidget
+            # Baseline display control
+            baseline_widget.baselineDisplayToggled.connect(self.dataWidget.toggleBaselineDisplay)
+            baseline_widget.baselineApplyToggled.connect(self.dataWidget.toggleBaselineApplication)
+            baseline_widget.baselineCalculated.connect(self.dataWidget.updateBaselinePlot)
+            # Region updates for baseline
+            self.regionWidget.regionsUpdated.connect(baseline_widget.updateRegions)
+            self.dataWidget.regionsChanged.connect(baseline_widget.updateRegions)
+            # Parameter changes trigger baseline recalculation
+            baseline_widget.baselineParametersChanged.connect(baseline_widget.calculateAndEmitBaseline)
+            # Active region set changes update baseline widget
+            self.regionWidget.activeRegionSetChanged.connect(baseline_widget.updateRegioStack)
+
         self.show()
 
 
@@ -300,8 +318,8 @@ class MainWindow(qtw.QMainWindow):
                 OPS.FourierTransform(),
                 OPS.SetPPMScale(),
                 OPS.Phase0D(0),
-                OPS.Phase1D(data.timeShift, unit="time")
-            ])]
+                OPS.Phase1D(data.timeShift, unit="time"),
+                OPS.BaselineCorrection(regionSet= self.RegionViewWidgets.activeRegion , degree=0, scale="Hz", applyLocally=False, fitFunction=None)])]
 
         pathToRegionStack = os.path.join(Processorpath, "pynmrRegionStack.dill")
 
@@ -355,7 +373,8 @@ class MainWindow(qtw.QMainWindow):
                                         OPS.SetPPMScale(),
                                         OPS.Phase0D(0),
                                         OPS.Phase1D(data.timeShift,
-                                                    unit="time")])]
+                                                    unit="time"),
+                                        OPS.BaseLineCorrection(regionSet= None , degree=0, scale="Hz", applyLocally=False, fitFunction=None)])]
 
         pathToRegionStack = path + "pynmrRegionStack.dill"
 
@@ -397,7 +416,7 @@ class MainWindow(qtw.QMainWindow):
         self.populateOpenRecent()
 
         self.updateView()
-        self.ProcessortoTD1()
+        # self.ProcessortoTD1()  # Commented out until properly implemented
 
     def populateOpenRecent(self, openString = ""):
         self.openRecentMenu.clear()
