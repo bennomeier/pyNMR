@@ -253,6 +253,16 @@ class GetSingleIntegral(Operation):
         - `stop`: upper limit of integration
         - `scale`: Hz or ppm
         - `part`: real or magnitude
+
+
+        Note that integration is a bit subtle. According to Kouril and Meier JMRO 21, 2024,
+        the Fourier coefficient scales as S0 * N / (R2 TA) = S0 /R2 * df, where df is the inverse of the dwelltime.
+
+        (i) Thus if we make the dwelltime longer, the Fourier coefficient increases in proportion.
+        (ii) At the same time, if the acuqisition time is constant, a longer dwell time puts more fourier coefficients into a given window.
+
+        Effect (i) can be compensated for by dividing by the sweepWidthTD2.
+        Effect (ii) can be compensated for by multiplying the fourier coefficients with dx.
         """
         self.index = index
         self.start = start
@@ -277,9 +287,9 @@ class GetSingleIntegral(Operation):
         i2 = indices[1]
 
         if self.part == "real":
-            retVal = np.sum(np.real(nmrData.allSpectra[-1][self.index][i1:i2])) * self.dx
+            retVal = np.sum(np.real(nmrData.allSpectra[-1][self.index][i1:i2])) * self.dx /nmrData.sweepWidthTD2
         elif self.part == "magnitude":
-            retVal = np.sum(np.abs(nmrData.allSpectra[-1][self.index][i1:i2]))*self.dx
+            retVal = np.sum(np.abs(nmrData.allSpectra[-1][self.index][i1:i2]))*self.dx / nmrData.sweepWidthTD2
 
         return retVal
 
