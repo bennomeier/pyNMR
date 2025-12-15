@@ -64,6 +64,8 @@ class NmrViewWidget(qtw.QFrame):
         self.pivotPosition = 0
         self.showPivot = False
 
+        self.showRegions = False
+
         # this is a plot data item
         self.p1 = self.pw.plot()
         self.p1.setPen((20, 20, 200))
@@ -119,22 +121,21 @@ class NmrViewWidget(qtw.QFrame):
         self.showPivot = show
         self.updatePW()
         
-    def updateRegionDisplay(self, regions):
-        """Update the visual display of regions from region widget"""
-        self.clearRegions()
-        for index, region in enumerate(regions):
-            if isinstance(region, (list, tuple)) and len(region) == 2:
-                # Create visual region markers
-                region_item = pg.LinearRegionItem(values=region, brush=(0, 100, 200, 50))
-                self.regionPlotItems.append(region_item)
-                self.pw.addItem(region_item)
+    def toggleRegionDisplay(self, show):
+        """Legacy method - use updateRegionDisplay instead"""
+        if show:
+            self.showRegions = True
+        if not show:
+            self.showRegions = False
+            self.clearRegions()
     
     def toggleBaselineDisplay(self, show):
         """Show or hide baseline display"""
+        print("Toggling Baseline Display to " + str(show))
         self.baseline = show
         if show:
-            # Request baseline calculation from baseline widget
-            pass  # Will be handled by baseline widget
+            self.updateBaselinePlot()
+            pass
         else:
             self.removeBaseline()
             
@@ -162,29 +163,20 @@ class NmrViewWidget(qtw.QFrame):
 
         # regionWindow = regionView.RegionViewWidget()
         # regionWindow.redraw()
-
-
-
-    def updateRegions(self, regionView):
-        """Legacy method - use updateRegionDisplay instead"""
-        if regionView.showRegionCheckBox.isChecked():
-            regionSet = regionView.rStack[regionView.activeRegion]
-            regions = regionSet.regions
-            self.updateRegionDisplay(regions)
-        else:
-            self.clearRegions()
             
     def updateRegionDisplay(self, regions):
         """Update the visual display of regions from region widget"""
-        self.clearRegions()
-        for index, region in enumerate(regions):
-            if isinstance(region, (list, tuple)) and len(region) == 2:
-                item = pg.LinearRegionItem(values=(region[0], region[1]))
-                item.sigRegionChangeFinished.connect(
-                    lambda _, idx=index, itm=item: self.onRegionMoved(idx, itm.getRegion())
-                )
-                self.regionPlotItems.append(item)
-                self.pw.addItem(item)
+        print("Updating Regions to " + str(regions))
+        if self.showRegions:
+            self.clearRegions()
+            for index, region in enumerate(regions):
+                if isinstance(region, (list, tuple)) and len(region) == 2:
+                    item = pg.LinearRegionItem(values=(region[0], region[1]))
+                    item.sigRegionChangeFinished.connect(
+                        lambda _, idx=index, itm=item: self.onRegionMoved(idx, itm.getRegion())
+                    )
+                    self.regionPlotItems.append(item)
+                    self.pw.addItem(item)
                 
     def onRegionMoved(self, index, new_region):
         """Called when a region is moved graphically - emit signal with new regions"""
@@ -297,6 +289,7 @@ class NmrViewWidget(qtw.QFrame):
             
     def toggleBaselineDisplay(self, show):
         """Show or hide baseline display"""
+        print("Toggling Baseline Display to " + str(show))
         self.baseline = show
         if not show:
             self.removeBaseline()

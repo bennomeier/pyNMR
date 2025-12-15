@@ -120,6 +120,8 @@ class MainWindow(qtw.QMainWindow):
         self.domainBox = qtw.QComboBox()
         self.domainBox.addItems(["Time.Points", "Time.Time", "Frequency.Hz", "Frequency.ppm"])
         self.domainBox.currentTextChanged.connect(self.setDomain)
+        if hasattr(self, 'regionWidget'):
+            self.domainBox.currentTextChanged.connect(self.regionWidget.DomainNMRViewChangeUpdate)
         TBviewerNavigation.addWidget(self.domainBox)
         
         # then have a box to set the processing index
@@ -255,7 +257,9 @@ class MainWindow(qtw.QMainWindow):
         self.dataWidget.regionsChanged.connect(self.regionWidget.updateFromDataWidget)
         self.regionWidget.regionsUpdated.connect(self.dataWidget.updateRegionDisplay)
         self.dataWidget.regionAddRequested.connect(self.regionWidget.addRegion)
-        
+        self.domainBox.currentTextChanged.connect(self.regionWidget.DomainNMRViewChangeUpdate)
+        self.regionWidget.regionDisplayToggled.connect(self.dataWidget.toggleRegionDisplay)
+
         # Baseline correction signals
         if hasattr(self.processorWidget, 'BaselineCorrectionWidget'):
             baseline_widget = self.processorWidget.BaselineCorrectionWidget
@@ -477,7 +481,8 @@ class MainWindow(qtw.QMainWindow):
             P = self.model.dataSets[0].processorStack[0]
             print(P)
             self.processorWidget.runProcessor(self.model.dataSets[self.processorWidget.dataSetIndex].processorStack[0])
-            
+        if self.domain in ["Frequency.Hz", "Frequency.ppm"]:
+            self.regionWidget.showRegionCheckBox.setDisabled(False)
         self.viewParametersChanged.emit(1)
     
  #   def ProcessortoTD1(self):
