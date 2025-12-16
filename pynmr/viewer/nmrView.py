@@ -131,10 +131,9 @@ class NmrViewWidget(qtw.QFrame):
     
     def toggleBaselineDisplay(self, show):
         """Show or hide baseline display"""
-        print("Toggling Baseline Display to " + str(show))
         self.baseline = show
         if show:
-            self.updateBaselinePlot()
+            self.updateBaseline()
             pass
         else:
             self.removeBaseline()
@@ -143,10 +142,64 @@ class NmrViewWidget(qtw.QFrame):
         """Apply or remove baseline correction to spectrum"""
         self.applybaleline = apply
         self.update()  # Redraw spectrum
-        
-    def updateBaselinePlot(self, x_data, y_data):
-        """Update baseline plot with calculated data"""
-        self.plotBaseline(x_data, y_data)
+    
+    def plotBaseline(self, datax, datay):
+        if self.Bslgraph is not None:
+            self.pw.removeItem(self.Bslgraph)
+        self.Bslgraph = pg.PlotDataItem(datax,datay, pen=(100, 100, 100))
+        self.pw.addItem(self.Bslgraph)
+
+    def removeBaseline(self):
+        if self.Bslgraph is not None:
+            self.pw.removeItem(self.Bslgraph)       
+
+    def updateBaselinePlot(self, xdata, ydata, baseline_func):
+        """Update the baseline plot with new data"""
+        if self.baseline:
+            self.plotBaseline(xdata, ydata)
+            self.Graphdata = baseline_func
+        else:
+            self.removeBaseline()
+
+    # def updateBaseline(self):
+    #     """Update the baseline plot if baseline fitting is enabled."""
+    #     if self.polynomialdegree is not None:
+    #         return
+    #         # Bsln = O.BaselineFitFunction(self.polynomialdegree)
+
+    #         # if self.domain == "Frequency.Hz":
+    #         #     xdata = self.model.dataSets[self.dataSetIndex].data.frequency
+    #         # elif self.domain == "Frequency.ppm":
+    #         #     xdata = self.model.dataSets[self.dataSetIndex].data.ppmScale
+    #         # else:
+    #         #     xdata = np.arange(len(self.data))
+
+    #         # xdata = xdata[:len(self.data)]
+    #         # min_x = np.min(xdata)
+    #         # max_x = np.max(xdata)
+    #         # regions = self.baselineRegions
+    #         # print("Regions: "+str(regions))
+    #         # mask = np.zeros_like(xdata, dtype=bool)
+    #         # for region in regions:
+    #         #     start, end = sorted(region)
+    #         #     mask |= (xdata >= max(start, min_x)) & (xdata <= min(end, max_x))
+    #         # xdata_masked = xdata[mask]
+    #         # y_masked = self.data[mask]
+    #         # self.Graphdata = Bsln.run(xdata_masked, y_masked)
+    #         # ydata = self.Graphdata(xdata)
+    #         # ydata = np.real(ydata)
+    #     #if self.baseline:
+    #         #self.plotBaseline(xdata, ydata)
+    #     else:
+    #         self.removeBaseline()
+
+    def updateBaseline(self):
+        if self.polynomialdegree is not None:
+            if hasattr(self.parent, 'processorWidget') and hasattr(self.parent.processorWidget, 'baselineWidget'):
+                self.parent.processorWidget.baselineWidget.calculateAndEmitBaseline()
+                return
+            return
+        self.removeBaseline()
 
     def pivotPositionSignal(self, val):
         print("Updating pivot position to {}".format(val))
@@ -276,62 +329,6 @@ class NmrViewWidget(qtw.QFrame):
         if autoScale:
             print("Rescaling")
             self.pw.autoRange()   
-
-    def plotBaseline(self, datax, datay):
-        if self.Bslgraph is not None:
-            self.pw.removeItem(self.Bslgraph)
-        self.Bslgraph = pg.PlotDataItem(datax,datay, pen=(100, 100, 100))
-        self.pw.addItem(self.Bslgraph)
-
-    def removeBaseline(self):
-        if self.Bslgraph is not None:
-            self.pw.removeItem(self.Bslgraph)
-            
-    def toggleBaselineDisplay(self, show):
-        """Show or hide baseline display"""
-        print("Toggling Baseline Display to " + str(show))
-        self.baseline = show
-        if not show:
-            self.removeBaseline()
-            
-    def toggleBaselineApplication(self, apply):
-        """Apply or remove baseline correction to spectrum"""
-        self.applybaleline = apply
-        self.update()  # Redraw spectrum
-        
-    def updateBaselinePlot(self, x_data, y_data):
-        """Update baseline plot with calculated data"""
-        self.plotBaseline(x_data, y_data)
-
-    def updateBaseline(self):
-        """Update the baseline plot if baseline fitting is enabled."""
-        if self.baseline and self.polynomialdegree is not None:
-            Bsln = O.BaselineFitFunction(self.polynomialdegree)
-
-            if self.domain == "Frequency.Hz":
-                xdata = self.model.dataSets[self.dataSetIndex].data.frequency
-            elif self.domain == "Frequency.ppm":
-                xdata = self.model.dataSets[self.dataSetIndex].data.ppmScale
-            else:
-                xdata = np.arange(len(self.data))
-
-            xdata = xdata[:len(self.data)]
-            min_x = np.min(xdata)
-            max_x = np.max(xdata)
-            regions = self.baselineRegions
-            print("Regions: "+str(regions))
-            mask = np.zeros_like(xdata, dtype=bool)
-            for region in regions:
-                start, end = sorted(region)
-                mask |= (xdata >= max(start, min_x)) & (xdata <= min(end, max_x))
-            xdata_masked = xdata[mask]
-            y_masked = self.data[mask]
-            self.Graphdata = Bsln.run(xdata_masked, y_masked)
-            ydata = self.Graphdata(xdata)
-            ydata = np.real(ydata)
-            self.plotBaseline(xdata, ydata)
-        else:
-            self.removeBaseline()
 
     # when Shift key is pressed, zoom y range as well.
     # for now you have to press shift as well.

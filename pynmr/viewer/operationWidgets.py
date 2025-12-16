@@ -198,10 +198,10 @@ class PhaseZeroOrder(CollapsibleWidget):
 
 
         self.sl = qtw.QSlider(qtc.Qt.Horizontal)
-        self.sl.setMinimum(-180)
-        self.sl.setMaximum(180)
-        self.sl.setValue(int(self.operation.phase))
-        self.sl.valueChanged.connect(self.handleChange)
+        self.sl.setMinimum(-360)
+        self.sl.setMaximum(360)
+        self.sl.setValue(int(self.operation.phase*2))
+        self.sl.valueChanged.connect(self.handleSliderChange)
 
         self.sl.setSizePolicy(qtw.QSizePolicy.Expanding, qtw.QSizePolicy.Fixed)
 
@@ -210,7 +210,7 @@ class PhaseZeroOrder(CollapsibleWidget):
         self.entry.setSizePolicy(qtw.QSizePolicy.Minimum, qtw.QSizePolicy.Fixed)
 
         self.entry.setValidator(qtg.QDoubleValidator())
-        self.entry.textChanged.connect(self.handleChange)
+        self.entry.editingFinished.connect(self.handleEntryChange)
 
         
         groupBoxLayout = qtw.QHBoxLayout()
@@ -220,22 +220,38 @@ class PhaseZeroOrder(CollapsibleWidget):
 
         self.add_layout(groupBoxLayout)
 
-    def handleChange(self, value):
-        while float(value)<-180 or float(value)>180:
-            if float(value)<0:
-                value = int(value)+ 360
+    def handleSliderChange(self, value):
+        phase = value / 2.0
+        while phase < -180 or phase > 180:
+            if phase < 0:
+                phase = phase + 360
             else:
-                value = int(value)- 360
-        self.operation.phase = float(value)
-        self.entry.setText(str(value))
-        if float(value)<0:
-            val = int(abs(float(value)))
-            self.sl.setValue(-val)
-        else:
-            self.sl.setValue(int(float(value)))
+                phase = phase - 360
+        self.operation.phase = float(phase)
+        self.entry.blockSignals(True)
+        self.entry.setText(str(phase))
+        self.entry.blockSignals(False)
         if self.runFunc:
             self.runFunc()
         self.reprocessWidget.emit()
+
+    def handleEntryChange(self):
+        try:
+            phase = float(self.entry.text())
+            while phase < -180 or phase > 180:
+                if phase < 0:
+                    phase = phase + 360
+                else:
+                    phase = phase - 360
+            self.operation.phase = float(phase)
+            self.sl.blockSignals(True)
+            self.sl.setValue(int(phase * 2))
+            self.sl.blockSignals(False)
+            if self.runFunc:  
+                self.runFunc()
+            self.reprocessWidget.emit()
+        except ValueError:
+            pass
 
 
     def updateValues(self, operation):
@@ -256,6 +272,7 @@ class PhaseFirstOrder(CollapsibleWidget):
         if not hasattr(self.operation, "phase"):
             self.operation.phase = 0
         self.runFunc = runFunc
+        self.Reproces = False
 
         layout = qtw.QVBoxLayout()
         layout.setContentsMargins(0, 0, 0, 0)
@@ -267,16 +284,16 @@ class PhaseFirstOrder(CollapsibleWidget):
         phaseLayout = qtw.QHBoxLayout()
 
         self.sl = qtw.QSlider(qtc.Qt.Horizontal)
-        self.sl.setMinimum(-180)
-        self.sl.setMaximum(180)
-        self.sl.setValue(int(self.operation.phase))
-        self.sl.valueChanged.connect(self.handleChange)
+        self.sl.setMinimum(-1080)
+        self.sl.setMaximum(1080)
+        self.sl.setValue(int(self.operation.phase*2))
+        self.sl.valueChanged.connect(self.handleSliderChange)
 
         self.sl.setSizePolicy(qtw.QSizePolicy.Expanding, qtw.QSizePolicy.Fixed)
         self.entry = qtw.QLineEdit(str(self.operation.phase)) 
         self.entry.setSizePolicy(qtw.QSizePolicy.Minimum, qtw.QSizePolicy.Fixed)
         self.entry.setValidator(qtg.QDoubleValidator())
-        self.entry.textChanged.connect(self.handleChange)
+        self.entry.editingFinished.connect(self.handleEntryChange)
 
         phaseLayout.addWidget(self.sl)
         phaseLayout.addWidget(self.entry)
@@ -294,6 +311,8 @@ class PhaseFirstOrder(CollapsibleWidget):
         pivotLayout.addWidget(self.showPivot)
 
         self.reproBox = qtw.QCheckBox("Reprocess")
+        self.reproBox.setChecked(False)
+        self.reproBox.stateChanged.connect(self.toggleReprocess)
 
         mylayout = qtw.QVBoxLayout()
         mylayout.addLayout(phaseLayout)
@@ -303,28 +322,45 @@ class PhaseFirstOrder(CollapsibleWidget):
 
 
         
-    def handleChange(self, value):
-        self.operation.value = float(value)
+    def handleSliderChange(self, value):
+        phase = value / 2.0
+        while phase < -540 or phase > 540:
+            if phase < 0:
+                phase = phase + 1080
+            else:
+                phase = phase - 1080
+        self.operation.value = float(phase)
         self.operation.pivot = float(self.pivot.text())
         self.operation.unit = "degree"
         self.operation.scale = "ppm"
-        self.entry.setText(str(value))
-        while float(value)<-540 or float(value)>540:
-            if float(value)<0:
-                value = int(value)+ 1080
-            else:
-                value = int(value)- 1080
-        self.operation.phase = float(value)
-        self.entry.setText(str(value))
-        if float(value)<0:
-            val = int(abs(float(value)))
-            self.sl.setValue(-val)
-        else:
-            self.sl.setValue(int(float(value)))
+        self.entry.blockSignals(True)
+        self.entry.setText(str(phase))
+        self.entry.blockSignals(False)
+        if self.Reproces:
+            if self.runFunc:
+                self.runFunc()  
+            self.reprocessWidget.emit()
 
-        if self.runFunc:
-            self.runFunc()
-        self.reprocessWidget.emit()
+    def handleEntryChange(self):
+        try:
+            phase = float(self.entry.text())
+            while phase < -540 or phase > 540:
+                if phase < 0:
+                    phase = phase + 1080
+                else:
+                    phase = phase - 1080
+            self.operation.phase = float(phase)
+            self.operation.pivot = float(self.pivot.text())
+            self.operation.unit = "degree"
+            self.operation.scale = "ppm"
+            self.sl.blockSignals(True)
+            self.sl.setValue(int(phase * 2))
+            self.sl.blockSignals(False)
+            if self.Reproces:
+                self.runFunc()
+            self.reprocessWidget.emit()
+        except ValueError:
+            pass
 
     def updatePivotPosition(self):
         # update pivot position text after pivot has been changed.
@@ -338,19 +374,27 @@ class PhaseFirstOrder(CollapsibleWidget):
         self.sl.setValue(int(self.operation.phase))
         self.pivot.setText(str(self.operation.pivot))
 
+    def toggleReprocess(self):
+        if self.reproBox.isChecked():
+            self.Reproces = True
+            if self.runFunc:
+                self.runFunc()
+            self.reprocessWidget.emit()
+        else:
+            self.Reproces = False
+
 class BaselineCorrectionWidget(CollapsibleWidget):
     # Signals for baseline correction
     baselineParametersChanged = qtc.pyqtSignal()  # Parameters changed, need recalculation
     baselineDisplayToggled = qtc.pyqtSignal(bool)  # Show/hide baseline
     baselineApplyToggled = qtc.pyqtSignal(bool)  # Apply/unapply baseline
     regionsRequested = qtc.pyqtSignal()  # Request current regions from region widget
-    baselineCalculated = qtc.pyqtSignal(object, object)  # x_data, baseline_y
+    baselineCalculated = qtc.pyqtSignal(object, object, object)
     
     def __init__(self, operation, parent=None , runFunc = None):
         super().__init__(title = "Baseline Correction")
         self.operation = operation
         self.runFunc = runFunc
-        self.operation = operation
         self.parent = parent
         self.model = self.parent.model
         self.dataSetIndex = self.parent.dataSetIndex
@@ -534,12 +578,11 @@ class BaselineCorrectionWidget(CollapsibleWidget):
             
     def calculateAndEmitBaseline(self):
         """Calculate baseline and emit the result using selected RegioSet"""
-        # Use regions from selected RegioSet, not current_regions
         if not hasattr(self, 'activeBaselineRegion') or not self.activeBaselineRegion:
             return
             
         try:
-            # Get regions from selected RegioSet
+            import pynmr.model.operations as O
             regiostack = self.model.dataSets[self.dataSetIndex].regionStack
             if self.activeBaselineRegion not in regiostack.regionSets:
                 return
@@ -550,31 +593,34 @@ class BaselineCorrectionWidget(CollapsibleWidget):
             
             # Get current spectrum data from parent
             data = self.parent.parent.dataWidget.data
-            x_data = self.parent.parent.dataWidget.x
+            domain = self.parent.parent.dataWidget.domain
             
-            if data is None or x_data is None:
+            if data is None or domain is None:
                 return
-                
-            # Calculate baseline using polynomial fitting
-            degree = int(self.polyDegreeEntry.text()) if hasattr(self, 'polyDegreeEntry') else 1
             
-            # Create mask for baseline regions
+            if domain == "Frequency.Hz":
+                x_data = self.model.dataSets[self.dataSetIndex].data.frequency
+            elif domain == "Frequency.ppm":
+                x_data = self.model.dataSets[self.dataSetIndex].data.ppmScale
+            else:
+                x_data = np.arange(len(data))
+            
+            degree = int(self.polyDegreeEntry.text()) if hasattr(self, 'polyDegreeEntry') else 1
+
+            min_x = np.min(x_data)
+            max_x = np.max(x_data)
             mask = np.zeros_like(x_data, dtype=bool)
             for region in baseline_regions:
-                if len(region) == 2:
-                    region_mask = (x_data >= min(region)) & (x_data <= max(region))
-                    mask |= region_mask
-            
+                start, end = sorted(region)
+                mask |= (x_data >= max(start, min_x)) & (x_data <= min(end, max_x))
+
             if np.any(mask):
                 x_masked = x_data[mask]
                 y_masked = np.real(data)[mask]
-                
-                # Fit polynomial
-                coeffs = np.polyfit(x_masked, y_masked, degree)
-                baseline_y = np.polyval(coeffs, x_data)
-                
-                # Emit baseline data
-                self.baselineCalculated.emit(x_data, baseline_y)
-                
+                Bsln = O.BaselineFitFunction(degree)
+                baseline_func = Bsln.run(x_masked, y_masked)
+                y_data = baseline_func(x_data)
+                y_data = np.real(y_data)
+                self.baselineCalculated.emit(x_data, y_data, baseline_func)
         except Exception as e:
             print(f"Error calculating baseline: {e}")

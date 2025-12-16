@@ -8,4 +8,5 @@
 ./dist/*
 /build/
 run_dev.sh
+run_dev.py
 run_dev.bat
