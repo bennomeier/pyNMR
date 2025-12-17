@@ -1,14 +1,21 @@
 # import sys
-# import numpy as np
+import numpy as np
 from PyQt5 import QtWidgets as qtw
 # from PyQt5 import QtGui as qtg
 from PyQt5 import QtCore as qtc
+from pynmr.model.operations import SetPPMScale as sppm, FourierTransform as FT
 # from pynmr.model.region import RegionStack, RegionSet
 # from functools import partial
 #from pynmr.viewer.nmrView import NmrViewWidget
 
 class RegionViewWidget(qtw.QFrame):
     """A widget to display and manage NMR regions."""
+    # Signals for region management
+    regionsUpdated = qtc.pyqtSignal(list)  # New region list for display
+    activeRegionSetChanged = qtc.pyqtSignal(str)  # Active region set name changed
+    regionDisplayToggled = qtc.pyqtSignal(bool)  # Show/hide regions
+    
+    # Legacy signal (to be removed)
     reprocessed = qtc.pyqtSignal()
     deleteRegions = False 
 
@@ -22,14 +29,15 @@ class RegionViewWidget(qtw.QFrame):
         self.parent = parent
         self.dataSetIndex = dataSetIndex
         self.reload = False
-
+        self.RegionDomain = None
+        if hasattr(self.parent, 'domainBox'):
+            self.DomainNMRView = (self.parent.domainBox.currentText())
         self.rStack = self.model.dataSets[dataSetIndex].regionStack 
 
         self.initUI()
 
-        self.parent.processorWidget.BaselineWidget.updateRegioStack()
-
         self.activeRegion = None
+        
         if len(self.rStack.regionSets.keys()) > 0:
             self.activeRegion = list(self.rStack.regionSets.keys())[0]
         
@@ -53,6 +61,7 @@ class RegionViewWidget(qtw.QFrame):
         for scale in ["Hz", "ppm"]:
             self.scaleSelBox.addItem(scale)
         self.scaleSelBox.setDisabled(True)
+        self.scaleSelBox.currentTextChanged.connect(self.DomainRegionViewChangeUpdate)
         groupBoxLayout.addWidget(self.scaleSelBox)
 
         self.tableWidget = qtw.QTableWidget(itemChanged=self.updateRegionSet)
@@ -64,7 +73,7 @@ class RegionViewWidget(qtw.QFrame):
         self.tableWidget.setSizePolicy(qtw.QSizePolicy.MinimumExpanding, qtw.QSizePolicy.MinimumExpanding)
         groupBoxLayout.addWidget(self.tableWidget)
 
-        self.showRegionCheckBox = qtw.QCheckBox("Show RegionSet", self, stateChanged=self.updateRegionSet)
+        self.showRegionCheckBox = qtw.QCheckBox("Show RegionSet", self, stateChanged=self.ChangeShowRegion)
         groupBoxLayout.addWidget(self.showRegionCheckBox)
         self.showRegionCheckBox.setDisabled(True)
         buttonLayout = qtw.QHBoxLayout()
@@ -87,13 +96,12 @@ class RegionViewWidget(qtw.QFrame):
         if done1 and name:
             try:
                 self.reload =True
-                self.rStack.add(name, scale="ppm", regions=[])  
+                self.rStack.add(name, scale=self.scaleSelBox.currentText(), regions=[])  
                 self.activeRegion = name
                 self.tableWidget.clearContents()
                 self.updateRegionSet()
                 self.scaleSelBox.setCurrentText(self.rStack[name].scale)
                 self.redraw()
-                self.parent.processorWidget.BaselineWidget.updateRegioStack()
                 self.reload = False
             except Exception as e:
                 qtw.QMessageBox.warning(self, "Error", str(e))
@@ -107,8 +115,8 @@ class RegionViewWidget(qtw.QFrame):
             regions = self.rStack[self.activeRegion].regions
             for index, r in enumerate(regions):
                 if isinstance(r, (list, tuple)) and len(r) == 2:
-                    i1 = qtw.QTableWidgetItem(str(r[0]))
-                    i2 = qtw.QTableWidgetItem(str(r[1]))
+                    i1 = qtw.QTableWidgetItem(str(np.round(r[0], 1)))
+                    i2 = qtw.QTableWidgetItem(str(np.round(r[1], 1)))
                     self.tableWidget.setItem(index, 0, i1)
                     self.tableWidget.setItem(index, 1, i2)
                 self.activeRegion = aktiveregion
@@ -119,10 +127,11 @@ class RegionViewWidget(qtw.QFrame):
         """Aktualisiere die Regionen in der aktiven Region."""
         print("Update")
         if not self.activeRegion and self.reload != True:
-            qtw.QMessageBox.warning(self, "No Active RegionSet", "No active RegionSet to update.")
+            
             return
         
         if self.reload == True:
+
             return
 
         regions = []
@@ -133,14 +142,36 @@ class RegionViewWidget(qtw.QFrame):
                 regions.append([start, end])
             except (ValueError, AttributeError):
                 break
-
+        
         self.rStack[self.activeRegion].regions = regions
-        self.parent.processorWidget.BaselineWidget.update
+        
+        if self.DomainNMRView == "Time.Points" or self.DomainNMRView == "Time.Time":
+            try:
+                self.showRegionCheckBox.setDisabled(True)
+                self.showRegionCheckBox.setChecked(False)
+            except:
+                return
+            
+            regions = []
+        # Emit signal with new regions
         if self.showRegionCheckBox.isChecked():
-            self.parent.dataWidget.updateRegions(self)
-        else:
-            self.parent.dataWidget.clearRegions()
+            self.regionsUpdated.emit(regions)
 
+    def ChangeShowRegion(self):
+        """Toggle the display of regions."""
+        if self.DomainNMRView == "Time.Points" or self.DomainNMRView == "Time.Time":
+            try: 
+                self.showRegionCheckBox.setDisabled(True)
+                self.showRegionCheckBox.setChecked(False)
+                self.regionDisplayToggled.emit(False)
+            except:
+                return
+            return
+        if self.showRegionCheckBox.isChecked():
+            self.regionDisplayToggled.emit(True)
+            self.updateRegionSet()
+        else:
+            self.regionDisplayToggled.emit(False)
 
     def saveStack(self):
         """Speichere die RegionStack in eine Datei."""
@@ -158,7 +189,7 @@ class RegionViewWidget(qtw.QFrame):
                 dlg.setIcon(qtw.QMessageBox.Question)
                 button = dlg.exec()
                 if button == qtw.QMessageBox.Yes:
-                    self.parent.dataWidget.clearRegions()
+                    self.regionDisplayToggled.emit(False)
                     self.reload =True
                     del self.rStack.regionSets[self.activeRegion]
                     self.activeRegion = None if not self.rStack.regionSets else list(self.rStack.regionSets.keys())[0]
@@ -205,7 +236,10 @@ class RegionViewWidget(qtw.QFrame):
             self.tableWidget.clearContents()
             self.reload = False
             self.reloadRegions()
-            self.parent.dataWidget.updateRegions(self)
+            self.activeRegionSetChanged.emit(name)
+            if self.activeRegion:
+                regions = self.rStack[self.activeRegion].regions
+                self.regionsUpdated.emit(regions)
 
     def redraw(self):
         """Redraw the UI to reflect the current state of the RegionStack."""
@@ -215,6 +249,14 @@ class RegionViewWidget(qtw.QFrame):
             self.showRegionCheckBox.setDisabled(False)
         self.scaleSelBox.setDisabled(False)
         self.tableWidget.setDisabled(False)
+        
+    def updateFromDataWidget(self, regions):
+        """Update regions from data widget changes"""
+        if self.activeRegion and not self.reload:
+            self.reload = True
+            self.rStack[self.activeRegion].regions = regions
+            self.reloadRegions()
+            self.reload = False
     
     def setActiveRegion(self, regionSet):
         """Set the active region set."""
@@ -242,6 +284,76 @@ class RegionViewWidget(qtw.QFrame):
         RSname = self.activeRegion
         self.rStack[RSname].regions.append(region)
         self.showRegionCheckBox.setChecked(True)
-        self.parent.dataWidget.updateRegions(self)
+        regions = self.rStack[RSname].regions
+        self.regionsUpdated.emit(regions)
 
         self.redraw()
+
+    def DomainNMRViewChangeUpdate(self):
+        """Update regions based on domain change."""
+        self.DomainNMRView = (self.parent.domainBox.currentText())
+        #self.updateRegionSet()
+        
+
+    def DomainRegionViewChangeUpdate(self):
+        """Update the scale of the active region set."""
+        new_scale = self.scaleSelBox.currentText()
+        
+        if self.activeRegion and not self.reload:
+            old_scale = self.rStack[self.activeRegion].scale
+            regions = self.rStack[self.activeRegion].regions.copy()
+            
+            print(f"DomainRegionViewChangeUpdate: old_scale={old_scale}, new_scale={new_scale}")
+            print(f"Original regions: {regions}")
+            
+            #Convert regions based on new scale:
+            if old_scale == new_scale:
+                print("No conversion needed")
+                return
+                
+            self.reload = True
+            print(f"Converting from {old_scale} to {new_scale}")
+            regions_converted = []
+            
+            try:
+                xp = self.model.dataSets[self.dataSetIndex].data.ppmScale
+                xf = self.model.dataSets[self.dataSetIndex].data.frequency
+                print(f"ppmScale range: {xp.min():.2f} to {xp.max():.2f}")
+                print(f"frequency range: {xf.min():.2f} to {xf.max():.2f}")
+            except:
+                data = self.model.dataSets[self.dataSetIndex].data
+                FoTr = FT()
+                FoTr.run(data)
+                setPPM = sppm()
+                setPPM.run(data)
+                xp = data.ppmScale
+                xf = data.frequency
+            
+            if old_scale == "Hz" and new_scale == "ppm":
+                # Convert Hz to ppm
+                for r in regions:
+                    idx_start = np.argmin(np.abs(xf - r[0]))
+                    idx_end = np.argmin(np.abs(xf - r[1]))
+                    r_converted = [xp[idx_start], xp[idx_end]]
+                    print(f"  Hz {r} -> ppm {r_converted} (indices: {idx_start}, {idx_end})")
+                    regions_converted.append(r_converted)
+                    
+            elif old_scale == "ppm" and new_scale == "Hz":
+                # Convert ppm to Hz
+                for r in regions:
+                    idx_start = np.argmin(np.abs(xp - r[0]))
+                    idx_end = np.argmin(np.abs(xp - r[1]))
+                    r_converted = [xf[idx_start], xf[idx_end]]
+                    print(f"  ppm {r} -> Hz {r_converted} (indices: {idx_start}, {idx_end})")
+                    regions_converted.append(r_converted)
+            else:
+                print("Region Scale Error - unknown conversion")
+                self.reload = False
+                return
+                
+            self.rStack[self.activeRegion].scale = new_scale
+            self.rStack[self.activeRegion].regions = regions_converted
+            self.reloadRegions()
+            self.reload = False
+
+            
