@@ -510,8 +510,12 @@ class SetPPMScale(Operation):
             self.sw = nmrData.sweepWidthTD2/(nmrData.carrier/1e6)
             #print(self.sw)
 
-            nmrData.ppmScale = np.arange(-self.o1p - self.sw/2, -self.o1p + self.sw/2,
-                                     step = self.sw/len(nmrData.frequency))
+            # the lines below are not stable w.r.t. ppmScale length
+            #nmrData.ppmScale = np.arange(-self.o1p - self.sw/2, -self.o1p + self.sw/2,
+            #                             step = self.sw/(len(nmrData.frequency)-1))
+
+            nmrData.ppmScale = np.linspace(-self.o1p - self.sw/2, -self.o1p + self.sw/2, num = len(nmrData.frequency))
+
         else:
             if self.scale == "offset":
                 freqRef = nmrData.carrier + self.offset
