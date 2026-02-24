@@ -3,6 +3,9 @@ from PyQt5 import QtGui as qtg
 from PyQt5 import QtCore as qtc
 
 class SettingsDialog(qtw.QDialog):
+    # Signal to request plot update after settings change
+    plotUpdateRequested = qtc.pyqtSignal()
+    
     def __init__(self, parent):
         super().__init__(parent)
         self.parent = parent
@@ -48,7 +51,7 @@ class SettingsDialog(qtw.QDialog):
         self.parent.settings.setValue("showImag", bool(self.cbImag.isChecked()))
         self.parent.settings.setValue("showMagn", bool(self.cbMagn.isChecked()))
 
-        self.parent.dataWidget.updatePW()
+        self.plotUpdateRequested.emit()
         
         super().accept()
 

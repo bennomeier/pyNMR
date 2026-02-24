@@ -604,7 +604,7 @@ class BaseLineCorrection(Operation):
         fitFunction: custom function to fit the baseline. Should accept xVals and yVals as input
                      and return fitted y-values.
         """
-        # make a boolean to only fit one FID
+        self.name = "Baseline Correction"
         self.regionSet = regionSet
         self.degree = degree
         self.scale = scale
@@ -612,6 +612,11 @@ class BaseLineCorrection(Operation):
         self.fitFunction = fitFunction
 
     def run(self, nmrData):
+        # Handle case where regionSet is None or empty
+        if self.regionSet is None or len(self.regionSet) == 0:
+            print("Warning: No regions defined for baseline correction. Skipping baseline correction.")
+            return
+            
         fidList = []
         graph = []
         for k in range(len(nmrData.allSpectra[-1])):
@@ -654,6 +659,7 @@ class BaseLineCorrection(Operation):
         #print("BaselineCorrection done.")
         nmrData.allSpectra.append(fidList)
         return graph
+    
     
 class BaselineFitFunction:
     def __init__(self, degree):

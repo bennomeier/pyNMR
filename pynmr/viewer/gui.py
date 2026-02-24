@@ -120,6 +120,8 @@ class MainWindow(qtw.QMainWindow):
         self.domainBox = qtw.QComboBox()
         self.domainBox.addItems(["Time.Points", "Time.Time", "Frequency.Hz", "Frequency.ppm"])
         self.domainBox.currentTextChanged.connect(self.setDomain)
+        if hasattr(self, 'regionWidget'):
+            self.domainBox.currentTextChanged.connect(self.regionWidget.DomainNMRViewChangeUpdate)
         TBviewerNavigation.addWidget(self.domainBox)
         
         # then have a box to set the processing index
@@ -186,6 +188,7 @@ class MainWindow(qtw.QMainWindow):
 
     def settingsDialog(self):
         dlg = SettingsDialog(self)
+        dlg.plotUpdateRequested.connect(self.dataWidget.updatePW)
         dlg.exec()
         
 
@@ -241,18 +244,37 @@ class MainWindow(qtw.QMainWindow):
 
         self.setCentralWidget(widgetAll)
 
-        # signals
+        # Core processing signals
         self.processorWidget.changeAxis.connect(self.dataWidget.changeDomain)
         self.processorWidget.reprocessed.connect(self.dataWidget.update)
+        
+        # Phase correction signals
         self.processorWidget.pivotPositionSignal.connect(self.dataWidget.pivotPositionSignal)
         self.processorWidget.showPivotSignal.connect(self.dataWidget.showPivotSignal)
-
+        self.dataWidget.pivotPositionChanged.connect(self.processorWidget.updatePivotFromData)
         
+        # Region management signals  
+        self.dataWidget.regionsChanged.connect(self.regionWidget.updateFromDataWidget)
+        self.regionWidget.regionsUpdated.connect(self.dataWidget.updateRegionDisplay)
+        self.dataWidget.regionAddRequested.connect(self.regionWidget.addRegion)
+        self.domainBox.currentTextChanged.connect(self.regionWidget.DomainNMRViewChangeUpdate)
+        self.regionWidget.regionDisplayToggled.connect(self.dataWidget.toggleRegionDisplay)
 
-        self.dataWidget.regionChanged.connect(self.regionWidget.reprocessed)
-        self.dataWidget.regionChanged.connect(self.regionWidget.reloadRegions)
-        self.dataWidget.regionChanged.connect(self.processorWidget.BaselineWidget.RegiochangeBaseline)
-        
+        # Baseline correction signals
+        if hasattr(self.processorWidget, 'BaselineCorrectionWidget'):
+            baseline_widget = self.processorWidget.BaselineCorrectionWidget
+            # Baseline display control
+            baseline_widget.baselineDisplayToggled.connect(self.dataWidget.toggleBaselineDisplay)
+            baseline_widget.baselineApplyToggled.connect(self.dataWidget.toggleBaselineApplication)
+            baseline_widget.baselineCalculated.connect(self.dataWidget.updateBaselinePlot)
+            # Region updates for baseline
+            self.regionWidget.regionsUpdated.connect(baseline_widget.updateRegions)
+            self.dataWidget.regionsChanged.connect(baseline_widget.updateRegions)
+            # Parameter changes trigger baseline recalculation
+            baseline_widget.baselineParametersChanged.connect(baseline_widget.calculateAndEmitBaseline)
+            # Active region set changes update baseline widget
+            self.regionWidget.activeRegionSetChanged.connect(baseline_widget.updateRegioStack)
+
         self.show()
 
 
@@ -300,8 +322,8 @@ class MainWindow(qtw.QMainWindow):
                 OPS.FourierTransform(),
                 OPS.SetPPMScale(),
                 OPS.Phase0D(0),
-                OPS.Phase1D(data.timeShift, unit="time")
-            ])]
+                OPS.Phase1D(data.timeShift, unit="time"),
+                OPS.BaselineCorrection(regionSet= self.RegionViewWidgets.activeRegion , degree=0, scale="Hz", applyLocally=False, fitFunction=None)])]
 
         pathToRegionStack = os.path.join(Processorpath, "pynmrRegionStack.dill")
 
@@ -355,7 +377,8 @@ class MainWindow(qtw.QMainWindow):
                                         OPS.SetPPMScale(),
                                         OPS.Phase0D(0),
                                         OPS.Phase1D(data.timeShift,
-                                                    unit="time")])]
+                                                    unit="time"),
+                                        OPS.BaseLineCorrection(regionSet= None , degree=0, scale="Hz", applyLocally=False, fitFunction=None)])]
 
         pathToRegionStack = path + "pynmrRegionStack.dill"
 
@@ -397,7 +420,7 @@ class MainWindow(qtw.QMainWindow):
         self.populateOpenRecent()
 
         self.updateView()
-        self.ProcessortoTD1()
+        # self.ProcessortoTD1()  # Commented out until properly implemented
 
     def populateOpenRecent(self, openString = ""):
         self.openRecentMenu.clear()
@@ -458,7 +481,8 @@ class MainWindow(qtw.QMainWindow):
             P = self.model.dataSets[0].processorStack[0]
             print(P)
             self.processorWidget.runProcessor(self.model.dataSets[self.processorWidget.dataSetIndex].processorStack[0])
-            
+        if self.domain in ["Frequency.Hz", "Frequency.ppm"]:
+            self.regionWidget.showRegionCheckBox.setDisabled(False)
         self.viewParametersChanged.emit(1)
     
  #   def ProcessortoTD1(self):
